@@ -221,9 +221,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //	CvScenePtr cvScene = new CvScene(*_renderer, _uim);
 //	cvScene->initialize();
 //	_renderer->addScene("cv", cvScene);
-	CaptureScenePtr captureScene = new CaptureScene(*_renderer, _uim);
-	captureScene->initialize();
-	_renderer->addScene("capture", captureScene);
+//	CaptureScenePtr captureScene = new CaptureScene(*_renderer, _uim);
+//	captureScene->initialize();
+//	_renderer->addScene("capture", captureScene);
 	WorkspacePtr workspace = new Workspace(*_renderer);
 	if (!_conf.workspaceFile.empty()) {
 		workspace->parse(_conf.workspaceFile);
@@ -298,7 +298,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SAFE_DELETE(workspace);
 	SAFE_DELETE(opScene);
 	SAFE_DELETE(mainScene);
-	SAFE_DELETE(captureScene);
+//	SAFE_DELETE(captureScene);
 //	SAFE_DELETE(cvScene);
 	SAFE_DELETE(_uim);
 	SAFE_DELETE(_renderer);
