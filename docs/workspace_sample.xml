@@ -1,0 +1,477 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+	<medialist>
+		<item type="image" id="000" name="黒" duration="1000">
+			<image>black.png</image>
+		</item>
+		<item type="image" id="030" name="A地震発生" duration="1000">
+			<image>/movies/bank/03_A地震発生/01A地震発生.jpg</image>
+		</item>
+		<item type="image" id="031" name="B地震収まり" duration="1000">
+			<image>/movies/bank/03_B地震収まり/02B地震収まり.jpg</image>
+		</item>
+		<item type="image" id="032" name="C火災" duration="1000">
+			<image>/movies/bank/03_C火災/03C火災.jpg</image>
+		</item>
+		<item type="image" id="033" name="D停電" duration="1000">
+			<image>/movies/bank/03_D停電/04D停電.jpg</image>
+		</item>
+		<item type="image" id="034" name="E爆発物告知" duration="10000">
+			<image>/movies/bank/03_E爆発物告知/05E爆発物告知.jpg</image>
+		</item>
+		<item type="image" id="035" name="F避難誘導" duration="10000">
+			<image>/movies/bank/03_Ｆ避難誘導/06F避難誘導.jpg</image>
+		</item>
+		<item type="image" id="100" name="静止看板1" duration="30000">
+			<image>/movies/bank/10_静止広告/emblem.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-a-l2009.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-a-c2009.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-a-r2009.png</image>
+			<image>/movies/bank/10_静止広告/emblem.png</image>
+		</item>
+		<item type="image" id="101" name="静止看板2" duration="30000">
+			<image>/movies/bank/10_静止広告/emblem.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-b-l2009.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-b-c2009.png</image>
+			<image>/movies/bank/10_静止広告/sponsor-b-r2009.png</image>
+			<image>/movies/bank/10_静止広告/emblem.png</image>
+		</item>
+		<item type="image" id="110" name="ACLロゴ" duration="10000">
+			<image>/movies/bank/11_静止画/ACL_rogo.png</image>
+		</item>
+		<item type="image" id="20A" name="スタジアム注意事項A" duration="10000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項A.jpg</image>
+		</item>
+		<item type="image" id="20B" name="スタジアム注意事項B" duration="26000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項B.jpg</image>
+		</item>
+		<item type="image" id="20C" name="スタジアム注意事項C" duration="24000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項C.jpg</image>
+		</item>
+		<item type="image" id="20D" name="スタジアム注意事項D" duration="14000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項D.jpg</image>
+		</item>
+		<item type="image" id="20E" name="スタジアム注意事項E" duration="11000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項E.jpg</image>
+		</item>
+		<item type="image" id="20F" name="スタジアム注意事項F" duration="17000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項F.jpg</image>
+		</item>
+		<item type="image" id="20G" name="スタジアム注意事項G" duration="13000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項G.jpg</image>
+		</item>
+		<item type="image" id="20H" name="スタジアム注意事項H" duration="9000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項H.jpg</image>
+		</item>
+		<item type="image" id="20I" name="スタジアム注意事項I" duration="22000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項I.jpg</image>
+		</item>
+		<item type="image" id="20J" name="スタジアム注意事項J" duration="8000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項J.jpg</image>
+		</item>
+		<item type="image" id="20K" name="スタジアム注意事項K" duration="14000">
+			<image>/movies/bank/20_スタジアム注意事項/01スタジアム注意事項K.jpg</image>
+		</item>
+		<item type="image" id="220" name="住友金属カーテンレーザーマッチ" duration="0">
+			<image>/movies/bank/22_住友金属カーテンレーザーマッチ/03カーテンレーザーマッチ.jpg</image>
+		</item>
+		<item type="image" id="230" name="大分トリニータ戦" duration="0">
+			<image>/movies/bank/23_告知アントラーズチケット発売情報/02大分トリニータ.jpg</image>
+		</item>
+		<item type="image" id="231" name="FC東京戦" duration="1000">
+			<image>/movies/bank/23_告知アントラーズチケット発売情報/03FC東京戦.jpg</image>
+		</item>
+		<item type="image" id="232" name="絶賛発売中" duration="1000">
+			<image>/movies/bank/23_告知アントラーズチケット発売情報/04絶賛発売中.jpg</image>
+		</item>
+		<item type="image" id="240" name="アントラーズファンクラブ情報" duration="1000">
+			<image>/movies/bank/24_告知アントラーズファンクラブ情報/08ファンクラブ告知.jpg</image>
+		</item>
+		<item type="image" id="250" name="東京駅臨時バス" duration="1000">
+			<image>/movies/bank/25_東京駅臨時バス告知/10東京駅行きバス告知.jpg</image>
+		</item>
+		<item type="image" id="260" name="茨城空港CM" duration="1000">
+			<image>/movies/bank/26_茨城空港CM/07茨城空港.jpg</image>
+		</item>
+		<item type="image" id="270" name="ミュージアム告知A" duration="30000">
+			<image>/movies/bank/27_ミュージアム告知A/04ミュージアムA.jpg</image>
+		</item>
+		<item type="image" id="271" name="ミュージアム告知B" duration="30000">
+			<image>/movies/bank/27_ミュージアム告知A/04ミュージアムB.jpg</image>
+		</item>
+		<item type="image" id="272" name="ミュージアム告知C" duration="1000">
+			<image>/movies/bank/27_ミュージアム告知B/04ミュージアムC.jpg</image>
+		</item>
+		<item type="image" id="280" name="ウェルネスプラザ告知" duration="1000">
+			<image>/movies/bank/29_ウェルネスプラザ告知/05ウェルネスプラザ.jpg</image>
+		</item>
+		<item type="image" id="281" name="レジェンドオブスターズDVD発売告知" duration="1000">
+			<image>/movies/bank/29_レジェンドオブスターズDVD発売告知/09レジェンドＤＶＤ.jpg</image>
+		</item>
+		<item type="movie" id="290" name="アントラー麺">
+			<movie>/movies/bank/30_アントン麺/アントラー麺.mp4</movie>
+		</item>
+		<item type="image" id="300" name="鹿嶋めぐり号告知" duration="1000">
+			<image>/movies/bank/30_鹿嶋めぐり号告知/06めぐり号.jpg</image>
+		</item>
+		<item type="movie" id="310" name="イエローハットＣＭ">
+			<movie>/movies/bank/31_CM1イエローハット/イエローハットdorna.mp4</movie>
+		</item>
+		<item type="movie" id="311" name="商船三井ＣＭ">
+			<movie>/movies/bank/31_CM1イエローハット/商船三井ＣＭ_01.mp4</movie>
+		</item>
+		<item type="movie" id="312" name="Nike_CM">
+			<movie>/movies/bank/31_CM1イエローハット/Nike_CM.mp4</movie>
+		</item>
+		<item type="image" id="340" name="JR臨時増便列車告知" duration="1000">
+			<image>/movies/bank/34_JR臨時増便列車告知/11臨時列車案内.jpg</image>
+		</item>
+		<item type="image" id="350" name="ホームタウン大抽選会当選者告知" duration="1000">
+			<image>/movies/bank/35_EX01ホームタウン大抽選/EX01_ホームタウン大抽選会当選者告知.jpg</image>
+		</item>
+		<item type="movie" id="351" name="朝日新聞スタート">
+			<movie>/movies/bank/35_朝日新聞スタート/朝日新聞スタート.mp4</movie>
+		</item>
+		<item type="image" id="352" name="朝日新聞テロップ" duration="1000">
+			<image>/movies/bank/35_朝日新聞テロップ/朝日新聞静止画.jpg</image>
+			<text>/movies/bank/35_朝日新聞テロップ/message.txt?encoding=sjis,cx=800,cw=1860,x=2660,dx=-2</text>
+			<text>/movies/bank/35_朝日新聞テロップ/message.txt?encoding=sjis,cx=4000,cw=1860,x=5860,dx=-2</text>
+			<text>/movies/bank/35_朝日新聞テロップ/message.txt?encoding=sjis,cx=7200,cw=1860,x=9060,dx=-2</text>
+			<text>/movies/bank/35_朝日新聞テロップ/message.txt?encoding=sjis,cx=10400,cw=1860,x=12260,dx=-2</text>
+			<text>/movies/bank/35_朝日新聞テロップ/message.txt?encoding=sjis,cx=13600,cw=1860,x=15460,dx=-2</text>
+		</item>
+		<item type="movie" id="353" name="朝日新聞エンド">
+			<movie>/movies/bank/35_朝日新聞テロップ/朝日新聞エンド.mp4</movie>
+		</item>
+		<item type="movie" id="370" name="カシマスクリーンセーバ">
+			<movie>/movies/bank/37_アントラーズ/カシマスクリーンセーバー.mp4</movie>
+		</item>
+		<item type="image" id="390" name="ボール注意喚起" duration="1000">
+			<image>/movies/bank/39_ボール注意喚起/12_ボール注意喚起.jpg</image>
+		</item>
+		<item type="movie" id="400" name="選手紹介イントロ">
+			<movie>/movies/bank/40_選手紹介イントロ/選手紹介intro.mp4</movie>
+		</item>
+		<item type="movie" id="410" name="選手紹介ファンファーレ">
+			<movie>/movies/bank/41_選手紹介ファンファーレ/選手紹介3.mp4</movie>
+		</item>
+		<item type="image" id="420" name="本日の審判団" duration="1000">
+			<image>/movies/bank/42_本日の審判団告知/12審判団$$_TEXTBASE.jpg</image>
+			<text>/movies/bank/42_本日の審判団告知/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/42_本日の審判団告知/message.txt?encoding=sjis,x=5333</text>
+			<text>/movies/bank/42_本日の審判団告知/message.txt?encoding=sjis,x=10666</text>
+		</item>
+		<item type="image" id="430" name="キックオフ時間告知" duration="1000">
+			<image>/movies/bank/43_キックオフ時間告知/13キックオフ時間告知$$_TEXTBASE.jpg</image>
+			<text>/movies/bank/43_キックオフ時間告知/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/43_キックオフ時間告知/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/43_キックオフ時間告知/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/43_キックオフ時間告知/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/43_キックオフ時間告知/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="image" id="440" name="本日のボールパーソン" duration="1000">
+			<image>/movies/bank/44_本日のボールボーイ入場＆紹介/14ボールパーソン.jpg</image>
+			<text>/movies/bank/44_本日のボールボーイ入場＆紹介/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/44_本日のボールボーイ入場＆紹介/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/44_本日のボールボーイ入場＆紹介/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/44_本日のボールボーイ入場＆紹介/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/44_本日のボールボーイ入場＆紹介/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="movie" id="450" name="サポータータイムA">
+			<movie>/movies/bank/45_サポータータイムA/サポータータイム_A.mp4</movie>
+		</item>
+		<item type="movie" id="451" name="サポータータイムB">
+			<movie>/movies/bank/45_サポータータイムB/サポータータイム_B.mp4</movie>
+		</item>
+		<item type="movie" id="452" name="サポータータイムC">
+			<movie>/movies/bank/45_サポータータイムC/サポータータイム_C.mp4</movie>
+		</item>
+		<item type="movie" id="453" name="サポータータイムD">
+			<movie>/movies/bank/45_サポータータイムD/サポータータイム_D.mp4</movie>
+		</item>
+		<item type="image" id="460" name="住友金属エスコートキッズ" duration="1000">
+			<image>/movies/bank/46_住友金属エスコートキッズ/15住友金属エスコートキッズ.jpg</image>
+		</item>
+		<item type="movie" id="500" name="試合中0イエローハット">
+			<movie>/movies/bank/50_試合中0イエローハット/イエローハットdorna.mp4</movie>
+		</item>
+		<item type="movie" id="501" name="試合中1NIKE">
+			<movie>/movies/bank/50_試合中1NIKE/nike_dorna.mp4</movie>
+		</item>
+		<item type="movie" id="502" name="試合中2商船三井">
+			<movie>/movies/bank/50_試合中2商船三井/商船三井ドルナ.mp4</movie>
+		</item>
+		<item type="movie" id="503" name="試合中3ANA">
+			<movie>/movies/bank/50_試合中3ANA/ana_dorna.mp4</movie>
+		</item>
+		<item type="image" id="504" name="試合中4鴻池組" duration="30000">
+			<image>/movies/bank/50_試合中4鴻池組/鴻池組全面.png</image>
+		</item>
+		<item type="movie" id="505" name="試合中5朝日">
+			<movie>/movies/bank/50_試合中5朝日/朝日新聞_試合中.mp4</movie>
+		</item>
+		<item type="movie" id="506" name="試合中6アカクラ">
+			<movie>/movies/bank/50_試合中6アカクラ/アカクラ.mp4</movie>
+		</item>
+		<item type="movie" id="510" name="トステムゴール">
+			<movie>/movies/bank/51_トステムゴール/GOAL.mp4</movie>
+		</item>
+		<item type="image" id="520" name="得点者表示鹿島" duration="1000">
+			<image>/movies/bank/52_得点者表示鹿島/16ゴール鹿島_TEXTBASE.jpg</image>
+			<text>/movies/bank/52_得点者表示鹿島/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/52_得点者表示鹿島/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/52_得点者表示鹿島/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/52_得点者表示鹿島/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/52_得点者表示鹿島/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="image" id="530" name="選手交代鹿島" duration="1000">
+			<image>/movies/bank/53_選手交代鹿島/18選手交代_鹿島.jpg</image>
+			<text>/movies/bank/53_選手交代鹿島/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/53_選手交代鹿島/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/53_選手交代鹿島/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/53_選手交代鹿島/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/53_選手交代鹿島/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="image" id="540" name="選手交代アウェイ" duration="1000">
+			<image>/movies/bank/54_選手交代アウェイ/18選手交代アウェイ.jpg</image>
+			<text>/movies/bank/54_選手交代アウェイ/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/54_選手交代アウェイ/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/54_選手交代アウェイ/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/54_選手交代アウェイ/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/54_選手交代アウェイ/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="image" id="550" name="ロスタイム" duration="1000">
+			<image>/movies/bank/55_ロスタイム1/19ロスタイム_TEXTBASE.jpg</image>
+			<text>/movies/bank/55_ロスタイム1/message.txt?encoding=sjis,x=1560</text>
+			<text>/movies/bank/55_ロスタイム1/message.txt?encoding=sjis,x=4760</text>
+			<text>/movies/bank/55_ロスタイム1/message.txt?encoding=sjis,x=7960</text>
+			<text>/movies/bank/55_ロスタイム1/message.txt?encoding=sjis,x=11160</text>
+			<text>/movies/bank/55_ロスタイム1/message.txt?encoding=sjis,x=14360</text>
+		</item>
+		<item type="image" id="600" name="ファンクラブプレゼント抽選発表" duration="1000">
+			<image>/movies/bank/60_ファンクラブプレゼント抽選発表/20当選者発表.jpg</image>
+		</item>
+		<item type="movie" id="610" name="他会場朝日新聞スタート">
+			<movie>/movies/bank/61_他会場朝日新聞スタート/朝日新聞スタート.mp4</movie>
+		</item>
+		<item type="image" id="611" name="他会場朝日新聞テロップ" duration="1000">
+			<image>/movies/bank/61_他会場朝日新聞テロップ/朝日新聞_他会場テロップベース3200.jpg</image>
+			<text>/movies/bank/61_他会場朝日新聞テロップ/message.txt?encoding=sjis,x=800,dx=-2</text>
+		</item>
+		<item type="movie" id="612" name="他会場朝日新聞エンド">
+			<movie>/movies/bank/61_他会場朝日新聞テロップ/朝日新聞エンド.mp4</movie>
+		</item>
+		<item type="image" id="620" name="入場者数発表" duration="1000">
+			<image>/movies/bank/62_入場者数発表/22入場者数_TEXTBASE.jpg</image>
+			<text>/movies/bank/62_入場者数発表/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/62_入場者数発表/message.txt?encoding=sjis,x=3200</text>
+			<text>/movies/bank/62_入場者数発表/message.txt?encoding=sjis,x=6400</text>
+			<text>/movies/bank/62_入場者数発表/message.txt?encoding=sjis,x=9600</text>
+			<text>/movies/bank/62_入場者数発表/message.txt?encoding=sjis,x=12800</text>
+		</item>
+		<item type="movie" id="700" name="トステム賞">
+			<movie>/movies/bank/70_トステム賞/トステム賞.mp4</movie>
+		</item>
+		<item type="image" id="710" name="次回開催告知" duration="1000">
+			<image>/movies/bank/71_次回開催告知/23次回のホームゲーム.jpg</image>
+			<text>/movies/bank/71_次回開催告知/message.txt?encoding=sjis,x=0</text>
+			<text>/movies/bank/71_次回開催告知/message.txt?encoding=sjis,x=5333</text>
+			<text>/movies/bank/71_次回開催告知/message.txt?encoding=sjis,x=10666</text>
+		</item>
+	</medialist>
+
+	<playlists>
+		<playlist name="black">
+			<item next="stop">000</item>
+		</playlist>
+		<playlist name="A地震発生">
+			<item next="stop">030</item>
+		</playlist>
+		<playlist name="B地震収まり">
+			<item next="stop">031</item>
+		</playlist>
+		<playlist name="C火災">
+			<item next="stop">032</item>
+		</playlist>
+		<playlist name="D停電">
+			<item next="stop">033</item>
+		</playlist>
+		<playlist name="E爆発物告知">
+			<item next="stop">034</item>
+		</playlist>
+		<playlist name="F避難誘導">
+			<item next="stop">035</item>
+		</playlist>
+		<playlist name="静止看板">
+			<item transition="slide">100</item>
+			<item transition="slide">101</item>
+		</playlist>
+		<playlist name="スタジアム注意事項">
+			<item transition="">20A</item>
+			<item transition="dissolve">20B</item>
+			<item transition="dissolve">20C</item>
+			<item transition="dissolve">20D</item>
+			<item transition="dissolve">20E</item>
+			<item transition="dissolve">20F</item>
+			<item transition="dissolve">20G</item>
+			<item transition="dissolve">20H</item>
+			<item transition="dissolve">20I</item>
+			<item transition="dissolve">20J</item>
+			<item transition="dissolve" next="stop">20K</item>
+		</playlist>
+		<playlist name="スタジアム注意事項(2Fなし)">
+			<item transition="">20A</item>
+			<item transition="dissolve">20B</item>
+			<item transition="dissolve">20C</item>
+			<item transition="dissolve">20E</item>
+			<item transition="dissolve">20F</item>
+			<item transition="dissolve">20G</item>
+			<item transition="dissolve">20H</item>
+			<item transition="dissolve">20I</item>
+			<item transition="dissolve">20J</item>
+			<item transition="dissolve" next="stop">20K</item>
+		</playlist>
+		<playlist name="住友金属カーテンレーザーマッチ">
+			<item next="stop">220</item>
+		</playlist>
+		<playlist name="アントラーズチケット発売情報">
+			<item transition="dissolve" next="stop">230</item>
+			<item transition="dissolve" next="stop">231</item>
+			<item transition="dissolve" next="stop">232</item>
+		</playlist>
+		<playlist name="アントラーズファンクラブ情報">
+			<item next="stop">240</item>
+		</playlist>
+		<playlist name="東京駅臨時バス">
+			<item next="stop">250</item>
+		</playlist>
+		<playlist name="茨城空港CM">
+			<item next="stop">260</item>
+		</playlist>
+		<playlist name="ミュージアムA～B">
+			<item transition="dissolve" next="stop">270</item>
+			<item transition="dissolve" next="stop">271</item>
+		</playlist>
+		<playlist name="ミュージアムC">
+			<item next="stop">272</item>
+		</playlist>
+		<playlist name="ウェルネスプラザ">
+			<item next="stop">280</item>
+		</playlist>
+		<playlist name="レジェンドオブスターズDVD発売">
+			<item next="stop">281</item>
+		</playlist>
+		<playlist name="アントラー麺">
+			<item next="stop">290</item>
+		</playlist>
+		<playlist name="鹿嶋めぐり号">
+			<item next="stop">300</item>
+		</playlist>
+		<playlist name="ＣＭ(イエローハット～)">
+			<item>310</item>
+			<item>311</item>
+			<item next="stop">312</item>
+		</playlist>
+		<playlist name="JR臨時増便列車">
+			<item next="stop">340</item>
+		</playlist>
+		<playlist name="朝日新聞ホームタウンニュース">
+			<item>351</item>
+			<item>352</item>
+			<item>353</item>
+		</playlist>
+		<playlist name="カシマスクリーンセーバ">
+			<item>370</item>
+		</playlist>
+		<playlist name="ボール注意喚起">
+			<item next="stop">390</item>
+		</playlist>
+		<playlist name="選手紹介イントロ">
+			<item next="stop">400</item>
+		</playlist>
+		<playlist name="選手紹介ファンファーレ">
+			<item next="stop">410</item>
+		</playlist>
+		<playlist name="本日の審判団">
+			<item next="stop">420</item>
+		</playlist>
+		<playlist name="キックオフ時間">
+			<item next="stop">430</item>
+		</playlist>
+		<playlist name="本日のボールパーソン">
+			<item next="stop">440</item>
+		</playlist>
+		<playlist name="サポータータイムA">
+			<item >450</item>
+		</playlist>
+		<playlist name="サポータータイムB">
+			<item>451</item>
+		</playlist>
+		<playlist name="サポータータイムC">
+			<item>452</item>
+		</playlist>
+		<playlist name="サポータータイムD">
+			<item>453</item>
+		</playlist>
+		<playlist name="住友金属エスコートキッズ">
+			<item next="stop">460</item>
+		</playlist>
+		<playlist name="試合中0イエローハット">
+			<item next="stop">500</item>
+		</playlist>
+		<playlist name="試合中1NIKE">
+			<item>501</item>
+			<item>501</item>
+			<item next="stop">501</item>
+		</playlist>
+		<playlist name="試合中2商船三井">
+			<item>502</item>
+			<item>502</item>
+			<item next="stop">502</item>
+		</playlist>
+		<playlist name="試合中3ANA">
+			<item next="stop">503</item>
+		</playlist>
+		<playlist name="試合中4鴻池組">
+			<item next="stop">504</item>
+		</playlist>
+		<playlist name="試合中5朝日">
+			<item next="stop">505</item>
+		</playlist>
+		<playlist name="試合中6アカクラ">
+			<item next="stop">506</item>
+		</playlist>
+		<playlist name="トステムゴール">
+			<item next="stop">510</item>
+		</playlist>
+		<playlist name="得点者表示鹿島">
+			<item next="stop">520</item>
+		</playlist>
+		<playlist name="選手交代鹿島">
+			<item next="stop">530</item>
+		</playlist>
+		<playlist name="選手交代アウェイ">
+			<item next="stop">540</item>
+		</playlist>
+		<playlist name="ロスタイム">
+			<item next="stop">550</item>
+		</playlist>
+		<playlist name="ファンクラブプレゼント抽選発表">
+			<item next="stop">600</item>
+		</playlist>
+		<playlist name="朝日新聞他会場">
+			<item>610</item>
+			<item>611</item>
+			<item next="stop">612</item>
+		</playlist>
+		<playlist name="入場者数発表">
+			<item next="stop">620</item>
+		</playlist>
+		<playlist name="トステム賞">
+			<item>700</item>
+		</playlist>
+		<playlist name="次回開催告知">
+			<item next="stop">710</item>
+		</playlist>
+	</playlists>
+</workspace>
