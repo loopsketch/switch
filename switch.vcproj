@@ -23,6 +23,7 @@
 			ConfigurationType="1"
 			UseOfATL="0"
 			CharacterSet="1"
+			EnableManagedIncrementalBuild="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
