@@ -22,9 +22,14 @@ PC上で作成できる動画ファイル、静止画ファイルの送出の他、テキストファイルをテロッ
 OS: Windows XP SP3
 IDE: Microsoft Visual C++ 2008 Express Edition
 
+
 ■ 依存する外部ライブラリ
-<ffmpeg>
+<ffmpeg>※MinGWやlibmp3lameなど含む
 <POCO C++ Libraries>
 <OpenSSL>※pocoにてSSL関連を扱う場合
 <Microsoft DirectX 9.0 SDK (December 2004)>
 <Windows Software Development Kit (SDK) for Windows Server 2008 and .NET Framework 3.5>
+※DirectShowを使うためbaseclassesが必要
+
+
+■ ビルド方法

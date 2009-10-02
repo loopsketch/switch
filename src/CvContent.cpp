@@ -134,14 +134,16 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 void CvContent::openDetectMovie() {
 	_log.information("*openDetectMovie");
 	SAFE_DELETE(_detectedItem);
-	vector<MediaItemFilePtr> files;
-	files.push_back(new MediaItemFile(MediaTypeMovie, _detectFiles.at(rand() % _detectFiles.size()), ""));
-	_detectedItem = new MediaItem(MediaTypeMovie, "detected", "detected", 0, files);
-	if (_detectedMovie->open(_detectedItem)) {
-//		_detectedMovie->setPosition(conf->stageRect.left, conf->stageRect.top);
-//		_detectedMovie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
-//	} else {
-//		SAFE_DELETE(_detectedMovie);
+	if (!_detectFiles.empty()) {
+		vector<MediaItemFilePtr> files;
+		files.push_back(new MediaItemFile(MediaTypeMovie, _detectFiles.at(rand() % _detectFiles.size()), ""));
+		_detectedItem = new MediaItem(MediaTypeMovie, "detected", "detected", 0, files);
+		if (_detectedMovie->open(_detectedItem)) {
+	//		_detectedMovie->setPosition(conf->stageRect.left, conf->stageRect.top);
+	//		_detectedMovie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
+	//	} else {
+	//		SAFE_DELETE(_detectedMovie);
+		}
 	}
 }
 

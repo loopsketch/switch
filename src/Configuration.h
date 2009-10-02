@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 using std::string;
 using std::wstring;
@@ -23,6 +24,8 @@ public:
 	RECT stageRect;
 	int splitType;
 	SIZE splitSize;
+
+	string useScenes;
 
 	int luminance;
 	int imageSplitWidth;

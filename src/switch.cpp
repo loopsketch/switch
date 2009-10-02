@@ -221,25 +221,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //	CvScenePtr cvScene = new CvScene(*_renderer, _uim);
 //	cvScene->initialize();
 //	_renderer->addScene("cv", cvScene);
-//	CaptureScenePtr captureScene = new CaptureScene(*_renderer, _uim);
-//	captureScene->initialize();
-//	_renderer->addScene("capture", captureScene);
+	CaptureScenePtr captureScene = NULL;
+	if (_conf.useScenes.find("capture") != string::npos) {
+		captureScene = new CaptureScene(*_renderer, _uim);
+		captureScene->initialize();
+		_renderer->addScene("capture", captureScene);
+	}
 	WorkspacePtr workspace = new Workspace(*_renderer);
 	if (!_conf.workspaceFile.empty()) {
 		workspace->parse(_conf.workspaceFile);
 	}
-	MainScenePtr mainScene = new MainScene(*_renderer);
-	if (FAILED(mainScene->create(workspace))) {
-		MessageBox(0, L"メインシーンの生成に失敗しました", NULL, MB_OK);
-		return 0;
+	MainScenePtr mainScene = NULL;
+	if (true) {
+		mainScene = new MainScene(*_renderer);
+		if (FAILED(mainScene->create(workspace))) {
+			MessageBox(0, L"メインシーンの生成に失敗しました", NULL, MB_OK);
+			return 0;
+		}
+		_renderer->addScene("main", mainScene);
 	}
-	_renderer->addScene("main", mainScene);
-	OperationScenePtr opScene = new OperationScene(*_renderer, _uim);
-	if (FAILED(opScene->create(workspace))) {
-		MessageBox(0, L"オペレーションシーンの生成に失敗しました", NULL, MB_OK);
-		return 0;
+	OperationScenePtr opScene = NULL;
+	if (_conf.useScenes.find("operation") != string::npos) {
+		opScene = new OperationScene(*_renderer, _uim);
+		if (FAILED(opScene->create(workspace))) {
+			MessageBox(0, L"オペレーションシーンの生成に失敗しました", NULL, MB_OK);
+			return 0;
+		}
+		_renderer->addScene("operation", opScene);
 	}
-	_renderer->addScene("operation", opScene);
 
 	// メッセージ処理および描画ループ
 	EmptyWorkingSet(GetCurrentProcess());
@@ -475,11 +484,13 @@ bool guiConfiguration(void)
 			_log.information(Poco::format("split <horizontal> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else {
 			_conf.splitType = 0;
-			_conf.stageRect.right = xml->getInt("display.stage[@w]", w);
-			_conf.stageRect.bottom = xml->getInt("display.stage[@h]", h);
+			_conf.stageRect.right = xml->getInt("display.stage[@width]", w);
+			_conf.stageRect.bottom = xml->getInt("display.stage[@height]", h);
 		}
 
+		_conf.useScenes = xml->getString("scenes", "main,operation");
 		_conf.luminance = xml->getInt("display.stage.luminance", 100);
+
 		_conf.imageSplitWidth = xml->getInt("display.stage.imageSplitWidth", 0);
 		if (xml->hasProperty("display.stage.text")) {
 			_conf.textFont = xml->getString("display.stage.text[@font]", "ＭＳ ゴシック");
@@ -513,11 +524,12 @@ bool guiConfiguration(void)
 		xml->release();
 		return true;
 	} catch (Poco::Exception& ex) {
-		_log.warning(ex.displayText());
-		string s = Poco::format("設定ファイル(config.xml)を確認してください\n「%s」", ex.displayText());
+		string s;
+		Poco::UnicodeConverter::toUTF8(L"設定ファイル(config.xml)を確認してください\n「%s」", s);
 		wstring utf16;
-		Poco::UnicodeConverter::toUTF16(s, utf16);
+		Poco::UnicodeConverter::toUTF16(Poco::format(s, ex.displayText()), utf16);
 		::MessageBox(HWND_DESKTOP, utf16.c_str(), L"エラー", MB_OK);
+		_log.warning(ex.displayText());
 	}
 	return false;
 }
