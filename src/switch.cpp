@@ -340,6 +340,25 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_KILLFOCUS:
 			break;
 
+		case WM_IME_SETCONTEXT:
+			lParam &= ~ISC_SHOWUIALL;
+			break;
+		case WM_IME_STARTCOMPOSITION:
+		case WM_IME_COMPOSITION:
+		case WM_IME_ENDCOMPOSITION:
+			return 0;
+		case WM_IME_NOTIFY:
+			switch(wParam){
+			case IMN_OPENSTATUSWINDOW:
+			case IMN_CLOSESTATUSWINDOW:
+			case IMN_OPENCANDIDATE:
+			case IMN_CHANGECANDIDATE:
+			case IMN_CLOSECANDIDATE:
+				return 0;
+			default:
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+			}
+
 		case WM_KEYDOWN:
 			if (wParam == VK_ESCAPE) {
 				PostQuitMessage(0);
