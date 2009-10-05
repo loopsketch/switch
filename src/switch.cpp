@@ -217,10 +217,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	_uim = new ui::UserInterfaceManager(*_renderer);
 	_uim->initialize();
 	// ƒV[ƒ“‚Ì¶¬
-//	CvScenePtr cvScene = NULL;
-//	CvScenePtr cvScene = new CvScene(*_renderer, _uim);
-//	cvScene->initialize();
-//	_renderer->addScene("cv", cvScene);
 	CaptureScenePtr captureScene = NULL;
 	if (_conf.useScenes.find("capture") != string::npos) {
 		captureScene = new CaptureScene(*_renderer, _uim);
@@ -307,8 +303,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SAFE_DELETE(workspace);
 	SAFE_DELETE(opScene);
 	SAFE_DELETE(mainScene);
-//	SAFE_DELETE(captureScene);
-//	SAFE_DELETE(cvScene);
+	SAFE_DELETE(captureScene);
 	SAFE_DELETE(_uim);
 	SAFE_DELETE(_renderer);
 	_log.information("*** system end");
