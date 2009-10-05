@@ -229,7 +229,9 @@ void CaptureScene::initialize() {
 			IMediaFilter* mf;
 			hr = _gb->QueryInterface(&mf);
 			if (SUCCEEDED(hr)) {
+				// リアルタイムでキャプチャするために基準タイマを外す
 				hr = mf->SetSyncSource(NULL);
+				SAFE_RELEASE(mf);
 			}
 			hr = _gb->QueryInterface(&_mc);
 			if (SUCCEEDED(hr)) {
