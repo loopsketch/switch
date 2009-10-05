@@ -296,7 +296,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			timeEndPeriod(1);
 		}
 	}
-	_renderer->removeScene("cv");
 	_renderer->removeScene("capture");
 	_renderer->removeScene("operation");
 	_renderer->removeScene("main");
