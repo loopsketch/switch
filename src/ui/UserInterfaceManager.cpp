@@ -183,7 +183,7 @@ namespace ui {
 		device->DrawPrimitiveUP(D3DPT_POINTLIST, 10, _mousePoint, sizeof(VERTEX_P));
 		device->SetTexture(0, NULL);
 		device->SetFVF(VERTEX_FVF);
-//		debugText(0, 0, Poco::format("mouse: %d,%d,%d", _mouseX, _mouseY, _mouseZ));
+//		debugText(0, 0, Poco::format("mouse: %d,%d,%d [%s] [%s]", _mouseX, _mouseY, _mouseZ, string(_lButton?"L":" "), string(_rButton?"R":" ")));
 	}
 
 
@@ -193,6 +193,7 @@ namespace ui {
 		_lButton = true;
 		_mouseUpdated = true;
 	}
+
 	void UserInterfaceManager::notifyButtonUpL(const int x, const int y) {
 		_mouseX = x;
 		_mouseY = y;
@@ -206,6 +207,7 @@ namespace ui {
 		_mButton = true;
 		_mouseUpdated = true;
 	}
+
 	void UserInterfaceManager::notifyButtonUpM(const int x, const int y) {
 		_mouseX = x;
 		_mouseY = y;
@@ -219,6 +221,7 @@ namespace ui {
 		_rButton = true;
 		_mouseUpdated = true;
 	}
+
 	void UserInterfaceManager::notifyButtonUpR(const int x, const int y) {
 		_mouseX = x;
 		_mouseY = y;

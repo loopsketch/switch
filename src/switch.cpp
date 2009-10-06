@@ -284,6 +284,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 描画処理の実行
 				::QueryPerformanceCounter(&current);
 				DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+				_uim->process(time);
 				_renderer->renderScene(time);
 //				if (lastSwapout == 0 || time - lastSwapout > 3600000) {
 //					swapout();
@@ -425,7 +426,7 @@ bool guiConfiguration(void)
 	av_register_all();
 
 	try {
-		XMLConfiguration* xml = new XMLConfiguration("config.xml");
+		XMLConfiguration* xml = new XMLConfiguration("switch-config.xml");
 		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log[@pattern]", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
 		pat->setProperty(Poco::PatternFormatter::PROP_TIMES, "local");
 		Poco::FormattingChannel* fc = new Poco::FormattingChannel(pat);
@@ -538,7 +539,7 @@ bool guiConfiguration(void)
 		return true;
 	} catch (Poco::Exception& ex) {
 		string s;
-		Poco::UnicodeConverter::toUTF8(L"設定ファイル(config.xml)を確認してください\n「%s」", s);
+		Poco::UnicodeConverter::toUTF8(L"設定ファイル(switch-config.xml)を確認してください\n「%s」", s);
 		wstring utf16;
 		Poco::UnicodeConverter::toUTF16(Poco::format(s, ex.displayText()), utf16);
 		::MessageBox(HWND_DESKTOP, utf16.c_str(), L"エラー", MB_OK);

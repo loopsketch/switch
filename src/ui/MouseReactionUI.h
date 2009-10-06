@@ -72,10 +72,10 @@ namespace ui {
 		/** processの後処理。1フレームに1度だけ処理される */
 		void postprocess(const DWORD& frame) {
 			// ボタン操作検出のエッジ処理のための後処理
-			_lButtonDown = false;
-			_lButtonUp = false;
-			_rButtonDown = false;
-			_rButtonUp = false;
+//			_lButtonDown = false;
+//			_lButtonUp = false;
+//			_rButtonDown = false;
+//			_rButtonUp = false;
 		}
 
 		void setMouseListener(MouseListenerPtr listener) {

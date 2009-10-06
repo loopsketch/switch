@@ -38,10 +38,10 @@ MainScene::~MainScene() {
 	SAFE_DELETE(_transition);
 	SAFE_DELETE(_interruptMedia);
 	try {
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("config.xml");
+		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
 		if (xml) {
 			xml->setInt("display.stage.luminnace", _luminance);
-			xml->save("config.xml");
+			xml->save("switch-config.xml");
 			xml->release();
 		}
 	} catch (Poco::Exception& ex) {
@@ -58,22 +58,9 @@ void MainScene::initialize() {
 	_contents.push_back(new Container(_renderer));
 	_contents.push_back(new Container(_renderer)); // 2個のContainer
 	_currentContent = -1;
-	_log.information("*initialized MainScene");
-}
 
-//-------------------------------------------------------------
-// シーンを生成
-// 引数
-//		pD3DDevice : IDirect3DDevice9 インターフェイスへのポインタ
-// 戻り値
-//		成功したらS_OK
-//-------------------------------------------------------------
-HRESULT MainScene::create(WorkspacePtr workspace)
-{
-	_workspace = workspace;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	if (device == 0) return E_FAIL;
-
+	if (!device) return;
 	device->SetRenderState(D3DRS_LIGHTING, false);
 	device->SetRenderState(D3DRS_ZENABLE, false);
 	device->SetRenderState(D3DRS_ZWRITEENABLE, false);
@@ -101,6 +88,19 @@ HRESULT MainScene::create(WorkspacePtr workspace)
 		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
 	}
 	_frame = 0;
+	_log.information("*initialized MainScene");
+}
+
+//-------------------------------------------------------------
+// シーンを生成
+// 引数
+//		pD3DDevice : IDirect3DDevice9 インターフェイスへのポインタ
+// 戻り値
+//		成功したらS_OK
+//-------------------------------------------------------------
+HRESULT MainScene::create(WorkspacePtr workspace)
+{
+	_workspace = workspace;
 
 	if (_workspace->getPlayListCount() > 0) {
 		_currentItem = -1;
@@ -142,12 +142,12 @@ void MainScene::prepareNextMedia() {
 		if (_contents.empty()) return;
 		Poco::Thread::sleep(30);
 	}
-	{
-//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		int next = (_currentContent + 1) % _contents.size();
-		_contents[next]->initialize();
 
-		// 準備フェーズ
+	// 準備フェーズ
+	int next = (_currentContent + 1) % _contents.size();
+	_contents[next]->initialize();
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_currentCommand.empty()) {
 			int jump = _currentCommand.find_first_of("jump");
 			if (jump == 0) {
@@ -179,7 +179,7 @@ void MainScene::prepareNextMedia() {
 }
 
 void MainScene::switchContent(ContainerPtr* container, PlayListPtr playlist, const int i) {
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_currentPlaylist = playlist;
 	_currentItem = i;
 	_nextItem = _currentPlaylist->items()[_currentItem];
@@ -201,7 +201,7 @@ void MainScene::process() {
 			break;
 	}
 
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_startup && _frame > 100) {
 		_startup = true;
 		_currentContent = (_currentContent + 1) % _contents.size();

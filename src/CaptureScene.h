@@ -20,6 +20,7 @@ private:
 	GUID _deviceVideoType;
 	int _samples;
 
+	IBaseFilter* _device;
 	IGraphBuilder* _gb;
 	ICaptureGraphBuilder2* _capture;
 	DSVideoRendererPtr _vr;

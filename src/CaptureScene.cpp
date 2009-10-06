@@ -3,7 +3,7 @@
 
 CaptureScene::CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim): Scene(renderer),
 	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _deviceVideoType(MEDIASUBTYPE_YUY2), _samples(2),
-	_gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _fx(NULL), _cameraImage(NULL)
+	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _fx(NULL), _cameraImage(NULL)
 {
 }
 
@@ -19,6 +19,7 @@ CaptureScene::~CaptureScene() {
 	SAFE_RELEASE(_mc);
 	SAFE_RELEASE(_vr);
 	SAFE_RELEASE(_capture);
+	SAFE_RELEASE(_device);
 	SAFE_RELEASE(_gb);
 }
 
@@ -73,6 +74,8 @@ void CaptureScene::initialize() {
 		if (FAILED(hr)) {
 			_log.warning("failed add capture source");
 		} else {
+			SAFE_RELEASE(_device);
+			_device = src;
 			routeCrossbar(src, _routePinNo);
 		}
 
@@ -216,12 +219,12 @@ void CaptureScene::initialize() {
 					DeleteMediaType(amt);
 				}
 			}
-			SAFE_RELEASE(sc);
+//			SAFE_RELEASE(sc);
 		}
 
 		hr = _gb->Render(renderPin);
 		SAFE_RELEASE(renderPin);
-		SAFE_RELEASE(src);
+//		SAFE_RELEASE(src);
 		if (dumpFilter(_gb) == 0) {
 			// ³‚µ‚­ƒŒƒ“ƒ_ƒŠƒ“ƒO‚Å‚«‚½
 //			IMediaSeeking* ms;

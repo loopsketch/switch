@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE switch-config SYSTEM "switch-config.dtd">
 <config>
 	<!-- 画面のサイズを設定 -->
 	<display frame="false" fullscreen="false" height="1024" rate="60" width="1280">

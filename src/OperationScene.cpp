@@ -194,7 +194,6 @@ void OperationScene::process() {
 		currentContent = _contents[_currentContent]->get(0);
 		_contents[_currentContent]->process(_frame);
 	}
-	_uim->process(_frame);
 
 	bool availableSplitMode = (_renderer.config()->splitSize.cx > 0 && _renderer.config()->splitSize.cy > 0);
 	switch (_keycode) {

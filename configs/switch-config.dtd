@@ -1,0 +1,8 @@
+<!ELEMENT switch-config (config)>
+
+<!ELEMENT config (display, workspace)>
+<!ATTLIST display width CDATA #REQUIRED>
+<!ATTLIST display height CDATA #REQUIRED>
+<!ATTLIST display rate CDATA #REQUIRED>
+
+<!ELEMENT workspace (#PCDATA)>
