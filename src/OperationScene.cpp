@@ -91,7 +91,12 @@ bool OperationScene::initialize() {
 
 	_prepareStart = 0;
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
-	_contents.clear();
+	_contents.push_back(new Container(_renderer));
+	_contents.push_back(new Container(_renderer)); // 2ŒÂ‚ÌContainer
+	_currentContent = -1;
+
+	_frame = 0;
+
 	_log.information("*initialized OperationScene");
 	return true;
 }
@@ -109,12 +114,7 @@ bool OperationScene::setWorkspace(WorkspacePtr workspace)
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	if (device == 0) return false;
 
-	_frame = 0;
-
-	_contents.push_back(new Container(_renderer));
-	_contents.push_back(new Container(_renderer)); // 2ŒÂ‚ÌContainer
-	_currentContent = -1;
-
+	_playListSelect->removeAll();
 	for (int i = 0; i < _workspace->getPlayListCount(); i++) {
 		PlayListPtr playlist = _workspace->getPlayList(i);
 		LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(playlist->name());
