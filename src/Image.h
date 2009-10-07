@@ -206,7 +206,7 @@ public:
 					float x = _x;
 					float y = _y;
 					int dh = (640 / ch * cw);
-					int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % 640;
+					int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % 640;
 					int cww = 0;
 					int chh = ch;
 					while (dx < 1024) {

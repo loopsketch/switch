@@ -23,7 +23,7 @@ CaptureScene::~CaptureScene() {
 	SAFE_RELEASE(_gb);
 }
 
-void CaptureScene::initialize() {
+bool CaptureScene::initialize() {
 	_log.information("*initialize CaptureScene");
 
 	try {
@@ -49,22 +49,22 @@ void CaptureScene::initialize() {
 	hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&_gb);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed create filter graph: %s", errorText(hr)));
-		return;
+		return false;
 	}
 	_vr = new DSVideoRenderer(_renderer, NULL, &hr);
 	if (FAILED(hr = _gb->AddFilter(_vr, L"DSVideoRenderer"))) {
 		_log.warning(Poco::format("failed add filter: %s", errorText(hr)));
-		return;
+		return false;
 	}
 	hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC_SERVER, IID_ICaptureGraphBuilder2, (void**)&_capture);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed create capture graph builder2: %s", errorText(hr)));
-		return;
+		return false;
 	}
 	hr = _capture->SetFiltergraph(_gb);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("setup failed capture graph builder2: %s", errorText(hr)));
-		return;
+		return false;
 	}
 
 	string deviceName;
@@ -86,7 +86,7 @@ void CaptureScene::initialize() {
 			hr = _capture->FindPin(src, PINDIR_OUTPUT, &PIN_CATEGORY_CAPTURE, &MEDIATYPE_Video, FALSE, 0, &renderPin);
 			if (FAILED(hr)) {
 				_log.warning("*not found capture pin.");
-				return;
+				return false;
 			} else {
 				_log.information("rendered capture pin");
 			}
@@ -262,6 +262,7 @@ void CaptureScene::initialize() {
 	} else {
 		_log.warning("not found video input device");
 	}
+	return true;
 }
 
 LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {

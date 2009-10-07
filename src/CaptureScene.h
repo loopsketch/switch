@@ -41,7 +41,7 @@ public:
 
 	~CaptureScene();
 
-	virtual void initialize();
+	virtual bool initialize();
 
 	LPDIRECT3DTEXTURE9 getCameraImage();
 
@@ -50,7 +50,6 @@ public:
 	virtual void draw1();
 
 	virtual void draw2();
-
 };
 
 typedef CaptureScene* CaptureScenePtr;

@@ -18,9 +18,7 @@ public:
 
 	virtual ~Scene();
 
-	virtual void initialize();
-
-	virtual HRESULT create(Workspace* workspace);
+	virtual bool initialize();
 
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 

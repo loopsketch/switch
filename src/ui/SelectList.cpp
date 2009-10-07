@@ -38,7 +38,7 @@ namespace ui {
 	}
 
 	SelectList::~SelectList(void) {
-		remveAll();
+		removeAll();
 		SAFE_DELETE(_listener);
 		SAFE_DELETE(_up);
 		SAFE_DELETE(_down);
@@ -100,7 +100,7 @@ namespace ui {
 		}
 	}
 
-	void SelectList::remveAll() {
+	void SelectList::removeAll() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 //		for (vector<LPDIRECT3DTEXTURE9>::iterator it = _items.begin(); it != _items.end(); it++) SAFE_RELEASE(*it);
 		_items.clear();

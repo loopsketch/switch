@@ -41,7 +41,7 @@ namespace ui {
 
 		void visibleSelected();
 
-		void remveAll();
+		void removeAll();
 
 		void addItem(const LPDIRECT3DTEXTURE9 texture);
 

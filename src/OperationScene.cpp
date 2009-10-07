@@ -26,6 +26,25 @@ OperationScene::OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr u
 	Scene(renderer), activeUpdateContentList(this, &OperationScene::updateContentList), activePrepareContent(this, &OperationScene::prepareContent),
 	_uim(uim), _workspace(NULL), _frame(0), _interruptMedia(NULL), _prepareUpdate(false), _prepared(false), _prepareStart(0)
 {
+	initialize();
+}
+
+//-------------------------------------------------------------
+// デストラクタ
+//-------------------------------------------------------------
+OperationScene::~OperationScene() {
+	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
+	SAFE_DELETE(_interruptMedia);
+	SAFE_DELETE(_contentsSelect);
+	SAFE_DELETE(_playListSelect);
+	SAFE_DELETE(_switchButton);
+}
+
+
+//-------------------------------------------------------------
+// シーンの初期化
+//-------------------------------------------------------------
+bool OperationScene::initialize() {
 	_playListSelect = new ui::SelectList("playlist", _uim, 300, 100, 300, 400);
 	class PlaylistSelected: public ui::SelectedListener {
 		friend class OperationScene;
@@ -69,28 +88,12 @@ OperationScene::OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr u
 		}
 	};
 	_switchButton->setMouseListener(new SwitchMouseListener(*this));
-}
 
-//-------------------------------------------------------------
-// デストラクタ
-//-------------------------------------------------------------
-OperationScene::~OperationScene() {
-	initialize();
-	SAFE_DELETE(_interruptMedia);
-	SAFE_DELETE(_contentsSelect);
-	SAFE_DELETE(_playListSelect);
-	SAFE_DELETE(_switchButton);
-}
-
-
-//-------------------------------------------------------------
-// シーンの初期化
-//-------------------------------------------------------------
-void OperationScene::initialize() {
 	_prepareStart = 0;
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
 	_log.information("*initialized OperationScene");
+	return true;
 }
 
 //-------------------------------------------------------------
@@ -100,12 +103,11 @@ void OperationScene::initialize() {
 // 戻り値
 //		成功したらS_OK
 //-------------------------------------------------------------
-HRESULT OperationScene::create(WorkspacePtr workspace)
+bool OperationScene::setWorkspace(WorkspacePtr workspace)
 {
-	initialize();
 	_workspace = workspace;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	if (device == 0) return E_FAIL;
+	if (device == 0) return false;
 
 	_frame = 0;
 
@@ -120,14 +122,14 @@ HRESULT OperationScene::create(WorkspacePtr workspace)
 	}
 	if (_workspace->getPlayListCount() > 0) _playListSelect->setSelected(0);
 	_log.information("*created operation-scene");
-	return S_OK;
+	return true;
 }
 
 
 void OperationScene::updateContentList() {
 //	_log.information("scene updateContentList");
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	_contentsSelect->remveAll();
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	_contentsSelect->removeAll();
 	int selected = _playListSelect->getSelectedIndex();
 	if (selected >= 0) {
 		PlayListPtr playlist = _workspace->getPlayList(selected);

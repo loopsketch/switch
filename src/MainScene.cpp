@@ -53,14 +53,14 @@ MainScene::~MainScene() {
 //-------------------------------------------------------------
 // ƒV[ƒ“‚Ì‰Šú‰»
 //-------------------------------------------------------------
-void MainScene::initialize() {
+bool MainScene::initialize() {
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
 	_contents.push_back(new Container(_renderer)); // 2ŒÂ‚ÌContainer
 	_currentContent = -1;
 
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	if (!device) return;
+	if (!device) return false;
 	device->SetRenderState(D3DRS_LIGHTING, false);
 	device->SetRenderState(D3DRS_ZENABLE, false);
 	device->SetRenderState(D3DRS_ZWRITEENABLE, false);
@@ -89,6 +89,7 @@ void MainScene::initialize() {
 	}
 	_frame = 0;
 	_log.information("*initialized MainScene");
+	return true;
 }
 
 //-------------------------------------------------------------
@@ -98,20 +99,19 @@ void MainScene::initialize() {
 // –ß‚è’l
 //		¬Œ÷‚µ‚½‚çS_OK
 //-------------------------------------------------------------
-HRESULT MainScene::create(WorkspacePtr workspace)
+bool MainScene::setWorkspace(WorkspacePtr workspace)
 {
 	_workspace = workspace;
-
 	if (_workspace->getPlayListCount() > 0) {
 		_currentItem = -1;
 		_currentPlaylist = _workspace->getPlayList(0);
 		activePrepareNextMedia();
 	} else {
-		_log.warning("failed no playlist");
+		_log.warning("no playlist, no auto starting");
 	}
 	_startup = false;
 	_log.information("*created main-scene");
-	return S_OK;
+	return true;
 }
 
 void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) {
@@ -147,7 +147,7 @@ void MainScene::prepareNextMedia() {
 	int next = (_currentContent + 1) % _contents.size();
 	_contents[next]->initialize();
 	{
-		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_currentCommand.empty()) {
 			int jump = _currentCommand.find_first_of("jump");
 			if (jump == 0) {
@@ -179,7 +179,7 @@ void MainScene::prepareNextMedia() {
 }
 
 void MainScene::switchContent(ContainerPtr* container, PlayListPtr playlist, const int i) {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_currentPlaylist = playlist;
 	_currentItem = i;
 	_nextItem = _currentPlaylist->items()[_currentItem];
@@ -201,7 +201,7 @@ void MainScene::process() {
 			break;
 	}
 
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_startup && _frame > 100) {
 		_startup = true;
 		_currentContent = (_currentContent + 1) % _contents.size();
@@ -344,15 +344,15 @@ void MainScene::draw2() {
 		_renderer.drawFontTextureText(0, 625, 12, 16, 0xccffffff, Poco::format(">%s", _currentCommand));
 	}
 
-	int next = (_currentContent + 1) % _contents.size();
-	MoviePtr nextMovie = (MoviePtr)_contents[next]->get(0);
-	string wait(nextMovie && _contents[next]->opened()?"ready":"preparing");
-	_renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
-
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		int next = (_currentContent + 1) % _contents.size();
+//		MoviePtr nextMovie = dynamic_cast<MoviePtr>(_contents[next]->get(0));
+//		MoviePtr nextMovie = (MoviePtr)_contents[next]->get(0);
+		string wait(_contents[next]->opened()?"ready":"preparing");
+		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
 		if (_nextItem) {
-			MediaItemPtr media = _nextItem->media();
+			const MediaItemPtr media = _nextItem->media();
 			if (media && _currentPlaylist) {
 				LPDIRECT3DTEXTURE9 playlist = _renderer.getCachedTexture(_currentPlaylist->name());
 				_renderer.drawTexture(0, 640, playlist, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);

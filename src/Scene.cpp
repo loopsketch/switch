@@ -9,11 +9,8 @@ Scene::~Scene() {
 }
 
 
-void Scene::initialize() {
-}
-
-HRESULT Scene::create(WorkspacePtr workspace) {
-	return S_OK;
+bool Scene::initialize() {
+	return false;
 }
 
 void Scene::notifyKey(const int keycode, const bool shift, const bool ctrl) {

@@ -230,7 +230,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MainScenePtr mainScene = NULL;
 	if (true) {
 		mainScene = new MainScene(*_renderer);
-		if (FAILED(mainScene->create(workspace))) {
+		if (!mainScene->setWorkspace(workspace)) {
 			MessageBox(0, L"メインシーンの生成に失敗しました", NULL, MB_OK);
 			return 0;
 		}
@@ -239,7 +239,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	OperationScenePtr opScene = NULL;
 	if (_conf.useScenes.find("operation") != string::npos) {
 		opScene = new OperationScene(*_renderer, _uim);
-		if (FAILED(opScene->create(workspace))) {
+		if (!opScene->setWorkspace(workspace)) {
 			MessageBox(0, L"オペレーションシーンの生成に失敗しました", NULL, MB_OK);
 			return 0;
 		}

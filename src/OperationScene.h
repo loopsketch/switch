@@ -66,9 +66,9 @@ public:
 
 	~OperationScene();
 
-	virtual void initialize();
+	virtual bool initialize();
 
-	virtual HRESULT create(WorkspacePtr workspace);
+	virtual bool setWorkspace(WorkspacePtr workspace);
 
 	void prepareInterruptFile(string file);
 
