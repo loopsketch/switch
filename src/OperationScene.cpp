@@ -265,9 +265,6 @@ void OperationScene::process() {
 		}
 	}
 
-	if (_frame > 0 && _frame % 50 == 0) {
-		_workspace->update();
-	}
 	_frame++;
 }
 
