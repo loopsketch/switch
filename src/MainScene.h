@@ -43,8 +43,9 @@ private:
 	int _currentItem;
 	string _currentCommand;
 
-	PlayListPtr _currentPlaylist;
+	string _playlistID;
 	PlayListItemPtr _nextItem;
+
 	MediaItemPtr _interruptMedia;
 
 	vector<ContainerPtr> _contents;
@@ -83,7 +84,9 @@ public:
 
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
-	void switchContent(ContainerPtr* container, PlayListPtr playlist, const int content = 0);
+	void switchContent(ContainerPtr* container, string playlistID, const int content = 0);
+
+	PlayListItemPtr prepareMedia(ContainerPtr container, string playlistID, const int itemIndex);
 
 	virtual void process();
 

@@ -108,19 +108,18 @@ bool OperationScene::initialize() {
 // –ß‚è’l
 //		¬Œ÷‚µ‚½‚çS_OK
 //-------------------------------------------------------------
-bool OperationScene::setWorkspace(WorkspacePtr workspace)
-{
+bool OperationScene::setWorkspace(WorkspacePtr workspace) {
 	_workspace = workspace;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	if (device == 0) return false;
 
 	_playListSelect->removeAll();
-	for (int i = 0; i < _workspace->getPlayListCount(); i++) {
-		PlayListPtr playlist = _workspace->getPlayList(i);
+	for (int i = 0; i < _workspace->getPlaylistCount(); i++) {
+		PlayListPtr playlist = _workspace->getPlaylist(i);
 		LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(playlist->name());
 		_playListSelect->addItem(texture);
 	}
-	if (_workspace->getPlayListCount() > 0) _playListSelect->setSelected(0);
+	if (_workspace->getPlaylistCount() > 0) _playListSelect->setSelected(0);
 	_log.information("*created operation-scene");
 	return true;
 }
@@ -128,15 +127,15 @@ bool OperationScene::setWorkspace(WorkspacePtr workspace)
 
 void OperationScene::updateContentList() {
 //	_log.information("scene updateContentList");
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_contentsSelect->removeAll();
 	int selected = _playListSelect->getSelectedIndex();
 	if (selected >= 0) {
-		PlayListPtr playlist = _workspace->getPlayList(selected);
+		PlayListPtr playlist = _workspace->getPlaylist(selected);
 		if (playlist) {
 			vector<PlayListItemPtr> items = playlist->items();
 			for (int i = 0; i < playlist->itemCount(); i++) {
-				PlayListPtr playlist = _workspace->getPlayList(i);
+				PlayListPtr playlist = _workspace->getPlaylist(i);
 				LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(items[i]->media()->id());
 				_contentsSelect->addItem(texture);
 			}
@@ -151,14 +150,17 @@ void OperationScene::updatePrepare() {
 
 void OperationScene::prepareContent() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	PlayListPtr playlist = _workspace->getPlayList(_playListSelect->getSelectedIndex());
+	PlayListPtr playlist = _workspace->getPlaylist(_playListSelect->getSelectedIndex());
 	if (playlist) {
 		int next = (_currentContent + 1)  % _contents.size();
 		_contents[next]->initialize();
-		PlayListItemPtr res = _workspace->prepareMedia(_contents[next], playlist, _contentsSelect->getSelectedIndex());
-		if (res) {
-			_prepared = true;
-			_contents[next]->setProperty("prepare", "true");
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			PlayListItemPtr res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
+			if (res) {
+				_prepared = true;
+				_contents[next]->setProperty("prepare", "true");
+			}
 		}
 	}
 }
@@ -166,11 +168,11 @@ void OperationScene::prepareContent() {
 void OperationScene::switchContent() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (scene) {
-		PlayListPtr playlist = _workspace->getPlayList(_playListSelect->getSelectedIndex());
+		PlayListPtr playlist = _workspace->getPlaylist(_playListSelect->getSelectedIndex());
 		if (playlist) {
 			updatePrepare();
 			_contents[_currentContent]->setProperty("prepare", "false");
-			scene->switchContent(&_contents[_currentContent], playlist, _contentsSelect->getSelectedIndex());
+			scene->switchContent(&_contents[_currentContent], playlist->id(), _contentsSelect->getSelectedIndex());
 		}
 	}
 }
@@ -263,6 +265,9 @@ void OperationScene::process() {
 		}
 	}
 
+	if (_frame > 0 && _frame % 50 == 0) {
+		_workspace->update();
+	}
 	_frame++;
 }
 

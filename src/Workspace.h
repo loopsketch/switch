@@ -3,6 +3,7 @@
 #include <vector>
 #include <Poco/HashMap.h>
 #include <Poco/Logger.h>
+#include <Poco/Mutex.h>
 
 #include "Container.h"
 #include "MediaItem.h"
@@ -18,27 +19,41 @@ class Workspace
 private:
 	Poco::Logger& _log;
 
-	Renderer& _renderer;
-	Poco::HashMap<string, MediaItemPtr> _media;
-	vector<PlayListPtr> _playlists;
+	Poco::FastMutex _lock;
+
+	string _file;
+
+	vector<MediaItemPtr> _media;
+	Poco::HashMap<string, MediaItemPtr> _mediaMap;
+
+	vector<PlayListPtr> _playlist;
+	Poco::HashMap<string, PlayListPtr> _playlistMap;
 
 	void initialize();
 
 public:
-	Workspace(Renderer& renderer);
+	Workspace(string file);
 
 	~Workspace();
 
-	/** XMLÇÉpÅ[ÉX */
-	bool parse(const string file);
-
 	void release();
 
-	const int getPlayListCount() const;
+	bool update();
 
-	const PlayListPtr getPlayList(int i) const;
 
-	PlayListItemPtr prepareMedia(ContainerPtr container, PlayListPtr playlist, const int itemIndex);
+	const int getMediaCount();
+
+	const MediaItemPtr getMedia(int i);
+
+	const MediaItemPtr getMedia(string id);
+
+
+	const int getPlaylistCount();
+
+	const PlayListPtr getPlaylist(int i);
+
+	const PlayListPtr getPlaylist(string id);
 };
+
 
 typedef Workspace* WorkspacePtr;

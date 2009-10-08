@@ -223,10 +223,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
-	WorkspacePtr workspace = new Workspace(*_renderer);
-	if (!_conf.workspaceFile.empty()) {
-		workspace->parse(_conf.workspaceFile);
-	}
+	WorkspacePtr workspace = new Workspace(_conf.workspaceFile);
+	workspace->update();
 	MainScenePtr mainScene = NULL;
 	if (true) {
 		mainScene = new MainScene(*_renderer);

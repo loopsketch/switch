@@ -10,49 +10,31 @@
 #include <Poco/UnicodeConverter.h>
 
 #include "Workspace.h"
-#include "Image.h"
-#include "Movie.h"
-#include "Text.h"
-#include "CvContent.h"
-#include "CaptureContent.h"
-#include "DSContent.h"
 
 using Poco::XML::Document;
 using Poco::XML::Element;
 using Poco::XML::NodeList;
 
 
-Workspace::Workspace(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
+Workspace::Workspace(string file): _log(Poco::Logger::get("")), _file(file) {
 }
 
 Workspace::~Workspace() {
-	initialize();
+	release();
 }
 
 void Workspace::initialize() {
-	for (vector<PlayListPtr>::iterator it = _playlists.begin(); it != _playlists.end(); it++) {
-		PlayListPtr playlist = *it;
-		_renderer.removeCachedTexture(playlist->name());
-		SAFE_DELETE(playlist);
-	}
-	_playlists.clear();
-	for (Poco::HashMap<string, MediaItemPtr>::Iterator it = _media.begin(); it != _media.end(); it++) {
-		MediaItemPtr media = it->second;
-		_renderer.removeCachedTexture(media->id());
-		SAFE_DELETE(media);
-	}
-	_media.clear();
 }
 
 
-/** XMLÇÉpÅ[ÉX */
-bool Workspace::parse(const string file) {
-	initialize();
+bool Workspace::update() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	release();
 	try {
 		Poco::XML::DOMParser parser;
-		Document* doc = parser.parse(file);
+		Document* doc = parser.parse(_file);
 		if (doc) {
-			_log.information(Poco::format("parse workspace: %s", file));
+			_log.information(Poco::format("update workspace: %s", _file));
 			NodeList* nodes = doc->documentElement()->getElementsByTagName("medialist");
 			if (nodes) {
 				_log.information("parse media items");
@@ -63,8 +45,11 @@ bool Workspace::parse(const string file) {
 					for (int j = 0; j < items->length(); j++) {
 						e = (Element*)items->item(j);
 						string type = Poco::toLower(e->getAttribute("type"));
-						string id = e->getAttribute("id");
 						string name = e->getAttribute("name");
+						string id = e->getAttribute("id");
+						if (id.empty()) {
+
+						}
 						string d = e->getAttribute("duration");
 						string parameters = e->getAttribute("params");
 						int duration = 0;
@@ -101,15 +86,18 @@ bool Workspace::parse(const string file) {
 						} else  if (type == "cvcap") {
 							typeCode = MediaTypeCvCap;
 						}
-						if (_media.find(id) != _media.end()) {
-							_log.warning(Poco::format("already registed media: %s", id));
-							SAFE_DELETE(_media[id]);
-							_media.erase(id);
+						Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.find(id);
+						if (it != _mediaMap.end()) {
+							_log.warning(Poco::format("already registed media, delete old item: %s", id));
+							SAFE_DELETE(it->second);
+							_mediaMap.erase(id);
 						}
-						_media[id] = new MediaItem(typeCode, id, name, duration, files);
-						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, _media[id]->name());
-						_renderer.addCachedTexture(id, texture);
-						_log.debug(Poco::format("media: <%s> %s %d", id, name, duration));
+						MediaItemPtr media  = new MediaItem(typeCode, id, name, duration, files);
+						_mediaMap[id] = media;
+						_media.push_back(media);
+//						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, _media[id]->name());
+//						_renderer.addCachedTexture(id, texture);
+//						_log.debug(Poco::format("media: <%s> %s %d", id, name, duration));
 					}
 					items->release();
 				}
@@ -119,32 +107,33 @@ bool Workspace::parse(const string file) {
 			nodes = doc->documentElement()->getElementsByTagName("playlists");
 			if (nodes) {
 				_log.information("parse playlists");
-				_playlists.clear();
+				_playlist.clear();
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* e = (Element*)nodes->item(i);
 					NodeList* nodesPlaylist = e->getElementsByTagName("playlist");
 					for (int j = 0; j < nodesPlaylist->length(); j++) {
 						e = (Element*)nodesPlaylist->item(j);
+						string id = e->getAttribute("id");
 						string name = e->getAttribute("name");
-						PlayListPtr playlist = new PlayList(name);
-						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, name);
-//						LPDIRECT3DTEXTURE9 texture = renderer.createTexturedText(L"", 18, 0xff99ffcc, 0xff99ccff, 4, 0xccffffff, 2, 0xff000000, name);
-						_renderer.addCachedTexture(name, texture);
+						PlayListPtr playlist = new PlayList(id, name);
+//						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, name);
+//						_renderer.addCachedTexture(name, texture);
 						NodeList* items = e->getElementsByTagName("item");
 						for (int k = 0; k < items->length(); k++) {
 							e = (Element*)items->item(k);
 							string id = e->innerText();
 							string next = e->getAttribute("next");
 							string transition = e->getAttribute("transition");
-							Poco::HashMap<string, MediaItemPtr>::Iterator it = _media.find(id);
-							if (it != _media.end()) {
+							Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.find(id);
+							if (it != _mediaMap.end()) {
 								playlist->add(new PlayListItem(it->second, next, transition));
 							} else {
 								_log.warning(Poco::format("not found item[id:%s] in playlist[name:%s]", id, name));
 							}
 						}
-						_playlists.push_back(playlist);
-						_log.debug(Poco::format("playlist: %s x%d", playlist->name(), playlist->itemCount()));
+						_playlistMap[id] = playlist;
+						_playlist.push_back(playlist);
+//						_log.debug(Poco::format("playlist: %s x%d", playlist->name(), playlist->itemCount()));
 						items->release();
 					}
 					nodesPlaylist->release();
@@ -152,9 +141,10 @@ bool Workspace::parse(const string file) {
 				nodes->release();
 			}
 			doc->release();
+			_log.information(Poco::format("playlist: %d", _playlist.size()));
 			return true;
 		} else {
-			_log.warning(Poco::format("failed parse: %s", file));
+			_log.warning(Poco::format("failed parse: %s", _file));
 		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(ex.displayText());
@@ -163,88 +153,64 @@ bool Workspace::parse(const string file) {
 }
 
 void Workspace::release() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	for (vector<PlayListPtr>::iterator it = _playlist.begin(); it != _playlist.end(); it++) {
+		PlayListPtr playlist = *it;
+//		_renderer.removeCachedTexture(playlist->name());
+		SAFE_DELETE(playlist);
+	}
+	_playlistMap.clear();
+	_playlist.clear();
+	for (Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.begin(); it != _mediaMap.end(); it++) {
+		MediaItemPtr media = it->second;
+//		_renderer.removeCachedTexture(media->id());
+		SAFE_DELETE(media);
+	}
+	_mediaMap.clear();
+	_media.clear();
 }
 
-const int Workspace::getPlayListCount() const {
-	return _playlists.size();
+const int Workspace::getMediaCount() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	return _media.size();
 }
 
-const PlayListPtr Workspace::getPlayList(int i) const {
-	try {
-		return _playlists.at(i);
-	} catch (std::out_of_range ex) {
+const MediaItemPtr Workspace::getMedia(int i) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (i >= 0 && i < _media.size()) {
+		return _media[i];
 	}
 	return NULL;
 }
 
-PlayListItemPtr Workspace::prepareMedia(ContainerPtr container, PlayListPtr playlist, const int itemIndex) {
-	if (playlist && playlist->itemCount() > 0) {
-		int i = itemIndex % playlist->itemCount();
-		PlayListItemPtr item = playlist->items()[i];
-		MediaItemPtr media = item->media();
-		if (media) {
-			ConfigurationPtr conf = _renderer.config();
-			container->initialize();
-			switch (media->type()) {
-				case MediaTypeImage:
-					{
-						ImagePtr image = new Image(_renderer);
-						image->open(media);
-						container->add(image);
-					}
-					break;
+const MediaItemPtr Workspace::getMedia(string id) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.find(id);
+	if (it != _mediaMap.end()) {
+		return it->second;
+	}
+	return NULL;
+}
 
-				case MediaTypeMovie:
-					{
-						MoviePtr movie = new Movie(_renderer);
-//						DSContentPtr movie = new DSContent(_renderer);
-						if (movie->open(media)) {
-							movie->setPosition(conf->stageRect.left, conf->stageRect.top);
-							movie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
-							container->add(movie);
-						}
-					}
-					break;
 
-				case MediaTypeText:
-					break;
+const int Workspace::getPlaylistCount() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	return _playlist.size();
+}
 
-				case MediaTypeCv:
-					{
-						CvContentPtr cv = new CvContent(_renderer);
-						cv->open(media);
-						container->add(cv);
-					}
-					break;
+const PlayListPtr Workspace::getPlaylist(int i) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (i >= 0 && i < _playlist.size()) {
+		return _playlist[i];
+	}
+	return NULL;
+}
 
-				case MediaTypeCvCap:
-					{
-						CaptureContentPtr cvcap = new CaptureContent(_renderer);
-						cvcap->open(media);
-						container->add(cvcap);
-					}
-					break;
-
-				default:
-					_log.warning("media type: unknown");
-			}
-			if (media->containsFileType(MediaTypeText)) {
-				for (int j = 0; j < media->fileCount(); j++) {
-					TextPtr text = new Text(_renderer);
-					if (text->open(media, j)) {
-						container->add(text);
-					} else {
-						SAFE_DELETE(text);
-					}
-				}
-			}
-			_log.information(Poco::format("next prepared: %s", media->name()));
-		} else {
-			_log.warning("failed prepare next media, no media item");
-		}
-		return item;
-	} else {
-		_log.warning("failed prepare next media, no item in current playlist");
+const PlayListPtr Workspace::getPlaylist(string id) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	Poco::HashMap<string, PlayListPtr>::Iterator it = _playlistMap.find(id);
+	if (it != _playlistMap.end()) {
+		return it->second;
 	}
 	return NULL;
 }
