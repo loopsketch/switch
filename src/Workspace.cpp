@@ -141,7 +141,7 @@ bool Workspace::update() {
 				nodes->release();
 			}
 			doc->release();
-			_log.information(Poco::format("playlist: %d", _playlist.size()));
+			_log.information(Poco::format("playlist: %?u", _playlist.size()));
 			return true;
 		} else {
 			_log.warning(Poco::format("failed parse: %s", _file));
