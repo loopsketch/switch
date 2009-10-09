@@ -30,6 +30,16 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 <Microsoft DirectX 9.0 SDK (December 2004)>
 <Windows Software Development Kit (SDK) for Windows Server 2008 and .NET Framework 3.5>
 ※DirectShowを使うためbaseclassesが必要
-
+※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
 
 ■ ビルド方法
+のちほど。
+
+■ リリースファイル一覧
+[samples]           サンプルのコンテンツファイル
+basic.fx            fxファイル
+cursor.png          カーソルのイメージ
+switch.exe          実行ファイル
+switch-config.dtd   基本設定ファイルのDTD
+switch-config.xml   基本設定ファイル
+workspace.xml       コンテンツ定義ファイル
