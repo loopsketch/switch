@@ -37,6 +37,10 @@ ContentPtr Container::get(int i) {
 	return NULL;
 }
 
+int Container::size() {
+	return _list.size();
+}
+
 ContentPtr Container::operator[](int i) {
 //	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	return get(i);

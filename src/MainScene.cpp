@@ -118,7 +118,7 @@ bool MainScene::setWorkspace(WorkspacePtr workspace) {
 		PlayListPtr playlist = _workspace->getPlaylist(0);
 		_playlistID = playlist->id();
 		_playlistItem = -1;
-		activePrepareNextMedia();
+//		activePrepareNextMedia();
 	} else {
 		_log.warning("no playlist, no auto starting");
 	}
@@ -192,11 +192,9 @@ void MainScene::prepareNextMedia() {
 		int next = (_currentContent + 1) % _contents.size();
 		if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
 			PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
-			if (playlist) {
+			if (playlist && playlist->itemCount() > 0) {
 				_playlistItem = (_playlistItem + 1) % playlist->itemCount();
 				PlayListItemPtr item = playlist->items()[_playlistItem];
-//				_playlistName = playlist->name();
-//				_preparedName = item->media()->name();
 				_preparedCommand = item->next();
 				_preparedTransition = item->transition();
 				LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 12, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
@@ -210,6 +208,8 @@ void MainScene::prepareNextMedia() {
 				}
 			}
 			_suppressSwitch = false;
+		} else {
+			_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 		}
 	}
 }
@@ -228,8 +228,11 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 				case MediaTypeImage:
 					{
 						ImagePtr image = new Image(_renderer);
-						image->open(media);
-						container->add(image);
+						if (image->open(media)) {
+							container->add(image);
+						} else {
+							SAFE_DELETE(image);
+						}
 					}
 					break;
 
@@ -241,6 +244,8 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 							movie->setPosition(conf->stageRect.left, conf->stageRect.top);
 							movie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
 							container->add(movie);
+						} else {
+							SAFE_DELETE(movie);
 						}
 					}
 					break;
@@ -251,16 +256,22 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 				case MediaTypeCv:
 					{
 						CvContentPtr cv = new CvContent(_renderer);
-						cv->open(media);
-						container->add(cv);
+						if (cv->open(media)) {
+							container->add(cv);
+						} else {
+							SAFE_DELETE(cv);
+						}
 					}
 					break;
 
 				case MediaTypeCvCap:
 					{
 						CaptureContentPtr cvcap = new CaptureContent(_renderer);
-						cvcap->open(media);
-						container->add(cvcap);
+						if (cvcap->open(media)) {
+							container->add(cvcap);
+						} else {
+							SAFE_DELETE(cvcap);
+						}
 					}
 					break;
 
@@ -277,11 +288,15 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 					}
 				}
 			}
-			_log.information(Poco::format("prepared: %s", media->name()));
+			if (container->size() > 0) {
+				_log.information(Poco::format("prepared: %s", media->name()));
+				return true;
+			} else {
+				_log.warning("failed prepare next media");
+			}
 		} else {
 			_log.warning("failed prepare next media, no media item");
 		}
-		return true;
 	} else {
 		_log.warning("failed prepare next media, no item in current playlist");
 	}
@@ -319,18 +334,24 @@ void MainScene::process() {
 
 	if (!_startup && _frame > 100) {
 		_startup = true;
-		_currentContent = (_currentContent + 1) % _contents.size();
-		_contents[_currentContent]->play();
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			_currentName = _preparedName;
-			_preparedName = NULL;
-		}
-		_currentCommand = _preparedCommand;
-		_playCount++;
 		_log.information("startup auto prepare");
-		activePrepareNextMedia();
-		_suppressSwitch = true;
+		_currentContent = (_currentContent + 1) % _contents.size();
+		ContentPtr nextContent = _contents[_currentContent]->get(0);
+		if (nextContent && nextContent->opened()) {
+			_contents[_currentContent]->play();
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				_currentName = _preparedName;
+				_preparedName = NULL;
+			}
+			_currentCommand = _preparedCommand;
+			_playCount++;
+			_log.information("startup auto prepare");
+			activePrepareNextMedia();
+			_suppressSwitch = true;
+		} else {
+			_log.warning("failed startup content");
+		}
 	}
 	if (_startup) {
 		for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
@@ -383,6 +404,8 @@ void MainScene::process() {
 					_suppressSwitch = true;
 					prepareNext = true;
 				}
+			} else {
+				//
 			}
 		}
 

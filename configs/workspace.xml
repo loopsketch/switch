@@ -1,68 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <workspace>
 	<medialist>
-		<item id="cv000" type="cv" name="動体認識" duration="60000" />
-		<item id="cv001" type="cvcap" name="キャプチャ" duration="60000" />
-		<item id="m99" type="movie" name="vfwcap0">
-			<movie>vfwcap0</movie>
-		</item>
-		<item id="m00" name="7のチカラ">
-			<movie>71.mpg</movie>
-		</item>
-		<item id="m01" name="猪木CM「全身の血行促進」3">
-			<movie>./猪木CM「全身の血行促進」3.mpg</movie>
-		</item>
-		<item id="00" name="GTHDフェラーリ">
-			<movie>/works/movies/GTHD_Ferrari_720.mp4</movie>
-		</item>
-		<item id="01" name="gthd_concept_digest_movie">
-			<movie>/works/movies/GTHD_Concept_Digest_Movie_720.mp4</movie>
-		</item>
-		<item id="02" name="AFRIKA All in one video">
-			<movie>/works/movies/AFRIKA All in one video.mp4</movie>
-		</item>
-		<item id="03" name="AQUANAUTS HOLIDAY Full PV">
-			<movie>/works/movies/AQUANAUTS HOLIDAY Full PV.mp4</movie>
-		</item>
-		<item id="04" name="Flowery_PV">
-			<movie>/works/movies/Flowery_PV.mp4</movie>
-		</item>
-		<item id="05" name="GranTurismo5 Prologue Spec3 Citroen">
-			<movie>/works/movies/GranTurismo5 Prologue Spec3 Citroen.mp4</movie>
-		</item>
-
-		<item type="image" id="P00" name="パターン1" duration="1000">
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/大塚製薬2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/イオンクレジット2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-			<image>sozai_120/ヴィンキュラムジャパン2009.png</image>
-		</item>
-		<item id="P01" name="世界新体操選手権">
-			<movie>I:/shintaiso/test.mp4</movie>
-		</item>
-		<item type="image" id="P02" name="世界新体操選手権base" duration="1000">
-			<image>images/世界新体操選手権base.png</image>
-			<text>images/name.txt?encoding=sjis,x=0,y=120,align=center</text>
-			<text>images/country.txt?encoding=sjis,x=0,y=120,align=right</text>
-			<text>images/name.txt?encoding=sjis,x=2400,y=240,dx=-2</text>
-		</item>
-
 		<item type="image" id="000" name="黒" duration="1000">
-			<image>black.bmp</image>
+			<image>black_vga.png</image>
+		</item>
+		<item type="movie" id="100" name="幸福の鐘" >
+			<movie>test.mpg</movie>
 		</item>
 	</medialist>
 
@@ -70,41 +13,8 @@
 		<playlist name="black">
 			<item next="stop">000</item>
 		</playlist>
-		<playlist name="ループテスト0">
-			<item  next="stop">m99</item>
-		</playlist>
-		<playlist name="ループテスト1">
-			<item >cv000</item>
-			<item >cv001</item>
-		</playlist>
-		<playlist name="ループテスト2">
-			<item >m00</item>
-			<item >m01</item>
-			<item >cv000</item>
-			<item >m00</item>
-			<item >m01</item>
-			<item >cv001</item>
-		</playlist>
-		<playlist name="OpenCVテスト1">
-			<item next="stop">cv000</item>
-		</playlist>
-		<playlist name="OpenCVテスト2">
-			<item next="stop">cv001</item>
-		</playlist>
-		<playlist name="世界新体操選手権">
-			<item >000</item>
-			<item transition="dissolve" next="stop">P02</item>
-		</playlist>
-		<playlist name="パターン1">
-			<item next="stop">P00</item>
-		</playlist>
-		<playlist name="動画デモ">
-			<item >05</item>
-			<item >00</item>
-			<item >01</item>
-			<item >02</item>
-			<item >03</item>
-			<item >04</item>
+		<playlist name="動画サンプル">
+			<item >100</item>
 		</playlist>
 	</playlists>
 </workspace>

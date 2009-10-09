@@ -431,9 +431,10 @@ void Renderer::renderScene(const DWORD current) {
 		shift = _shift;
 		ctrl = _ctrl;
 	}
-	for (Poco::HashMap<string, Scene*>::Iterator it = _sceneMap.begin(); it != _sceneMap.end(); it++) {
-		it->second->notifyKey(keycode, shift, ctrl);
-		it->second->process();
+	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
+		Scene* scene = (*it);
+		scene->notifyKey(keycode, shift, ctrl);
+		scene->process();
 	}
 
 	_device->SetFVF(VERTEX_FVF);

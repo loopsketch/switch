@@ -28,6 +28,8 @@ public:
 
 	ContentPtr get(int i);
 
+	int size();
+
 	const MediaItemPtr opened() const;
 
 	void play();
