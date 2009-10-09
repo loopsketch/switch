@@ -2,6 +2,59 @@
 
 
 namespace ui {
+	SelectListItem::SelectListItem(UserInterfaceManagerPtr uim): _uim(uim)
+	{
+	}
+
+	SelectListItem::~SelectListItem() {
+		for (int i = 0; i < _texture.size(); i++) {
+			SAFE_RELEASE(_texture[i]);
+		}
+	}
+
+	void SelectListItem::addText(int width, string text) {
+		LPDIRECT3DTEXTURE9 texture = _uim->drawText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, text);
+		addTexture(width, texture);
+	}
+
+	void SelectListItem::addTexture(int width, LPDIRECT3DTEXTURE9 texture) {
+		_width.push_back(width);
+		_texture.push_back(texture);
+	}
+
+	int SelectListItem::getWidth() {
+		int w = 0;
+		for (int i = 0; i < _width.size(); i++) {
+			w += _width[i];
+		}
+		return w;
+	}
+
+	int SelectListItem::getHeight() {
+		D3DSURFACE_DESC desc;
+		int h = 20;
+		for (int i = 0; i < _texture.size(); i++) {
+			HRESULT hr = _texture[i]->GetLevelDesc(0, &desc);
+			if (SUCCEEDED(hr)) {
+				if (h < desc.Height) h = desc.Height;
+			}
+		}
+		return h;
+	}
+
+	void SelectListItem::draw(int x, int y, DWORD c1, DWORD c2, DWORD c3, DWORD c4) {
+		int h = getHeight();
+		D3DSURFACE_DESC desc;
+		int pos = 0;
+		for (int i = 0; i < _texture.size(); i++) {
+			int w = _width[i];
+			HRESULT hr = _texture[i]->GetLevelDesc(0, &desc);
+			_uim->drawTexture(x + pos + (w - desc.Width) / 2, y + (h - desc.Height) / 2, _texture[i], c1, c2, c3, c4);
+			pos += w;
+		}
+	}
+
+
 	SelectList::SelectList(string name, UserInterfaceManagerPtr uim, int x, int y, int w, int h, float alpha):
 		Component(name, uim, x, y, w, h, alpha), MouseReactionUI(this), _itemY(0), _itemHeight(20), _dragKnob(false), _hoverItem(-1), _selectedItem(-1), _listener(NULL)
 	{
@@ -102,21 +155,16 @@ namespace ui {
 
 	void SelectList::removeAll() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-//		for (vector<LPDIRECT3DTEXTURE9>::iterator it = _items.begin(); it != _items.end(); it++) SAFE_RELEASE(*it);
+		for (vector<SelectListItemPtr>::iterator it = _items.begin(); it != _items.end(); it++) SAFE_DELETE(*it);
 		_items.clear();
 		_selectedItem = -1;
 		_itemY = 0;
 	}
 
-	void SelectList::addItem(const LPDIRECT3DTEXTURE9 texture) {
-		if (texture) {
-			_items.push_back(texture);
-
-			D3DSURFACE_DESC desc;
-			HRESULT hr = texture->GetLevelDesc(0, &desc);
-			if (SUCCEEDED(hr)) {
-				if (_itemHeight < desc.Height) _itemHeight = desc.Height;
-			}
+	void SelectList::addItem(const SelectListItemPtr item) {
+		if (item) {
+			_items.push_back(item);
+			if (_itemHeight < item->getHeight()) _itemHeight = item->getHeight();
 		}
 	}
 
@@ -194,34 +242,30 @@ namespace ui {
 		int y = 0;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			for (vector<LPDIRECT3DTEXTURE9>::iterator it = _items.begin(); it != _items.end(); it++) {
-				LPDIRECT3DTEXTURE9 texture = *it;
-				D3DSURFACE_DESC desc;
-				HRESULT hr = texture->GetLevelDesc(0, &desc);
-				if (SUCCEEDED(hr)) {
-					int w = desc.Width;
-					int h = desc.Height;
-					if (_itemY + y + h >= 0) {
-						if (y == _selectedItem * _itemHeight) {
-							c1 = (a | 0xffffff) & 0xccffcc33;
-							c2 = (a | 0xcccccc) & 0xcccc9900;
-							_uim->fillSquare(_x, _y + _itemY + y, _w - 20, _itemHeight, c1, c1, c2, c2);
-						}
-						if (y == _hoverItem * _itemHeight) {
-							c1 = (a | 0xffffff) & 0xccffffff;
-							c2 = (a | 0xcccccc) & 0xccffffff;
-							_uim->drawSquare(_x, _y + _itemY + y, _w - 20, _itemHeight, c1, c1, c2, c2);
-						}
-						float alpha = 0.3f + _alpha;
-						if (alpha > F(1)) alpha = F(1);
-						c1 = (((DWORD)(255 * alpha)) << 24) | 0xffffff;
-						c2 = (((DWORD)(255 * alpha)) << 24) | 0xcccccc;
-						int dy = (_itemHeight - h) / 2;
-						_uim->drawTexture(_x, _y + _itemY + y + dy, texture, c1, c1, c2, c2);
+			for (vector<SelectListItemPtr>::iterator it = _items.begin(); it != _items.end(); it++) {
+				SelectListItemPtr item = *it;
+//				int w = desc.Width;
+				int h = item->getHeight();
+				if (_itemY + y + h >= 0) {
+					if (y == _selectedItem * _itemHeight) {
+						c1 = (a | 0xffffff) & 0xccffcc33;
+						c2 = (a | 0xcccccc) & 0xcccc9900;
+						_uim->fillSquare(_x, _y + _itemY + y, _w - 20, _itemHeight, c1, c1, c2, c2);
 					}
-					if (_itemY + y > _h) break;
-					y += _itemHeight;
+					if (y == _hoverItem * _itemHeight) {
+						c1 = (a | 0xffffff) & 0xccffffff;
+						c2 = (a | 0xcccccc) & 0xccffffff;
+						_uim->drawSquare(_x, _y + _itemY + y, _w - 20, _itemHeight, c1, c1, c2, c2);
+					}
+					float alpha = 0.3f + _alpha;
+					if (alpha > F(1)) alpha = F(1);
+					c1 = (((DWORD)(255 * alpha)) << 24) | 0xffffff;
+					c2 = (((DWORD)(255 * alpha)) << 24) | 0xcccccc;
+					int dy = (_itemHeight - h) / 2;
+					item->draw(_x, _y + _itemY + y + dy, c1, c1, c2, c2);
 				}
+				if (_itemY + y > _h) break;
+				y += _itemHeight;
 			}
 		}
 		device->SetScissorRect(&scissorRect);

@@ -11,7 +11,7 @@ using Poco::Util::XMLConfiguration;
 
 
 CaptureContent::CaptureContent(Renderer& renderer): Content(renderer), 
-	_fx(NULL), _small1(NULL), _small2(NULL), _diff(NULL), _diff2(NULL), _image(NULL),
+	_scene(NULL), _fx(NULL), _small1(NULL), _small2(NULL), _diff(NULL), _diff2(NULL), _image(NULL),
 	_detected(false), _doShutter(0), _viewPhoto(0), _finished(true), _playing(false), _statusFrame(0)
 {
 	initialize();
@@ -205,6 +205,8 @@ void CaptureContent::draw(const DWORD& frame) {
 		int h = conf->stageRect.bottom;
 
 		LPDIRECT3DTEXTURE9 cameraImage = _scene->getCameraImage();
+		if (!cameraImage) return;
+
 		DWORD col = 0xffffffff;
 		_renderer.drawTexture(x, y, w, h, cameraImage, col, col, col, col);
 		if (_image) _renderer.drawTexture(x, y, _image, col, col, col, col);

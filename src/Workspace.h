@@ -29,14 +29,12 @@ private:
 	vector<PlayListPtr> _playlist;
 	Poco::HashMap<string, PlayListPtr> _playlistMap;
 
-	void initialize();
+	void release();
 
 public:
 	Workspace(string file);
 
 	~Workspace();
-
-	void release();
 
 	bool update();
 

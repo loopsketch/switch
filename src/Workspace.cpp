@@ -6,6 +6,7 @@
 #include <Poco/Exception.h>
 #include <Poco/NumberParser.h>
 #include <Poco/format.h>
+#include <Poco/hash.h>
 #include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
 
@@ -20,24 +21,39 @@ Workspace::Workspace(string file): _log(Poco::Logger::get("")), _file(file) {
 }
 
 Workspace::~Workspace() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	release();
 }
 
-void Workspace::initialize() {
-}
 
+void Workspace::release() {
+	for (vector<PlayListPtr>::iterator it = _playlist.begin(); it != _playlist.end(); it++) {
+		PlayListPtr playlist = *it;
+//		_renderer.removeCachedTexture(playlist->name());
+		SAFE_DELETE(playlist);
+	}
+	_playlistMap.clear();
+	_playlist.clear();
+
+	for (vector<MediaItemPtr>::iterator it = _media.begin(); it != _media.end(); it++) {
+		MediaItemPtr media = *it;
+//		_renderer.removeCachedTexture(media->id());
+		SAFE_DELETE(media);
+	}
+	_mediaMap.clear();
+	_media.clear();
+}
 
 bool Workspace::update() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	release();
 	try {
 		Poco::XML::DOMParser parser;
 		Document* doc = parser.parse(_file);
 		if (doc) {
-			_log.information(Poco::format("update workspace: %s", _file));
+			_log.information(Poco::format("update/parse workspace file: %s", _file));
+			release();
 			NodeList* nodes = doc->documentElement()->getElementsByTagName("medialist");
 			if (nodes) {
-				_log.information("parse media items");
 				_media.clear();
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* e = (Element*)nodes->item(i);
@@ -47,15 +63,12 @@ bool Workspace::update() {
 						string type = Poco::toLower(e->getAttribute("type"));
 						string name = e->getAttribute("name");
 						string id = e->getAttribute("id");
-						if (id.empty()) {
-
-						}
 						string d = e->getAttribute("duration");
-						string parameters = e->getAttribute("params");
 						int duration = 0;
-						if (d.length() > 0) {
-							duration = Poco::NumberParser::parse(e->getAttribute("duration"));
+						if (!d.empty()) {
+							duration = Poco::NumberParser::parse(d);
 						}
+						string parameters = e->getAttribute("params");
 						vector<MediaItemFilePtr> files;
 						NodeList* movies = e->getElementsByTagName("*");
 						for (int k = 0; k < movies->length(); k++) {
@@ -103,18 +116,22 @@ bool Workspace::update() {
 				}
 				nodes->release();
 			}
+			_log.information(Poco::format("media item: %?u", _media.size()));
 
 			nodes = doc->documentElement()->getElementsByTagName("playlists");
 			if (nodes) {
-				_log.information("parse playlists");
-				_playlist.clear();
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* e = (Element*)nodes->item(i);
 					NodeList* nodesPlaylist = e->getElementsByTagName("playlist");
 					for (int j = 0; j < nodesPlaylist->length(); j++) {
 						e = (Element*)nodesPlaylist->item(j);
-						string id = e->getAttribute("id");
 						string name = e->getAttribute("name");
+						string id = e->getAttribute("id");
+						if (id.empty()) {
+							// TODO playlist.idéwíËÇ™ñ≥Ç¢éûÇÃèàóù
+							id = Poco::format("g%04d", j);
+//							_log.information(Poco::format("auto group id: %s", id));
+						}
 						PlayListPtr playlist = new PlayList(id, name);
 //						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, name);
 //						_renderer.addCachedTexture(name, texture);
@@ -150,24 +167,6 @@ bool Workspace::update() {
 		_log.warning(ex.displayText());
 	}
 	return false;
-}
-
-void Workspace::release() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	for (vector<PlayListPtr>::iterator it = _playlist.begin(); it != _playlist.end(); it++) {
-		PlayListPtr playlist = *it;
-//		_renderer.removeCachedTexture(playlist->name());
-		SAFE_DELETE(playlist);
-	}
-	_playlistMap.clear();
-	_playlist.clear();
-	for (Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.begin(); it != _mediaMap.end(); it++) {
-		MediaItemPtr media = it->second;
-//		_renderer.removeCachedTexture(media->id());
-		SAFE_DELETE(media);
-	}
-	_mediaMap.clear();
-	_media.clear();
 }
 
 const int Workspace::getMediaCount() {

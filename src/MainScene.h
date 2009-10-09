@@ -40,16 +40,30 @@ private:
 	DWORD _frame;
 	int _luminance;
 	bool _startup;
-	int _currentItem;
 	string _currentCommand;
 
 	string _playlistID;
-	PlayListItemPtr _nextItem;
+	int _playlistItem;
 
 	MediaItemPtr _interruptMedia;
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
+
+//	LPDIRECT3DTEXTURE9 _playlistTexture;
+//	LPDIRECT3DTEXTURE9 _mediaTexture;
+//	LPDIRECT3DTEXTURE9 _preparedMediaTexture;
+
+	/** プレイリスト名 */
+	LPDIRECT3DTEXTURE9 _playlistName;
+	/** 再生中のコンテンツ名 */
+	LPDIRECT3DTEXTURE9 _currentName;
+	/** 準備済のコンテンツ名 */
+	LPDIRECT3DTEXTURE9 _preparedName;
+	/** 準備済のコマンド */
+	string _preparedCommand;
+	/** 準備済のトランジション */
+	string _preparedTransition;
 
 	/** 再生回数 */
 	int _playCount;
@@ -84,9 +98,12 @@ public:
 
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
-	void switchContent(ContainerPtr* container, string playlistID, const int content = 0);
+	/** containerの準備を行います */
+	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
-	PlayListItemPtr prepareMedia(ContainerPtr container, string playlistID, const int itemIndex);
+	/** 手動で切替を行います */
+	void switchContent(ContainerPtr* container, string playlistID, const int i = 0);
+
 
 	virtual void process();
 

@@ -44,6 +44,10 @@ namespace ui {
 			_uim->removeComponent(_name);
 		}
 
+		UserInterfaceManagerPtr getUserInterfaceManager() {
+			return _uim;
+		}
+
 		/** —LŒø‚©‚Ç‚¤‚© */
 		bool getEnabled() const {
 			return _enabled;

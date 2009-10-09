@@ -109,15 +109,29 @@ bool OperationScene::initialize() {
 //		ê¨å˜ÇµÇΩÇÁS_OK
 //-------------------------------------------------------------
 bool OperationScene::setWorkspace(WorkspacePtr workspace) {
+	if (_workspace) {
+		for (int i = 0; i < _workspace->getMediaCount(); i++) {
+			MediaItemPtr media = _workspace->getMedia(i);
+			_renderer.removeCachedTexture(media->id());
+		}
+		for (int i = 0; i < _workspace->getPlaylistCount(); i++) {
+			PlayListPtr playlist = _workspace->getPlaylist(i);
+			_renderer.removeCachedTexture(playlist->id());
+		}
+	}
 	_workspace = workspace;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	if (device == 0) return false;
+//	_renderer.addCachedTexture(id, texture);
 
 	_playListSelect->removeAll();
 	for (int i = 0; i < _workspace->getPlaylistCount(); i++) {
 		PlayListPtr playlist = _workspace->getPlaylist(i);
-		LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(playlist->name());
-		_playListSelect->addItem(texture);
+//		LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(playlist->name());
+		ui::SelectListItemPtr item = new ui::SelectListItem(_uim);
+		item->addText(30, Poco::format("%02d", i));
+		item->addText(200, playlist->name());
+		_playListSelect->addItem(item);
 	}
 	if (_workspace->getPlaylistCount() > 0) _playListSelect->setSelected(0);
 	_log.information("*created operation-scene");
@@ -133,11 +147,12 @@ void OperationScene::updateContentList() {
 	if (selected >= 0) {
 		PlayListPtr playlist = _workspace->getPlaylist(selected);
 		if (playlist) {
-			vector<PlayListItemPtr> items = playlist->items();
-			for (int i = 0; i < playlist->itemCount(); i++) {
-				PlayListPtr playlist = _workspace->getPlaylist(i);
-				LPDIRECT3DTEXTURE9 texture = _renderer.getCachedTexture(items[i]->media()->id());
-				_contentsSelect->addItem(texture);
+			const vector<PlayListItemPtr> items = playlist->items();
+			for (int i = 0; i < items.size(); i++) {
+				ui::SelectListItemPtr item = new ui::SelectListItem(_uim);
+				item->addText(30, Poco::format("%02d", i));
+				item->addText(200, items[i]->media()->name());
+				_contentsSelect->addItem(item);
 			}
 			_contentsSelect->setSelected(0);
 		}
@@ -156,7 +171,8 @@ void OperationScene::prepareContent() {
 		_contents[next]->initialize();
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
-			PlayListItemPtr res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
+//			PlayListItemPtr res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
+			bool res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
 			if (res) {
 				_prepared = true;
 				_contents[next]->setProperty("prepare", "true");
