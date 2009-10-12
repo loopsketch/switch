@@ -157,6 +157,7 @@ public:
 						_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
 						_intervals = _renderer.config()->mainRate / _rate;
 						_lastIntervals = -1;
+
 						_log.information(Poco::format("open decoder: %s %.3hf %.3hf", string(avcodec->long_name), _rate, _intervals));
 						_video = i;
 						_videoDecoder = new VideoDecoder(_renderer, _ic, _video);

@@ -6,7 +6,7 @@
 
 DSVideoRenderer::DSVideoRenderer(Renderer& renderer, LPUNKNOWN unk, HRESULT* result):
 	CBaseVideoRenderer(__uuidof(CLSID_DSVideoRenderer), NAME("DSVideoRenderer"), unk, result),
-	_log(Poco::Logger::get("")), _renderer(renderer), _w(0), _h(0), _texture(NULL)
+	_log(Poco::Logger::get("")), _renderer(renderer), _w(0), _h(0), _texture(NULL), _readTime(0)
 {
 	AddRef();
 	_format = D3DFMT_UNKNOWN;
