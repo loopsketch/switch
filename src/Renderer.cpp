@@ -669,53 +669,61 @@ const LPDIRECT3DTEXTURE9 Renderer::getCaptureTexture() const {
 /**
  * テクスチャを指定位置に描画します
  */
-void Renderer::drawTexture(const int x, const int y, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
+void Renderer::drawTexture(const int x, const int y, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
 	Uint32 tw = 0, th = 0;
 	if (texture) {
 		D3DSURFACE_DESC desc;
 		HRESULT hr = texture->GetLevelDesc(0, &desc);
 		tw = desc.Width;
 		th = desc.Height;
-		_device->SetTexture(0, texture);
 	}
+	drawTexture(x, y, tw, th, texture, flipMode, c1, c2, c3, c4);
+}
+
+/**
+ * テクスチャを指定位置･サイズで描画します
+ */
+void Renderer::drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
+	float u1, u2, v1, v2;
+	switch (flipMode) {
+		case 1:
+			u1 = F(1); u2 = F(0);
+			v1 = F(0); v2 = F(1);
+			break;
+		default:
+			u1 = F(0); u2 = F(1);
+			v1 = F(0); v2 = F(1);
+	}
+	float x1 = F(x     - 0.5);
+	float y1 = F(y     - 0.5);
+	float x2 = F(x + w - 0.5);
+	float y2 = F(y + h - 0.5);
+
+	_device->SetTexture(0, texture);
 	VERTEX dst[] =
 		{
-			{F(x      - 0.5), F(y      - 0.5), 0.0f, 1.0f, c1, 0, 0},
-			{F(x + tw - 0.5), F(y      - 0.5), 0.0f, 1.0f, c2, 1, 0},
-			{F(x      - 0.5), F(y + th - 0.5), 0.0f, 1.0f, c3, 0, 1},
-			{F(x + tw - 0.5), F(y + th - 0.5), 0.0f, 1.0f, c4, 1, 1}
+			{x1, y1, 0.0f, 1.0f, c1, u1, v1},
+			{x2, y1, 0.0f, 1.0f, c2, u2, v1},
+			{x1, y2, 0.0f, 1.0f, c3, u1, v2},
+			{x2, y2, 0.0f, 1.0f, c4, u2, v2}
 		};
 	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
 	_device->SetTexture(0, NULL);
 }
 
 /**
- * テクスチャを指定位置･サイズで描画します
- */
-void Renderer::drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
-	if (texture) _device->SetTexture(0, texture);
-	VERTEX dst[] =
-		{
-			{F(x     - 0.5), F(y     - 0.5), 0.0f, 1.0f, c1, 0, 0},
-			{F(x + w - 0.5), F(y     - 0.5), 0.0f, 1.0f, c2, 1, 0},
-			{F(x     - 0.5), F(y + h - 0.5), 0.0f, 1.0f, c3, 0, 1},
-			{F(x + w - 0.5), F(y + h - 0.5), 0.0f, 1.0f, c4, 1, 1}
-		};
-	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
-	if (texture) _device->SetTexture(0, NULL);
-}
-
-/**
  * テクスチャの指定部分を指定位置・範囲に描画します
  */
 void Renderer::drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
-	if (!texture) return;
-	D3DSURFACE_DESC desc;
-	HRESULT hr = texture->GetLevelDesc(0, &desc);
-	float u1 = sx / desc.Width;
-	float v1 = sy / desc.Height;
-	float u2 = (sx + sw) / desc.Width;
-	float v2 = (sy + sh) / desc.Height;
+	float u1, v1, u2, v2;
+	if (texture) {
+		D3DSURFACE_DESC desc;
+		HRESULT hr = texture->GetLevelDesc(0, &desc);
+		u1 = sx / desc.Width;
+		v1 = sy / desc.Height;
+		u2 = (sx + sw) / desc.Width;
+		v2 = (sy + sh) / desc.Height;
+	}
 
 	_device->SetTexture(0, texture);
 	VERTEX dst[] =

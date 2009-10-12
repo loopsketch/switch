@@ -313,7 +313,7 @@ public:
 		} else {
 			if (get("prepare") == "true") {
 				int sy = getF("itemNo") * 20;
-				_renderer.drawTexture(700, 600 + sy, 324, 20, _target, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+				_renderer.drawTexture(700, 600 + sy, 324, 20, _target, 0, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
 		}
 	}

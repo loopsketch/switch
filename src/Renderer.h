@@ -211,12 +211,12 @@ public:
 	/**
 	 * テクスチャを指定位置に描画します
 	 */
-	void drawTexture(const int x, const int y, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
+	void drawTexture(const int x, const int y, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
 
 	/**
 	 * テクスチャを指定位置・範囲に描画します
 	 */
-	void drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
+	void drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
 
 	/**
 	 * テクスチャの指定部分を指定位置・範囲に描画します

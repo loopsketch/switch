@@ -294,7 +294,7 @@ void CaptureScene::draw1() {
 	_cameraImage->GetSurfaceLevel(0, &surface);
 	hr = device->SetRenderTarget(0, surface);
 	device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
-	_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture());
+	_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1);
 	SAFE_RELEASE(surface);
 
 	hr = device->SetRenderTarget(0, orgRT);
@@ -306,7 +306,7 @@ void CaptureScene::draw2() {
 	device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 	device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 	DWORD col = 0xffffffff;
-	_renderer.drawTexture(0, 242, 256, 192, _cameraImage, col, col, col, col);
+	_renderer.drawTexture(0, 242, 256, 192, _cameraImage, 0, col, col, col, col);
 	device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 	device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 	ConfigurationPtr conf = _renderer.config();

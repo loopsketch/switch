@@ -316,7 +316,7 @@ void CvContent::draw(const DWORD& frame) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		LPDIRECT3DTEXTURE9 cameraImage = _scene->getCameraImage();
 		DWORD col = 0xffffffff;
-		_renderer.drawTexture(640, 0, 640, 480, cameraImage, col, col, col, col);
+		_renderer.drawTexture(640, 0, 640, 480, cameraImage, 0, col, col, col, col);
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		if (_fx) {
 			LPDIRECT3DSURFACE9 orgRT;
@@ -392,7 +392,7 @@ void CvContent::draw(const DWORD& frame) {
 			_photo->GetSurfaceLevel(0, &surface);
 			hr = device->SetRenderTarget(0, surface);
 			DWORD col = 0xffffffff;
-			_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, col, col, col, col);
+			_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, 0, col, col, col, col);
 			SAFE_RELEASE(surface);
 
 			hr = device->SetRenderTarget(0, orgRT);
@@ -417,28 +417,28 @@ void CvContent::draw(const DWORD& frame) {
 				alpha = F(500 - (frame - _viewPhoto)) / 100;
 			}
 			DWORD col = ((DWORD)(0x66 * alpha) << 24) | 0x000000;
-			_renderer.drawTexture(x + 60, y + 20, w - 80, h - 20, NULL, col, col, col, col);
+			_renderer.drawTexture(x + 60, y + 20, w - 80, h - 20, NULL, 0, col, col, col, col);
 			col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			_renderer.drawTexture(x + 40, y + 10, w - 80, h - 20, NULL, col, col, col, col);
-			_renderer.drawTexture(x + 43, y + 13, w - 86, h - 26, _photo, col, col, col, col);
+			_renderer.drawTexture(x + 40, y + 10, w - 80, h - 20, NULL, 0, col, col, col, col);
+			_renderer.drawTexture(x + 43, y + 13, w - 86, h - 26, _photo, 0, col, col, col, col);
 		}
 
 		// ステータス表示
 		col = 0x66669966;
-		_renderer.drawTexture(640 + _clipX, _clipY, _clipW, _clipH, NULL, col, col, col, col);
+		_renderer.drawTexture(640 + _clipX, _clipY, _clipW, _clipH, NULL, 0, col, col, col, col);
 		_renderer.drawFontTextureText(640 + _clipX, _clipY, 8, 10, 0xccffffff, Poco::format("(%d,%d)-%dx%d", _clipX, _clipY, _clipW, _clipH));
 		col = 0xffffffff;
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		_renderer.drawTexture(320, 480, 320, 240, _diff, col, col, col, col);
+		_renderer.drawTexture(320, 480, 320, 240, _diff, 0, col, col, col, col);
 		_renderer.drawFontTextureText(320, 480, 12, 16, 0xccffffff, Poco::format("<%04d/%04d>", _diffCount, _detectThreshold));
-		_renderer.drawTexture(640, 480, 320, 240, _small1, col, col, col, col);
+		_renderer.drawTexture(640, 480, 320, 240, _small1, 0, col, col, col, col);
 		float interval = _intervalDiff / 60.0f;
 		_renderer.drawFontTextureText(640, 480, 12, 16, 0xccffffff, Poco::format("%d(%0.2hfs)", _intervalDiff, interval));
-		_renderer.drawTexture(960, 480, 320, 240, _small2, col, col, col, col);
+		_renderer.drawTexture(960, 480, 320, 240, _small2, 0, col, col, col, col);
 		interval = _intervalSmall / 60.0f;
 		_renderer.drawFontTextureText(960, 480, 12, 16, 0xccffffff, Poco::format("%d(%0.2hfs)", _intervalSmall, interval));
-		_renderer.drawTexture(0, 480, 320, 240, _photo, col, col, col, col);
+		_renderer.drawTexture(0, 480, 320, 240, _photo, 0, col, col, col, col);
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		if (_statusFrame > 0 && (frame - _statusFrame) < 200) {

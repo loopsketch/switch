@@ -77,6 +77,8 @@ bool MainScene::initialize() {
 	device->SetRenderState(D3DRS_ALPHABLENDENABLE, true);
 	device->SetRenderState(D3DRS_ALPHATESTENABLE, false);
 	device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_MIRROR);
+	device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_MIRROR);
 
 	if (true) {
 		// blend_nomal
@@ -448,7 +450,7 @@ void MainScene::draw1() {
 	ConfigurationPtr conf = _renderer.config();
 	if (_luminance < 100) {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
-		_renderer.drawTexture(conf->mainRect.left, conf->mainRect.top, conf->mainRect.right, conf->mainRect.bottom, NULL, col, col, col, col);
+		_renderer.drawTexture(conf->mainRect.left, conf->mainRect.top, conf->mainRect.right, conf->mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	_renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
 }
@@ -459,7 +461,7 @@ void MainScene::draw2() {
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-		_renderer.drawTexture(0, 50, 256, 192, capture, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+		_renderer.drawTexture(0, 50, 256, 192, capture, 0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 	}

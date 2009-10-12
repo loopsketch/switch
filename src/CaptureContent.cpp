@@ -208,8 +208,8 @@ void CaptureContent::draw(const DWORD& frame) {
 		if (!cameraImage) return;
 
 		DWORD col = 0xffffffff;
-		_renderer.drawTexture(x, y, w, h, cameraImage, col, col, col, col);
-		if (_image) _renderer.drawTexture(x, y, _image, col, col, col, col);
+		_renderer.drawTexture(x, y, w, h, cameraImage, 0, col, col, col, col);
+		if (_image) _renderer.drawTexture(x, y, _image, 0, col, col, col, col);
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		if (_fx) {
 			LPDIRECT3DSURFACE9 orgRT;
@@ -230,13 +230,13 @@ void CaptureContent::draw(const DWORD& frame) {
 			if ((frame % _intervalDiff) == 0) {
 				_small1->GetSurfaceLevel(0, &surface);
 				hr = device->SetRenderTarget(0, surface);
-				_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, col, col, col, col);
+				_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, 0, col, col, col, col);
 				SAFE_RELEASE(surface);
 			}
 			if ((frame % _intervalSmall) == 0) {
 				_small2->GetSurfaceLevel(0, &surface);
 				hr = device->SetRenderTarget(0, surface);
-				_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, col, col, col, col);
+				_renderer.drawTexture(0, 0, desc.Width, desc.Height, cameraImage, 0, col, col, col, col);
 				SAFE_RELEASE(surface);
 
 				// ·•ª
@@ -300,12 +300,12 @@ void CaptureContent::draw(const DWORD& frame) {
 		col = 0xffffffff;
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		_renderer.drawTexture(320, 480, 320, 240, _diff, col, col, col, col);
+		_renderer.drawTexture(320, 480, 320, 240, _diff, 0, col, col, col, col);
 		_renderer.drawFontTextureText(320, 480, 12, 16, 0xccffffff, Poco::format("<%04d/%04d>", _diffCount, _detectThreshold));
-		_renderer.drawTexture(640, 480, 320, 240, _small1, col, col, col, col);
+		_renderer.drawTexture(640, 480, 320, 240, _small1, 0, col, col, col, col);
 		float interval = _intervalDiff / 60.0f;
 		_renderer.drawFontTextureText(640, 480, 12, 16, 0xccffffff, Poco::format("%d(%0.2hfs)", _intervalDiff, interval));
-		_renderer.drawTexture(960, 480, 320, 240, _small2, col, col, col, col);
+		_renderer.drawTexture(960, 480, 320, 240, _small2, 0, col, col, col, col);
 		interval = _intervalSmall / 60.0f;
 		_renderer.drawFontTextureText(960, 480, 12, 16, 0xccffffff, Poco::format("%d(%0.2hfs)", _intervalSmall, interval));
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
