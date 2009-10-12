@@ -31,6 +31,7 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 <Windows Software Development Kit (SDK) for Windows Server 2008 and .NET Framework 3.5>
 ※DirectShowを使うためbaseclassesが必要
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
+※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
 
 ■ ビルド方法
 のちほど。
@@ -39,6 +40,7 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 [samples]           サンプルのコンテンツファイル
 basic.fx            fxファイル
 cursor.png          カーソルのイメージ
+defactica.ttf       フォントファイル
 switch.exe          実行ファイル
 switch-config.dtd   基本設定ファイルのDTD
 switch-config.xml   基本設定ファイル
