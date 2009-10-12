@@ -335,7 +335,11 @@ private:
 			default:
 				type = Poco::format("unknown format(%d)", (int)avctx->pix_fmt);
 		}
-		_log.information(Poco::format("video stream: size(%dx%d) format(%s) %d %s", w, h, type, avctx->ticks_per_frame, string(avctx->hwaccel?"H/W Acceleted":"")));
+
+		int dw = w * avctx->sample_aspect_ratio.num;
+		int dh = h * avctx->sample_aspect_ratio.den;
+		string status = Poco::format("%dx%d DAR %d:%d", w, h, dw, dh);
+		_log.information(Poco::format("video stream: size(%s) format(%s) %d %s", status, type, avctx->ticks_per_frame, string(avctx->hwaccel?"H/W Acceleted":"")));
 
 		if (changeFormat) {
 			_outFrame = avcodec_alloc_frame();
