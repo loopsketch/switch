@@ -163,6 +163,7 @@ namespace ui {
 
 	void SelectList::addItem(const SelectListItemPtr item) {
 		if (item) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			_items.push_back(item);
 			if (_itemHeight < item->getHeight()) _itemHeight = item->getHeight();
 		}
