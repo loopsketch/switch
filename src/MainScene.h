@@ -31,9 +31,6 @@ class MainScene: public Scene
 {
 private:
 	Poco::FastMutex _lock;
-#if defined(DEBUG) | defined(_DEBUG)
-	_CrtMemState s1;
-#endif
 
 	WorkspacePtr _workspace;
 
@@ -49,10 +46,6 @@ private:
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
-
-//	LPDIRECT3DTEXTURE9 _playlistTexture;
-//	LPDIRECT3DTEXTURE9 _mediaTexture;
-//	LPDIRECT3DTEXTURE9 _preparedMediaTexture;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
@@ -80,9 +73,6 @@ private:
 
 	void prepareContent();
 
-	Poco::ActiveMethod<void, void, MainScene> activeCloseNextMedia;
-	void closeNextMedia();
-
 	Poco::ActiveMethod<void, void, MainScene> activePrepareNextMedia;
 	void prepareNextMedia();
 
@@ -102,7 +92,7 @@ public:
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 	/** 手動で切替を行います */
-	void switchContent(ContainerPtr* container, string playlistID, const int i = 0);
+	void switchContent(ContainerPtr* container, const string playlistID, const int i = 0);
 
 
 	virtual void process();

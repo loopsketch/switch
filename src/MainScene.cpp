@@ -24,7 +24,7 @@
 // デフォルトコンストラクタ
 //-------------------------------------------------------------
 MainScene::MainScene(Renderer& renderer):
-	Scene(renderer), activeCloseNextMedia(this, &MainScene::closeNextMedia), activePrepareNextMedia(this, &MainScene::prepareNextMedia),
+	Scene(renderer), activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_workspace(NULL), _frame(0), _luminance(100), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
@@ -48,12 +48,12 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_preparedName);
 
 	try {
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
-		if (xml) {
-			xml->setInt("display.stage.luminnace", _luminance);
-			xml->save("switch-config.xml");
-			xml->release();
-		}
+//		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
+//		if (xml) {
+//			xml->setInt("display.stage.luminnace", _luminance);
+//			xml->save("switch-config.xml");
+//			xml->release();
+//		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(ex.displayText());
 	}
@@ -135,17 +135,6 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 	if (_currentContent >= 0) {
 		_contents[_currentContent]->notifyKey(keycode, shift, ctrl);
 	}
-}
-
-void MainScene::closeNextMedia() {
-	int count = 10;
-	while (_transition || count-- > 0) {
-		// トランジション中は解放しないようにする。更に次のコンテンツの初期化まで1秒くらいウェイトする
-		if (_contents.empty()) return;
-		Poco::Thread::sleep(30);
-	}
-	int next = (_currentContent + 1) % _contents.size();
-	_contents[next]->initialize();
 }
 
 void MainScene::prepareNextMedia() {
@@ -305,31 +294,38 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 	return false;
 }
 
-void MainScene::switchContent(ContainerPtr* container, string playlistID, const int i) {
+void MainScene::switchContent(ContainerPtr* container, const string playlistID, const int i) {
 //	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	_playlistID = playlistID;
-	_playlistItem = i;
-	PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
+	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 	if (playlist) {
-		PlayListItemPtr item = playlist->items()[_playlistItem];
-		int next = (_currentContent + 1) % _contents.size();
-		ContainerPtr tmp = _contents[next];
-		_contents[next] = *container;
-		*container = tmp;
-		_log.information(Poco::format("switch content: %s-%d:%s", playlistID, i, item->media()->name()));
+		if (playlist->itemCount() > i) {
+			PlayListItemPtr item = playlist->items()[i];
+			int next = (_currentContent + 1) % _contents.size();
+			ContainerPtr tmp = _contents[next];
+			_contents[next] = *container;
+			*container = tmp;
+			_log.information(Poco::format("switch content: %s-%d:%s", playlistID, i, item->media()->name()));
 
-		_preparedCommand = item->next();
-		_preparedTransition = item->transition();
-		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			SAFE_RELEASE(_playlistName);
-			_playlistName = t1;
-			SAFE_RELEASE(_preparedName);
-			_preparedName = t2;
+			LPDIRECT3DTEXTURE9 t1 = NULL;
+			if (_playlistID != playlistID) {
+				_playlistID = playlistID;
+				t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
+			}
+			LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				if (t1) {
+					SAFE_RELEASE(_playlistName);
+					_playlistName = t1;
+				}
+				SAFE_RELEASE(_preparedName);
+				_preparedName = t2;
+			}
+			_playlistItem = i;
+			_preparedCommand = item->next();
+			_preparedTransition = item->transition();
+			_doSwitch = true;
 		}
-		_doSwitch = true;
 	} else {
 		_log.warning(Poco::format("not find playlist: %s", playlistID));
 	}
