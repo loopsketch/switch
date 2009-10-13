@@ -317,6 +317,18 @@ void MainScene::switchContent(ContainerPtr* container, string playlistID, const 
 		_contents[next] = *container;
 		*container = tmp;
 		_log.information(Poco::format("switch content: %s-%d:%s", playlistID, i, item->media()->name()));
+
+		_preparedCommand = item->next();
+		_preparedTransition = item->transition();
+		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
+		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			SAFE_RELEASE(_playlistName);
+			_playlistName = t1;
+			SAFE_RELEASE(_preparedName);
+			_preparedName = t2;
+		}
 		_doSwitch = true;
 	} else {
 		_log.warning(Poco::format("not find playlist: %s", playlistID));
