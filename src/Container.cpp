@@ -92,6 +92,13 @@ void Container::draw(const DWORD& frame) {
 	}
 }
 
+void Container::preview(const DWORD& frame) {
+	if (!_initialized) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->preview(frame);
+	}
+}
+
 const int Container::current() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_list.empty()) {

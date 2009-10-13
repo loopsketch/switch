@@ -16,7 +16,7 @@
 
 class AudioDecoder: public BaseDecoder, Poco::Runnable
 {
-friend class Movie;
+friend class FFMovieContent;
 private:
 	Poco::FastMutex _lock;
 

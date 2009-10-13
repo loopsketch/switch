@@ -68,6 +68,9 @@ public:
 	/** 描画 */
 	virtual void draw(const DWORD& frame);
 
+	/** プレビュー描画 */
+	virtual void preview(const DWORD& frame);
+
 	/** 現在のフレーム */
 	virtual const int current() const;
 

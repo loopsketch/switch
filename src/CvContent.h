@@ -9,7 +9,7 @@
 #include "Content.h"
 #include "CaptureScene.h"
 #include "MediaItem.h"
-#include "Movie.h"
+#include "FFMovieContent.h"
 #include "PerformanceTimer.h"
 #include "Renderer.h"
 #include "Workspace.h"
@@ -48,10 +48,10 @@ private:
 
 	string _normalFile;
 	MediaItemPtr _normalItem;
-	MoviePtr _normalMovie;
+	FFMovieContentPtr _normalMovie;
 	vector<string> _detectFiles;
 	MediaItemPtr _detectedItem;
-	MoviePtr _detectedMovie;
+	FFMovieContentPtr _detectedMovie;
 
 	int _detectCount;
 	bool _detected;

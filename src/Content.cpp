@@ -65,6 +65,10 @@ void Content::process(const DWORD& frame) {
 void Content::draw(const DWORD& frame) {
 }
 
+/** プレビュー描画 */
+void Content::preview(const DWORD& frame) {
+}
+
 /**
  * 現在のフレーム
  */

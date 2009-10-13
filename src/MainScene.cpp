@@ -8,7 +8,7 @@
 #include <Poco/Util/XMLConfiguration.h>
 
 #include "Image.h"
-#include "Movie.h"
+#include "FFMovieContent.h"
 #include "Text.h"
 #include "CvContent.h"
 #include "CaptureContent.h"
@@ -240,7 +240,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 
 				case MediaTypeMovie:
 					{
-						MoviePtr movie = new Movie(_renderer);
+						FFMovieContentPtr movie = new FFMovieContent(_renderer);
 //						DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
 							movie->setPosition(conf->stageRect.left, conf->stageRect.top);
@@ -474,7 +474,7 @@ void MainScene::draw2() {
 			int duration = c->duration();
 			string time;
 			if (media->type() == MediaTypeMovie) {
-				MoviePtr movie = (MoviePtr)c;
+				FFMovieContentPtr movie = dynamic_cast<FFMovieContentPtr>(c);
 				DWORD currentTime = movie->currentTime();
 				DWORD timeLeft = movie->timeLeft();
 				Uint32 fps = movie->getFPS();
@@ -497,8 +497,8 @@ void MainScene::draw2() {
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int next = (_currentContent + 1) % _contents.size();
-//		MoviePtr nextMovie = dynamic_cast<MoviePtr>(_contents[next]->get(0));
-//		MoviePtr nextMovie = (MoviePtr)_contents[next]->get(0);
+//		FFMovieContentPtr nextMovie = dynamic_cast<FFMovieContentPtr>(_contents[next]->get(0));
+//		FFMovieContentPtr nextMovie = (FFMovieContentPtr)_contents[next]->get(0);
 		string wait(_contents[next]->opened()?"ready":"preparing");
 		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
 

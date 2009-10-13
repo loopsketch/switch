@@ -44,6 +44,8 @@ public:
 
 	void draw(const DWORD& frame);
 
+	void preview(const DWORD& frame);
+
 	const int current();
 
 	const int duration();

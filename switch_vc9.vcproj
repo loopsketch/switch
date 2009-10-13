@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\FFMovieContent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\MainScene.cpp"
 				>
 			</File>
@@ -311,6 +315,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\FFMovieContent.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\FPSCounter.h"
 				>
 			</File>
@@ -324,10 +332,6 @@
 			</File>
 			<File
 				RelativePath=".\src\MediaItem.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\Movie.h"
 				>
 			</File>
 			<File

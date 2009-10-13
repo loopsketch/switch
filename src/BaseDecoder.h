@@ -26,7 +26,7 @@ protected:
 
 	DWORD _readTime;
 	int _readCount;
-	Float _avgTime;
+	float _avgTime;
 
 public:
 	BaseDecoder(): _log(Poco::Logger::get("")), _avgTime(0) {
@@ -93,7 +93,7 @@ public:
 	/**
 	 * 平均デコード時間
 	 */
-	const Float getAvgTime() {
+	const float getAvgTime() const {
 		return _avgTime;
 	}
 };

@@ -8,7 +8,7 @@
 
 #include "Image.h"
 #include "MainScene.h"
-#include "Movie.h"
+#include "FFMovieContent.h"
 #include "Text.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
@@ -201,7 +201,7 @@ void OperationScene::prepareInterruptFile(string file) {
 	int next = (_currentContent + 1)  % _contents.size();
 	_contents[next]->initialize();
 
-	MoviePtr movie = new Movie(_renderer);
+	FFMovieContentPtr movie = new FFMovieContent(_renderer);
 	movie->open(_interruptMedia);
 	_contents[next]->add(movie);
 	_contents[next]->play();

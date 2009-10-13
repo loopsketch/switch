@@ -8,7 +8,7 @@
 #include "Content.h"
 #include "CaptureScene.h"
 #include "MediaItem.h"
-#include "Movie.h"
+#include "FFMovieContent.h"
 #include "PerformanceTimer.h"
 #include "Renderer.h"
 #include "Workspace.h"
