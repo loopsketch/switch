@@ -15,6 +15,7 @@
 			<luminnace>100</luminnace>
 		</stage>
 	</display>
+	<scenes>main,operation</scenes>
 	<!-- ワークスペース設定ファイル名を指定 -->
 	<workspace>workspace.xml</workspace>
 </config>
