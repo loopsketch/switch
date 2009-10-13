@@ -241,6 +241,8 @@ private:
 
 	LPD3DXEFFECT _fx;
 
+	int _dw;
+	int _dh;
 
 	VideoDecoder(Renderer& renderer, AVFormatContext* ic, const int video): BaseDecoder(),
 		_renderer(renderer), _ic(ic), _video(video), _outFrame(NULL), _buffer(NULL), _diFrame(NULL), _diBuffer(NULL), _fx(NULL), _swsCtx(NULL)
@@ -336,10 +338,17 @@ private:
 				type = Poco::format("unknown format(%d)", (int)avctx->pix_fmt);
 		}
 
-		int dw = w * avctx->sample_aspect_ratio.num;
-		int dh = h * avctx->sample_aspect_ratio.den;
-		string status = Poco::format("%dx%d DAR %d:%d", w, h, dw, dh);
-		_log.information(Poco::format("video stream: size(%s) format(%s) %d %s", status, type, avctx->ticks_per_frame, string(avctx->hwaccel?"H/W Acceleted":"")));
+		string size;
+		if (avctx->sample_aspect_ratio.num) {
+			_dw = w * avctx->sample_aspect_ratio.num;
+			_dh = h * avctx->sample_aspect_ratio.den;
+			size = Poco::format("size(%dx%d DAR %d:%d)", w, h, _dw, _dh);
+		} else {
+			_dw = w;
+			_dh = h;
+			size = Poco::format("size(%dx%d)", w, h);
+		}
+		_log.information(Poco::format("video stream: %s format(%s) %d %s", size, type, avctx->ticks_per_frame, string(avctx->hwaccel?"H/W Acceleted":"")));
 
 		if (changeFormat) {
 			_outFrame = avcodec_alloc_frame();
@@ -369,6 +378,10 @@ private:
 
 		_worker = this;
 		_thread.start(*_worker);
+	}
+
+	const float getDisplayAspectRatio() const {
+		return F(_dw) / _dh;
 	}
 
 	const UINT bufferedFrames() {

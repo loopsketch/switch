@@ -310,6 +310,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 	if (_media) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_frameLock);
 		if (_vf && _playing) {
+			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 			float alpha = getF("alpha");
 			const ConfigurationPtr conf = _renderer.config();
 			int cw = conf->splitSize.cx;
@@ -369,7 +370,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 							int dx = (sx / 4) * cw;
 							int dy = ch * 3 - (sx % 4) * ch;
 							_vf->draw(ox + dx, oy + dy, cw, ch, 0, col, sx * cw, sy * ch, cw, ch);
-//								_renderer.drawTexture(ox + dx, oy + dy, cw, ch, sx * cw, sy * ch, cw, ch, _target, col, col, col, col);
+//							_renderer.drawTexture(ox + dx, oy + dy, cw, ch, sx * cw, sy * ch, cw, ch, _target, col, col, col, col);
 						}
 					}
 //					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
@@ -389,7 +390,6 @@ void FFMovieContent::draw(const DWORD& frame) {
 						int w = _renderer.config()->mainRect.right;
 						int h = _renderer.config()->mainRect.bottom;
 						if (_vf->width() > w || _vf->height() > h) {
-							LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 							device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 							device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 							_vf->draw( 0, 0, w, h, 1, col);
@@ -403,7 +403,19 @@ void FFMovieContent::draw(const DWORD& frame) {
 				}
 				break;
 			default:
-				_vf->draw(_x, _y, _w, _h, 0, col);
+				{
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+					float dar = _videoDecoder->getDisplayAspectRatio();
+					if (_h * dar > _w) {
+						// 画角よりディスプレイサイズは横長
+						_vf->draw(L(_x), L(_y), L(_w), L(_w / dar), 0, col);
+					} else {
+						_vf->draw(L(_x), L(_y), L(_h * dar), L(_h), 0, col);
+					}
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+				}
 				break;
 			}
 
