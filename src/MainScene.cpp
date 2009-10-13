@@ -199,8 +199,8 @@ void MainScene::prepareNextMedia() {
 				PlayListItemPtr item = playlist->items()[_playlistItem];
 				_preparedCommand = item->next();
 				_preparedTransition = item->transition();
-				LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 12, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-				LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 12, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+				LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
+				LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					SAFE_RELEASE(_playlistName);

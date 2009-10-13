@@ -14,6 +14,7 @@
 #include "Renderer.h"
 #include "PerformanceTimer.h"
 
+
 class AudioDecoder: public BaseDecoder, Poco::Runnable
 {
 friend class FFMovieContent;
@@ -35,11 +36,10 @@ private:
 
 	DWORD _readTime;
 	int _readCount;
-	Float _avgTime;
 
 
 	AudioDecoder(Renderer& renderer, AVFormatContext* ic, const int audio): BaseDecoder(),
-		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _running(false), _avgTime(0)
+		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _running(false)
 	{
 	}
 

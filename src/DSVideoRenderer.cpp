@@ -162,6 +162,7 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 			}
 		}
 		_readTime = _readTimer.getTime();
+		Poco::Thread::sleep(1);
 	} else {
 		hr = E_UNEXPECTED;
 	}
