@@ -1,4 +1,5 @@
 #include "FFMovieContent.h"
+#include "Utils.h"
 
 
 FFMovieContent::FFMovieContent(Renderer& renderer):
@@ -29,7 +30,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	MediaItemFilePtr mif = media->files()[0];
 	string file = mif->file();
 	string mbfile;
-	utf8_sjis(file, mbfile);
+	svvitch::utf8_sjis(file, mbfile);
 	AVInputFormat* format = NULL;
 	if (file.find(string("vfwcap")) == 0) {
 		_log.information(Poco::format("capture device: %s", file));

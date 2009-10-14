@@ -48,14 +48,14 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_preparedName);
 
 	try {
-//		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
-//		if (xml) {
-//			xml->setInt("display.stage.luminnace", _luminance);
-//			xml->save("switch-config.xml");
-//			xml->release();
-//		}
+		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
+		if (xml) {
+			xml->setInt("stage.luminnace", _luminance);
+			xml->save("switch-config.xml");
+			xml->release();
+		}
 	} catch (Poco::Exception& ex) {
-		_log.warning(ex.displayText());
+		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 	}
 }
 

@@ -4,8 +4,11 @@
 #include <Poco/LineEndingConverter.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/string.h>
+#include <Poco/UnicodeConverter.h>
 
 #include <gdiplus.h>
+
+#include "Utils.h"
 
 using namespace Gdiplus;
 
@@ -59,7 +62,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 						if (isSJIS) {
 							// sjis
 							wstring wline;
-							sjis_utf16(string(line), wline);
+							svvitch::sjis_utf16(string(line), wline);
 							string utf8;
 							Poco::UnicodeConverter::toUTF8(wline, utf8);
 							text = Poco::cat(text, utf8);

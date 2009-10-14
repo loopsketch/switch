@@ -132,39 +132,3 @@ const float Content::getF(const string& key, const float& defaultValude) const {
 	}
 	return defaultValude;
 }
-
-/** SJIS>UTF-16‚É•ÏŠ· */
-void Content::sjis_utf16(const string& in, wstring& out) const {
-	int len = ::MultiByteToWideChar(CP_ACP, 0, in.c_str(), -1, NULL, 0);
-	if (len > 0) { 
-		vector<wchar_t> utf16(len);
-		if (MultiByteToWideChar(CP_ACP, 0, in.c_str(), -1, &utf16[0], len)) {
-			out = &utf16[0];
-		}
-		utf16.clear();
-	} else {
-		out = L"";
-	}
-}
-
-/** UTF16->SJIS‚É•ÏŠ· */
-void Content::utf16_sjis(const wstring& wstr, string& out) const {
-	int len = ::WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
-	if (len > 0) {
-		vector<char> sjis(len);
-		if (WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &sjis[0], len, NULL, NULL)) {
-			out = &sjis[0];
-		}
-		sjis.clear();
-	} else {
-		out.clear();
-	}
-}
-
-/** UTF-8->SJIS‚É•ÏŠ· */
-void Content::utf8_sjis(const string& str, string& out) const {
-	std::wstring wstr;
-	// UTF-8‚ðUTF-16‚É•ÏŠ·
-	Poco::UnicodeConverter::toUTF16(str, wstr);
-	utf16_sjis(wstr, out); // UTF-16‚ðƒVƒtƒgJIS‚É•ÏŠ·
-}

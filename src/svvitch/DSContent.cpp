@@ -1,4 +1,5 @@
 #include "DSContent.h"
+#include <Poco/UnicodeConverter.h>
 
 
 DSContent::DSContent(Renderer& renderer): Content(renderer), _gb(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)

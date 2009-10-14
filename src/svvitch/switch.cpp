@@ -447,66 +447,68 @@ bool guiConfiguration(void)
 		_log.information("*** configuration");
 
 		_conf.title = xml->getString("title", "switch");
-		_conf.mainRect.left = xml->getInt("display[0][@x]", 0);
-		_conf.mainRect.top = xml->getInt("display[0][@y]", 0);
-		int w = xml->getInt("display[0][@width]", 1024);
-		int h = xml->getInt("display[0][@height]", 768);
+		_conf.mainRect.left = xml->getInt("display.x", 0);
+		_conf.mainRect.top = xml->getInt("display.y", 0);
+		int w = xml->getInt("display.width", 1024);
+		int h = xml->getInt("display.height", 768);
 		_conf.mainRect.right = w;
 		_conf.mainRect.bottom = h;
-		_conf.mainRate = xml->getInt("display[0][@rate]", 60);
-		_conf.subRect.left = xml->getInt("display[1][@x]", _conf.mainRect.left);
-		_conf.subRect.top = xml->getInt("display[1][@y]", _conf.mainRect.top);
-		_conf.subRect.right = xml->getInt("display[1][@width]", _conf.mainRect.right);
-		_conf.subRect.bottom = xml->getInt("display[1][@height]", _conf.mainRect.bottom);
-		_conf.subRate = xml->getInt("display[1][@rate]", _conf.mainRate);
-		_conf.frameIntervals = xml->getInt("display[0][@frameIntervals]", 3);
-		_conf.frame = xml->getBool("display[0][@frame]", true);
-		_conf.fullsceen = xml->getBool("display[0][@fullscreen]", true);
-		_conf.draggable = xml->getBool("display[0][@draggable]", true);
-		_conf.mouse = xml->getBool("display[0][@mouse]", true);
+		_conf.mainRate = xml->getInt("display.rate", 60);
+		_conf.subRect.left = xml->getInt("display[1].x", _conf.mainRect.left);
+		_conf.subRect.top = xml->getInt("display[1].y", _conf.mainRect.top);
+		_conf.subRect.right = xml->getInt("display[1].width", _conf.mainRect.right);
+		_conf.subRect.bottom = xml->getInt("display[1].height", _conf.mainRect.bottom);
+		_conf.subRate = xml->getInt("display[1].rate", _conf.mainRate);
+		_conf.frameIntervals = xml->getInt("display.frameIntervals", 3);
+		_conf.frame = xml->getBool("display.frame", true);
+		_conf.fullsceen = xml->getBool("display.fullscreen", true);
+		_conf.draggable = xml->getBool("display.draggable", true);
+		_conf.mouse = xml->getBool("display.mouse", true);
 		string windowStyles(_conf.fullsceen?"fullscreen":"window");
 		_log.information(Poco::format("display %dx%d@%d %s", w, h, _conf.mainRate, windowStyles));
-		_conf.useClip = xml->getBool("display[0].clip[@use]", false);
-		_conf.clipRect.left = xml->getInt("display[0].clip[@x1]", 0);
-		_conf.clipRect.top = xml->getInt("display[0].clip[@y1]", 0);
-		_conf.clipRect.right = xml->getInt("display[0].clip[@x2]", 0);
-		_conf.clipRect.bottom = xml->getInt("display[0].clip[@y2]", 0);
-		string useClips(_conf.useClip?"use":"not use");
-		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClips, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
+		_conf.useClip = xml->getBool("display.clip.use", false);
+		_conf.clipRect.left = xml->getInt("display.clip.x1", 0);
+		_conf.clipRect.top = xml->getInt("display.clip.y1", 0);
+		_conf.clipRect.right = xml->getInt("display.clip.x2", 0);
+		_conf.clipRect.bottom = xml->getInt("display.clip.y2", 0);
+		string useClip(_conf.useClip?"use":"not use");
+		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
-		int cw = xml->getInt("display.split[@w]", 0);
-		int ch = xml->getInt("display.split[@h]", 0);
+		int cw = xml->getInt("display.split.w", 0);
+		int ch = xml->getInt("display.split.h", 0);
 		_conf.splitSize.cx = cw;
 		_conf.splitSize.cy = ch;
-		string splitType = xml->getString("display.split[@type]", "");
+		string splitType = xml->getString("display.split.type", "");
 		if (splitType == "vertical" || splitType == "vertical-down") {
 			_conf.splitType = 1;
-			_conf.stageRect.right = xml->getInt("display.stage[@width]", w / cw * (640 / ch * cw));
-			_conf.stageRect.bottom = xml->getInt("display.stage[@height]", ch);
+			_conf.stageRect.right = xml->getInt("stage.width", w / cw * (640 / ch * cw));
+			_conf.stageRect.bottom = xml->getInt("stage.height", ch);
 			_log.information(Poco::format("split <vertical-down> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else if (splitType == "vertical-up") {
 			_conf.splitType = 2;
-			_conf.stageRect.left = xml->getInt("display.stage[@x]", 0);
-			_conf.stageRect.top = xml->getInt("display.stage[@y]", 0);
-			_conf.stageRect.right = xml->getInt("display.stage[@width]", w / cw * (640 / ch * cw));
-			_conf.stageRect.bottom = xml->getInt("display.stage[@height]", ch);
+			_conf.stageRect.left = xml->getInt("stage.x", 0);
+			_conf.stageRect.top = xml->getInt("stage.y", 0);
+			_conf.stageRect.right = xml->getInt("stage.width", w / cw * (640 / ch * cw));
+			_conf.stageRect.bottom = xml->getInt("stage.height", ch);
 			_log.information(Poco::format("split <vertical-up> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else if (splitType == "horizontal") {
 			_conf.splitType = 11;
 			_log.information(Poco::format("split <horizontal> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else {
 			_conf.splitType = 0;
-			_conf.stageRect.right = xml->getInt("display.stage[@width]", w);
-			_conf.stageRect.bottom = xml->getInt("display.stage[@height]", h);
+			_conf.stageRect.right = xml->getInt("stage.width", w);
+			_conf.stageRect.bottom = xml->getInt("stage.height", h);
 		}
 
 		_conf.useScenes = xml->getString("scenes", "main,operation");
-		_conf.luminance = xml->getInt("display.stage.luminance", 100);
+		_conf.luminance = xml->getInt("stage.luminance", 100);
 
-		_conf.imageSplitWidth = xml->getInt("display.stage.imageSplitWidth", 0);
-		if (xml->hasProperty("display.stage.text")) {
-			_conf.textFont = xml->getString("display.stage.text[@font]", "ÇlÇr ÉSÉVÉbÉN");
-			string style = xml->getString("display.stage.text[@style]");
+		_conf.imageSplitWidth = xml->getInt("stage.imageSplitWidth", 0);
+		if (xml->hasProperty("stage.text")) {
+			string s;
+			Poco::UnicodeConverter::toUTF8(L"ÇlÇr ÉSÉVÉbÉN", s);
+			_conf.textFont = xml->getString("stage.text.font", s);
+			string style = xml->getString("stage.text.style");
 			if (style == "bold") {
 				_conf.textStyle = Gdiplus::FontStyleBold;
 			} else if (style == "italic") {
@@ -516,9 +518,11 @@ bool guiConfiguration(void)
 			} else {
 				_conf.textStyle = Gdiplus::FontStyleRegular;
 			}
-			_conf.textHeight = xml->getInt("display.stage.text[@height]", _conf.stageRect.bottom - 2);
+			_conf.textHeight = xml->getInt("stage.text.height", _conf.stageRect.bottom - 2);
 		} else {
-			_conf.textFont = "ÇlÇr ÉSÉVÉbÉN";
+			string s;
+			Poco::UnicodeConverter::toUTF8(L"ÇlÇr ÉSÉVÉbÉN", s);
+			_conf.textFont = s;
 			_conf.textStyle = Gdiplus::FontStyleRegular;
 			_conf.textHeight = _conf.stageRect.bottom - 2;
 		}

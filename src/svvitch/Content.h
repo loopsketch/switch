@@ -5,7 +5,6 @@
 #include <Poco/format.h>
 #include <Poco/Logger.h>
 #include <Poco/HashMap.h>
-#include <Poco/UnicodeConverter.h>
 
 #include "Renderer.h"
 #include "MediaItem.h"
@@ -93,15 +92,6 @@ public:
 	const string& get(const string& key) const;
 
 	const float getF(const string& key, const float& defaultValue = 0) const;
-
-	/** SJIS>UTF-8‚É•ÏŠ· */
-	void sjis_utf16(const string& in, wstring& out) const;
-
-	/** UTF16->SJIS‚É•ÏŠ· */
-	void utf16_sjis(const wstring& wstr, string& out) const;
-
-	/** UTF-8->SJIS‚É•ÏŠ· */
-	void utf8_sjis(const string& str, string& out) const;
 };
 
 typedef Content* ContentPtr;

@@ -1,5 +1,6 @@
 #include "CaptureScene.h"
 #include <Poco/Util/XMLConfiguration.h>
+#include <Poco/UnicodeConverter.h>
 
 CaptureScene::CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim): Scene(renderer),
 	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _deviceVideoType(MEDIASUBTYPE_YUY2), _samples(2),
