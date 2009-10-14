@@ -1,22 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE switch-config SYSTEM "switch-config.dtd"[]>
 <config>
-  <!-- 画面のサイズを設定 -->
-  <display>
-    <width>1024</width>
-    <height>768</height>
-    <rate>60</rate>
-    <fullscreen>false</fullscreen>
-    <frame>false</frame>
-  </display>
-  <stage>
-    <x>0</x>
-    <y>0</y>
-    <width>640</width>
-    <height>480</height>
-    <luminnace>100</luminnace>
-  </stage>
-  <!--
+	<!-- 画面のサイズを設定 -->
+	<display>
+		<width>1024</width>
+		<height>768</height>
+		<rate>60</rate>
+		<fullscreen>false</fullscreen>
+		<frame>false</frame>
+	</display>
+	<stage>
+		<x>0</x>
+		<y>0</y>
+		<width>640</width>
+		<height>480</height>
+		<luminnace>100</luminnace>
+	</stage>
+	<!--
 	<stage width="2400" height="120">
 		<imageSplitWidth>2400</imageSplitWidth>
 		<textHeight>80</textHeight>
@@ -28,4 +28,5 @@
   <scenes>main,operation</scenes>
   <!-- ワークスペース設定ファイル名を指定 -->
   <workspace>workspace.xml</workspace>
+
 </config>
