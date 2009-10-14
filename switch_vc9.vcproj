@@ -46,7 +46,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="includes\ffmpeg_"
+				AdditionalIncludeDirectories="src;includes\ffmpeg_"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
@@ -125,7 +125,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="includes\ffmpeg_"
+				AdditionalIncludeDirectories="src;includes\ffmpeg_"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -260,6 +260,10 @@
 				RelativePath=".\src\svvitch\Workspace.cpp"
 				>
 			</File>
+			<Filter
+				Name="NewFilter1"
+				>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -355,7 +359,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\Resource.h"
+				RelativePath=".\src\Resource.h"
 				>
 			</File>
 			<File
@@ -368,6 +372,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\switch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\switch.rc"
 				>
 			</File>
 			<File
@@ -393,15 +401,15 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\small.ico"
+				RelativePath=".\src\small.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\switch.ico"
+				RelativePath=".\src\switch.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\switch.rc"
+				RelativePath=".\src\switch.rc"
 				>
 			</File>
 		</Filter>
