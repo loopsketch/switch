@@ -38,6 +38,7 @@ private:
 	int _luminance;
 	bool _startup;
 	string _currentCommand;
+	string _currentTransition;
 
 	string _playlistID;
 	int _playlistItem;

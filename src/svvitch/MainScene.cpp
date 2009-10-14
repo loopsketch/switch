@@ -147,61 +147,59 @@ void MainScene::prepareNextMedia() {
 	}
 
 	// 準備フェーズ
-	{
-		if (!_currentCommand.empty()) {
-			int jump = _currentCommand.find_first_of("jump");
-			if (jump == 0) {
-				string s = Poco::trim(_currentCommand.substr(4));
-				string playlistID;
-				int i = s.find("-");
-				int j = 0;
-				if (i != string::npos) {
-					playlistID = s.substr(0, i);
-					j = Poco::NumberParser::parse(s.substr(i + 1));
-				} else {
-					playlistID = s;
-				}
-				PlayListPtr playlist = _workspace->getPlaylist(playlistID);
-				if (playlist) {
-					if (playlist->itemCount() > j) {
-						_playlistID = playlist->id();
-						_playlistItem = j;
-						_log.information(Poco::format("jump playlist <%s>:%d", playlist->name(), _playlistItem));
-						_playlistItem--;
-					} else {
-						_log.warning(Poco::format("failed jump index %d-<%d>", i, j));
-					}
-				} else {
-					_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
-				}
-			} else if (_currentCommand == "stop") {
-				_suppressSwitch = false;
-				return;
+	if (!_currentCommand.empty()) {
+		int jump = _currentCommand.find_first_of("jump");
+		if (jump == 0) {
+			string s = Poco::trim(_currentCommand.substr(4));
+			string playlistID;
+			int i = s.find("-");
+			int j = 0;
+			if (i != string::npos) {
+				playlistID = s.substr(0, i);
+				j = Poco::NumberParser::parse(s.substr(i + 1));
+			} else {
+				playlistID = s;
 			}
-		}
-
-		int next = (_currentContent + 1) % _contents.size();
-		if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
-			PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
-			if (playlist && playlist->itemCount() > 0) {
-				_playlistItem = (_playlistItem + 1) % playlist->itemCount();
-				PlayListItemPtr item = playlist->items()[_playlistItem];
-				_preparedCommand = item->next();
-				_preparedTransition = item->transition();
-				LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-				LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
-				{
-					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					SAFE_RELEASE(_playlistName);
-					_playlistName = t1;
-					SAFE_RELEASE(_preparedName);
-					_preparedName = t2;
+			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+			if (playlist) {
+				if (playlist->itemCount() > j) {
+					_playlistID = playlist->id();
+					_playlistItem = j;
+					_log.information(Poco::format("jump playlist <%s>:%d", playlist->name(), _playlistItem));
+					_playlistItem--;
+				} else {
+					_log.warning(Poco::format("failed jump index %d-<%d>", i, j));
 				}
+			} else {
+				_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
 			}
+		} else if (_currentCommand == "stop") {
 			_suppressSwitch = false;
-		} else {
-			_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
+			return;
 		}
+	}
+
+	int next = (_currentContent + 1) % _contents.size();
+	if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
+		PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
+		if (playlist && playlist->itemCount() > 0) {
+			_playlistItem = (_playlistItem + 1) % playlist->itemCount();
+			PlayListItemPtr item = playlist->items()[_playlistItem];
+			_preparedCommand = item->next();
+			_preparedTransition = item->transition();
+			LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
+			LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				SAFE_RELEASE(_playlistName);
+				_playlistName = t1;
+				SAFE_RELEASE(_preparedName);
+				_preparedName = t2;
+			}
+		}
+		_suppressSwitch = false;
+	} else {
+		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
 }
 
@@ -355,6 +353,7 @@ void MainScene::process() {
 				_preparedName = NULL;
 			}
 			_currentCommand = _preparedCommand;
+			_currentTransition = _preparedTransition;
 			_playCount++;
 			_log.information("startup auto prepare");
 			activePrepareNextMedia();
@@ -396,6 +395,7 @@ void MainScene::process() {
 					_preparedName = NULL;
 				}
 				_currentCommand = _preparedCommand;
+//				_currentTransition = _preparedTransition;
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
