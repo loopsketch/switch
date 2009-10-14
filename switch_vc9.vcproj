@@ -189,75 +189,75 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\CaptureContent.cpp"
+				RelativePath=".\src\svvitch\CaptureContent.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\CaptureScene.cpp"
+				RelativePath=".\src\svvitch\CaptureScene.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Container.cpp"
+				RelativePath=".\src\svvitch\Container.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Content.cpp"
+				RelativePath=".\src\svvitch\Content.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\CvContent.cpp"
+				RelativePath=".\src\svvitch\CvContent.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DissolveTransition.cpp"
+				RelativePath=".\src\svvitch\DissolveTransition.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DSContent.cpp"
+				RelativePath=".\src\svvitch\DSContent.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DSVideoRenderer.cpp"
+				RelativePath=".\src\svvitch\DSVideoRenderer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\FFMovieContent.cpp"
+				RelativePath=".\src\svvitch\FFMovieContent.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\MainScene.cpp"
+				RelativePath=".\src\svvitch\MainScene.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\OperationScene.cpp"
+				RelativePath=".\src\svvitch\OperationScene.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Renderer.cpp"
+				RelativePath=".\src\svvitch\Renderer.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Scene.cpp"
+				RelativePath=".\src\svvitch\Scene.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\SlideTransition.cpp"
+				RelativePath=".\src\svvitch\SlideTransition.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\switch.cpp"
+				RelativePath=".\src\svvitch\switch.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Text.cpp"
+				RelativePath=".\src\svvitch\Text.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Transition.cpp"
+				RelativePath=".\src\svvitch\Transition.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Workspace.cpp"
+				RelativePath=".\src\svvitch\Workspace.cpp"
 				>
 			</File>
 		</Filter>
@@ -267,123 +267,123 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\src\AudioDecoder.h"
+				RelativePath=".\src\svvitch\AudioDecoder.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\BaseDecoder.h"
+				RelativePath=".\src\svvitch\BaseDecoder.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\CaptureContent.h"
+				RelativePath=".\src\svvitch\CaptureContent.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\CaptureScene.h"
+				RelativePath=".\src\svvitch\CaptureScene.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Common.h"
+				RelativePath=".\src\svvitch\Common.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Configuration.h"
+				RelativePath=".\src\svvitch\Configuration.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Container.h"
+				RelativePath=".\src\svvitch\Container.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Content.h"
+				RelativePath=".\src\svvitch\Content.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\CvContent.h"
+				RelativePath=".\src\svvitch\CvContent.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DissolveTransition.h"
+				RelativePath=".\src\svvitch\DissolveTransition.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DSContent.h"
+				RelativePath=".\src\svvitch\DSContent.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\DSVideoRenderer.h"
+				RelativePath=".\src\svvitch\DSVideoRenderer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\FFMovieContent.h"
+				RelativePath=".\src\svvitch\FFMovieContent.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\FPSCounter.h"
+				RelativePath=".\src\svvitch\FPSCounter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Image.h"
+				RelativePath=".\src\svvitch\Image.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\MainScene.h"
+				RelativePath=".\src\svvitch\MainScene.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\MediaItem.h"
+				RelativePath=".\src\svvitch\MediaItem.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\OperationScene.h"
+				RelativePath=".\src\svvitch\OperationScene.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\PerformanceTimer.h"
+				RelativePath=".\src\svvitch\PerformanceTimer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\PlayList.h"
+				RelativePath=".\src\svvitch\PlayList.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\PlayListItem.h"
+				RelativePath=".\src\svvitch\PlayListItem.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Renderer.h"
+				RelativePath=".\src\svvitch\Renderer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Resource.h"
+				RelativePath=".\src\svvitch\Resource.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Scene.h"
+				RelativePath=".\src\svvitch\Scene.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\SlideTransition.h"
+				RelativePath=".\src\svvitch\SlideTransition.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\switch.h"
+				RelativePath=".\src\svvitch\switch.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Text.h"
+				RelativePath=".\src\svvitch\Text.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Transition.h"
+				RelativePath=".\src\svvitch\Transition.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\VideoDecoder.h"
+				RelativePath=".\src\svvitch\VideoDecoder.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\Workspace.h"
+				RelativePath=".\src\svvitch\Workspace.h"
 				>
 			</File>
 		</Filter>
@@ -393,15 +393,15 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\src\small.ico"
+				RelativePath=".\small.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\src\switch.ico"
+				RelativePath=".\switch.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\src\switch.rc"
+				RelativePath=".\switch.rc"
 				>
 			</File>
 		</Filter>
@@ -409,43 +409,43 @@
 			Name="ui"
 			>
 			<File
-				RelativePath=".\src\ui\Button.cpp"
+				RelativePath=".\src\svvitch\ui\Button.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\Button.h"
+				RelativePath=".\src\svvitch\ui\Button.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\Component.h"
+				RelativePath=".\src\svvitch\ui\Component.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\MouseListener.h"
+				RelativePath=".\src\svvitch\ui\MouseListener.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\MouseReactionUI.h"
+				RelativePath=".\src\svvitch\ui\MouseReactionUI.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\SelectedListener.h"
+				RelativePath=".\src\svvitch\ui\SelectedListener.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\SelectList.cpp"
+				RelativePath=".\src\svvitch\ui\SelectList.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\SelectList.h"
+				RelativePath=".\src\svvitch\ui\SelectList.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\UserInterfaceManager.cpp"
+				RelativePath=".\src\svvitch\ui\UserInterfaceManager.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\src\ui\UserInterfaceManager.h"
+				RelativePath=".\src\svvitch\ui\UserInterfaceManager.h"
 				>
 			</File>
 		</Filter>
