@@ -257,13 +257,13 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\Utils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\Workspace.cpp"
 				>
 			</File>
-			<Filter
-				Name="NewFilter1"
-				>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -384,6 +384,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\Transition.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\Utils.h"
 				>
 			</File>
 			<File
