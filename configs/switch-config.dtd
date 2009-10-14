@@ -1,22 +1,19 @@
 <!ELEMENT switch-config (config)>
 
-<!ELEMENT config (display, scenes, workspace)>
-<!ELEMENT display (stage*)>
-<!ATTLIST display
-	width      CDATA #REQUIRED
-	height     CDATA #REQUIRED
-	rate       CDATA #REQUIRED
-	frame      CDATA #IMPLIED
-	fullscreen CDATA #REQUIRED>
+<!ELEMENT config     (display+, stage, scenes, workspace)>
+<!ELEMENT display    (width, height, rate, fullscreen, frame)>
+<!ELEMENT width      (#PCDATA)>
+<!ELEMENT height     (#PCDATA)>
+<!ELEMENT rate       (#PCDATA)>
+<!ELEMENT fullscreen (#PCDATA)>
+<!ELEMENT frame      (#PCDATA)>
 
-<!ELEMENT stage (luminnace*)>
-<!ATTLIST stage
-	x      CDATA #IMPLIED
-	y      CDATA #IMPLIED
-	width  CDATA #IMPLIED
-	height CDATA #IMPLIED>
+<!ELEMENT stage      (x?, y?, width, height, luminance)>
+<!ELEMENT x          (#PCDATA)>
+<!ELEMENT y          (#PCDATA)>
+<!ELEMENT width      (#PCDATA)>
+<!ELEMENT height     (#PCDATA)>
+<!ELEMENT luminance  (#PCDATA)>
 
-<!ELEMENT luminnace (#PCDATA)>
-
-<!ELEMENT scenes (#PCDATA)>
-<!ELEMENT workspace (#PCDATA)>
+<!ELEMENT scenes     (#PCDATA)>
+<!ELEMENT workspace  (#PCDATA)>
