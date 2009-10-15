@@ -35,8 +35,6 @@ public:
 
 	bool open(const MediaItemPtr media, const int offset = 0);
 
-	const MediaItemPtr opened() const;
-
 	void play();
 
 	void stop();

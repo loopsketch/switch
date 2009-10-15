@@ -22,6 +22,7 @@ private:
 	Poco::FastMutex _lock;
 
 	string _file;
+	string _signature;
 
 	vector<MediaItemPtr> _media;
 	Poco::HashMap<string, MediaItemPtr> _mediaMap;
@@ -36,8 +37,9 @@ public:
 
 	~Workspace();
 
-	bool update();
+	bool parse();
 
+	bool checkUpdate();
 
 	const int getMediaCount();
 

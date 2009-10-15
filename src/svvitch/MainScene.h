@@ -38,7 +38,6 @@ private:
 	int _luminance;
 	bool _startup;
 	string _currentCommand;
-	string _currentTransition;
 
 	string _playlistID;
 	int _playlistItem;
@@ -74,7 +73,6 @@ private:
 
 	void prepareContent();
 
-	Poco::ActiveMethod<void, void, MainScene> activePrepareNextMedia;
 	void prepareNextMedia();
 
 public:
@@ -94,6 +92,8 @@ public:
 
 	/** è“®‚ÅØ‘Ö‚ğs‚¢‚Ü‚· */
 	void switchContent(ContainerPtr* container, const string playlistID, const int i = 0);
+
+	Poco::ActiveMethod<void, void, MainScene> activePrepareNextMedia;
 
 
 	virtual void process();

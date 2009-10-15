@@ -46,14 +46,14 @@ ContentPtr Container::operator[](int i) {
 	return get(i);
 }
 
-const MediaItemPtr Container::opened() const {
-	MediaItemPtr media = NULL;
+const string Container::opened() const {
+	string mediaID;
 	for (vector<ContentPtr>::const_iterator it = _list.begin(); it != _list.end(); it++) {
-		MediaItemPtr m = (*it)->opened();
-		if (!m) return NULL;
-		if (!media) media = m;
+		string id = (*it)->opened();
+		if (id.empty()) return "";
+		if (mediaID.empty()) mediaID = id;
 	}
-	return media;
+	return mediaID;
 }
 
 void Container::play() {

@@ -14,6 +14,7 @@
 #include "DissolveTransition.h"
 #include "ui/MouseListener.h"
 #include "ui/SelectedListener.h"
+#include "Utils.h"
 
 
 //=============================================================
@@ -23,7 +24,10 @@
 // デフォルトコンストラクタ
 //-------------------------------------------------------------
 OperationScene::OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
-	Scene(renderer), activeUpdateContentList(this, &OperationScene::updateContentList), activePrepareContent(this, &OperationScene::prepareContent),
+	Scene(renderer),
+	activeUpdateContentList(this, &OperationScene::updateContentList),
+	activePrepareContent(this, &OperationScene::prepareContent),
+	activeUpdateWorkspace(this, &OperationScene::updateWorkspace),
 	_uim(uim), _workspace(NULL), _frame(0), _interruptMedia(NULL), _prepareUpdate(false), _prepared(false), _prepareStart(0)
 {
 	initialize();
@@ -88,6 +92,23 @@ bool OperationScene::initialize() {
 		}
 	};
 	_switchButton->setMouseListener(new SwitchMouseListener(*this));
+	string labelText;
+	svvitch::sjis_utf8("Workspace更新", labelText);
+	_updateWSButton = new ui::Button("updateWS", _uim, 880, 730, 140, 30);
+	_updateWSButton->setBackground(0xff00cc99);
+	_updateWSButton->setText(labelText);
+	_updateWSButton->setEnabled(false);
+	class UpdateWSMouseListener: public ui::MouseListener {
+		friend class OperationScene;
+		OperationScene& _scene;
+		UpdateWSMouseListener(OperationScene& scene): _scene(scene) {
+		}
+
+		void buttonDownL() {
+			_scene.updateWorkspace();
+		}
+	};
+	_updateWSButton->setMouseListener(new UpdateWSMouseListener(*this));
 
 	_prepareStart = 0;
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
@@ -142,6 +163,9 @@ bool OperationScene::setWorkspace(WorkspacePtr workspace) {
 void OperationScene::updateContentList() {
 //	_log.information("scene updateContentList");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (_workspace->checkUpdate()) {
+		_updateWSButton->setEnabled(true);
+	}
 	_contentsSelect->removeAll();
 	int selected = _playListSelect->getSelectedIndex();
 	if (selected >= 0) {
@@ -171,7 +195,6 @@ void OperationScene::prepareContent() {
 		_contents[next]->initialize();
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
-//			PlayListItemPtr res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
 			bool res = scene->prepareMedia(_contents[next], playlist->id(), _contentsSelect->getSelectedIndex());
 			if (res) {
 				_prepared = true;
@@ -190,6 +213,17 @@ void OperationScene::switchContent() {
 			_contents[_currentContent]->setProperty("prepare", "false");
 			scene->switchContent(&_contents[_currentContent], playlist->id(), _contentsSelect->getSelectedIndex());
 		}
+	}
+}
+
+void OperationScene::updateWorkspace() {
+	if (_workspace) {
+		if (_workspace->parse()) {
+			_updateWSButton->setEnabled(false);
+		}
+		updateContentList();
+//		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+//		if (scene) scene->activePrepareNextMedia();
 	}
 }
 
@@ -295,10 +329,10 @@ void OperationScene::draw1() {
 void OperationScene::draw2() {
 	if (_currentContent >= 0 && _prepareStart == 0) {
 		ContentPtr c = _contents[_currentContent]->get(0);
-		if (c && c->opened()) {
-			MediaItemPtr media = c->opened();
-			LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
-			_renderer.drawTexture(700, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		if (c && !c->opened().empty()) {
+//			MediaItemPtr media = _workspace->getMedia(c->opened());
+//			LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
+//			_renderer.drawTexture(700, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			_contents[_currentContent]->draw(_frame);
 		}
 	}

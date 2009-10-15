@@ -100,12 +100,8 @@ bool CaptureContent::open(const MediaItemPtr media, const int offset) {
 	set("alpha", 1.0f);
 	_duration = media->duration() * 60 / 1000;
 	_current = 0;
-	_media = media;
+	_mediaID = media->id();
 	return true;
-}
-
-const MediaItemPtr CaptureContent::opened() const {
-	return _media;
 }
 
 
@@ -142,7 +138,7 @@ const bool CaptureContent::finished() {
 /** ファイルをクローズします */
 void CaptureContent::close() {
 	stop();
-	_media = NULL;
+	_mediaID.clear();
 
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -196,7 +192,7 @@ void CaptureContent::process(const DWORD& frame) {
 }
 
 void CaptureContent::draw(const DWORD& frame) {
-	if (_media && _playing) {
+	if (!_mediaID.empty() && _playing) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		ConfigurationPtr conf = _renderer.config();
 		int x = conf->stageRect.left;

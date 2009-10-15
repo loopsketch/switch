@@ -375,10 +375,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\switch.rc"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\Text.h"
 				>
 			</File>

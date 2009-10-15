@@ -95,12 +95,8 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		_log.information(Poco::format("duration: %d", _duration));
 	}
 	_current = 0;
-	_media = media;
+	_mediaID = media->id();
 	return true;
-}
-
-const MediaItemPtr DSContent::opened() const {
-	return _media;
 }
 
 /**
@@ -143,7 +139,7 @@ void DSContent::close() {
 	SAFE_RELEASE(_mc);
 	SAFE_RELEASE(_vr);
 	SAFE_RELEASE(_gb);
-	_media = NULL;
+	_mediaID.clear();
 	CoUninitialize();
 }
 
@@ -170,7 +166,7 @@ void DSContent::process(const DWORD& frame) {
 }
 
 void DSContent::draw(const DWORD& frame) {
-	if (_media && _playing) {
+	if (!_mediaID.empty() && _playing) {
 		if (_vr) {
 //			LPDIRECT3DTEXTURE9 texture = _vr->getTexture();
 //			if (texture) _renderer.drawTexture(_x, _y, texture);

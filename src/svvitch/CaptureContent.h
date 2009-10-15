@@ -62,8 +62,6 @@ public:
 	/** ファイルをオープンします */
 	bool open(const MediaItemPtr media, const int offset = 0);
 
-	const MediaItemPtr opened() const;
-
 
 	/**
 	 * 再生

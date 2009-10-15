@@ -139,6 +139,7 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 
 void MainScene::prepareNextMedia() {
 	// 初期化フェーズ
+	if (!_workspace) return;
 	int count = 5;
 	while (_transition || count-- > 0) {
 		// トランジション中は解放しないようにする。更に初期化まで1秒くらいウェイトする
@@ -201,6 +202,7 @@ void MainScene::prepareNextMedia() {
 	} else {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
+	_workspace->checkUpdate();
 }
 
 bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
@@ -345,7 +347,7 @@ void MainScene::process() {
 		_log.information("startup auto prepare");
 		_currentContent = (_currentContent + 1) % _contents.size();
 		ContentPtr nextContent = _contents[_currentContent]->get(0);
-		if (nextContent && nextContent->opened()) {
+		if (nextContent && !nextContent->opened().empty()) {
 			_contents[_currentContent]->play();
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -353,7 +355,6 @@ void MainScene::process() {
 				_preparedName = NULL;
 			}
 			_currentCommand = _preparedCommand;
-			_currentTransition = _preparedTransition;
 			_playCount++;
 			_log.information("startup auto prepare");
 			activePrepareNextMedia();
@@ -386,7 +387,7 @@ void MainScene::process() {
 			_doSwitch = false;
 			int next = (_currentContent + 1) % _contents.size();
 			ContentPtr nextContent = _contents[next]->get(0);
-			if (nextContent && nextContent->opened()) {
+			if (nextContent && !nextContent->opened().empty()) {
 				_currentContent = next;
 				_contents[next]->play();
 				{
@@ -395,7 +396,6 @@ void MainScene::process() {
 					_preparedName = NULL;
 				}
 				_currentCommand = _preparedCommand;
-//				_currentTransition = _preparedTransition;
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
@@ -476,8 +476,8 @@ void MainScene::draw2() {
 
 	if (_currentContent >= 0) {
 		ContentPtr c = _contents[_currentContent]->get(0);
-		if (c && c->opened()) {
-			MediaItemPtr media = c->opened();
+		if (c && !c->opened().empty()) {
+			MediaItemPtr media = _workspace->getMedia(c->opened());
 			int current = c->current();
 			int duration = c->duration();
 			string time;
@@ -507,7 +507,7 @@ void MainScene::draw2() {
 		int next = (_currentContent + 1) % _contents.size();
 //		FFMovieContentPtr nextMovie = dynamic_cast<FFMovieContentPtr>(_contents[next]->get(0));
 //		FFMovieContentPtr nextMovie = (FFMovieContentPtr)_contents[next]->get(0);
-		string wait(_contents[next]->opened()?"ready":"preparing");
+		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
 
 		_renderer.drawTexture(0, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);

@@ -11,6 +11,7 @@
 #include <Poco/UnicodeConverter.h>
 
 #include "Workspace.h"
+#include "Utils.h"
 
 using Poco::XML::Document;
 using Poco::XML::Element;
@@ -44,9 +45,20 @@ void Workspace::release() {
 	_media.clear();
 }
 
-bool Workspace::update() {
+bool Workspace::checkUpdate() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	string signature = svvitch::md5(_file);
+	if (_signature != signature) {
+		_log.information(Poco::format("detect update workspace: %s", _signature));
+		return true;
+	}
+	return false;
+}
+
+bool Workspace::parse() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	try {
+		string signature = svvitch::md5(_file);
 		Poco::XML::DOMParser parser;
 		Document* doc = parser.parse(_file);
 		if (doc) {
@@ -157,8 +169,9 @@ bool Workspace::update() {
 				}
 				nodes->release();
 			}
-			doc->release();
 			_log.information(Poco::format("playlist: %?u", _playlist.size()));
+			doc->release();
+			_signature = signature;
 			return true;
 		} else {
 			_log.warning(Poco::format("failed parse: %s", _file));

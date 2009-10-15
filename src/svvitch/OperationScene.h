@@ -38,6 +38,7 @@ private:
 	ui::SelectListPtr _playListSelect;
 	ui::SelectListPtr _contentsSelect;
 	ui::ButtonPtr _switchButton;
+	ui::ButtonPtr _updateWSButton;
 
 	WorkspacePtr _workspace;
 
@@ -60,6 +61,9 @@ private:
 	void prepareContent();
 
 	void switchContent();
+
+	Poco::ActiveMethod<void, void, OperationScene> activeUpdateWorkspace;
+	void updateWorkspace();
 
 public:
 	OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);

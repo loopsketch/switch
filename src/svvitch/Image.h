@@ -122,8 +122,8 @@ public:
 		}
 
 		if (valid) {
-			_media = media;
-			_duration = _media->duration() * 60 / 1000;
+			_mediaID = media->id();
+			_duration = media->duration() * 60 / 1000;
 			_current = 0;
 			set("alpha", 1.0f);
 			_finished = false;
@@ -131,10 +131,6 @@ public:
 		}
 
 		return false;
-	}
-
-	const MediaItemPtr opened() const {
-		return _media;
 	}
 
 
@@ -168,7 +164,7 @@ public:
 	/** ファイルをクローズします */
 	void close() {
 		stop();
-		_media = NULL;
+		_mediaID.clear();
 		_current = 0;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -183,7 +179,7 @@ public:
 	}
 
 	virtual void draw(const DWORD& frame) {
-		if (_media && _playing) {
+		if (!_mediaID.empty() && _playing) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 //			_dy -= 0.5f;

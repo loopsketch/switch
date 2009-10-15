@@ -127,7 +127,7 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 	set("alpha", 1.0f);
 	_duration = media->duration() * 60 / 1000;
 	_current = 0;
-	_media = media;
+	_mediaID = media->id();
 	return true;
 }
 
@@ -145,10 +145,6 @@ void CvContent::openDetectMovie() {
 	//		SAFE_DELETE(_detectedMovie);
 		}
 	}
-}
-
-const MediaItemPtr CvContent::opened() const {
-	return _media;
 }
 
 
@@ -188,7 +184,7 @@ const bool CvContent::finished() {
 /** ファイルをクローズします */
 void CvContent::close() {
 	stop();
-	_media = NULL;
+	_mediaID.clear();
 
 	Poco::DateTime now;
 	now.makeLocal(Poco::Timezone::tzd());
@@ -284,7 +280,7 @@ void CvContent::process(const DWORD& frame) {
 		}
 		if (_detectedMovie) {
 			_detectedMovie->process(frame);
-			if (_detectedMovie->opened() && !_detected && _diffCount > _detectThreshold) {
+			if (!_detectedMovie->opened().empty() && !_detected && _diffCount > _detectThreshold) {
 				if (_viewPhoto == 0 || (frame - _viewPhoto) > 500) {
 					if (_detectCount > 0) {
 						if (_normalMovie) _normalMovie->stop();
@@ -312,7 +308,7 @@ void CvContent::process(const DWORD& frame) {
 }
 
 void CvContent::draw(const DWORD& frame) {
-	if (_media && _playing) {
+	if (!_mediaID.empty() && _playing) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		LPDIRECT3DTEXTURE9 cameraImage = _scene->getCameraImage();
 		DWORD col = 0xffffffff;

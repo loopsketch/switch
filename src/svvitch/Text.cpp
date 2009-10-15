@@ -108,15 +108,11 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 	}
 
 	if (_texture) {
-		_media = media;
+		_mediaID = media->id();
 		set("alpha", 1.0f);
 		return true;
 	}
 	return false;
-}
-
-const MediaItemPtr Text::opened() const {
-	return _media;
 }
 
 void Text::play() {
@@ -128,7 +124,7 @@ void Text::stop() {
 }
 
 const bool Text::finished() {
-	if (_media && _texture) {
+	if (_mediaID.empty() && _texture) {
 		if (_dx != 0) {
 			return _x < (_cx -_iw);
 		}
@@ -138,7 +134,7 @@ const bool Text::finished() {
 
 /** ファイルをクローズします */
 void Text::close() {
-	_media = NULL;
+	_mediaID.clear();
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	SAFE_RELEASE(_texture);
 	_iw = 0;
@@ -149,7 +145,7 @@ void Text::close() {
 
 /** 1フレームに1度だけ処理される */
 void Text::process(const DWORD& frame) {
-	if (_media && _texture) {
+	if (!_mediaID.empty() && _texture) {
 		if (_playing) {
 			if (_dx != 0) {
 				_x += _dx;
@@ -161,7 +157,7 @@ void Text::process(const DWORD& frame) {
 
 /** 描画 */
 void Text::draw(const DWORD& frame) {
-	if (_media && _texture && _playing) {
+	if (!_mediaID.empty() && _texture && _playing) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		const ConfigurationPtr conf = _renderer.config();
 		float alpha = getF("alpha");

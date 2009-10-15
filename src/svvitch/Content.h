@@ -24,7 +24,8 @@ protected:
 	Poco::Logger& _log;
 	Renderer& _renderer;
 
-	MediaItemPtr _media;
+//	MediaItemPtr _media;
+	string _mediaID;
 	bool _playing;
 
 	int _duration;
@@ -46,7 +47,7 @@ public:
 
 	virtual bool open(const MediaItemPtr media, const int offset = 0);
 
-	virtual const MediaItemPtr opened() const;
+	virtual const string opened() const;
 
 	virtual void play();
 

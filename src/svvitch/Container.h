@@ -30,7 +30,7 @@ public:
 
 	int size();
 
-	const MediaItemPtr opened() const;
+	const string opened() const;
 
 	void play();
 

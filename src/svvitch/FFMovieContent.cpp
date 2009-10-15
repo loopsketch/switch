@@ -134,8 +134,8 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	_thread.start(*_worker);
 
 	_log.information(Poco::format("opened: %s", file));
-	_media = media;
-	if (_media->duration() > 0) _duration = _media->duration() / 30;
+	_mediaID = media->id();
+	if (media->duration() > 0) _duration = media->duration() / 30;
 	set("alpha", 1.0f);
 	_finished = false;
 	return true;
@@ -235,7 +235,7 @@ const bool FFMovieContent::finished() {
 			if (_videoDecoder) {
 				return _videoDecoder->bufferedFrames() == 0;
 			}
-			return !_media;
+			return _mediaID.empty();
 		}
 	} else {
 		return true;
@@ -245,7 +245,7 @@ const bool FFMovieContent::finished() {
 
 /** ファイルをクローズします */
 void FFMovieContent::close() {
-	_media = NULL;
+	_mediaID.clear();
 	if (_ic) {
 		stop();
 		{
@@ -282,7 +282,7 @@ void FFMovieContent::close() {
 }
 
 void FFMovieContent::process(const DWORD& frame) {
-	if (_media && _videoDecoder) {
+	if (!_mediaID.empty() && _videoDecoder) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_playing) {
 			if (0 == (frame % 2)) {
@@ -308,7 +308,7 @@ void FFMovieContent::process(const DWORD& frame) {
 }
 
 void FFMovieContent::draw(const DWORD& frame) {
-	if (_media) {
+	if (!_mediaID.empty()) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_frameLock);
 		if (_vf && _playing) {
 			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
@@ -358,9 +358,9 @@ void FFMovieContent::draw(const DWORD& frame) {
 //					device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 //					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 //					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-					int sw = _w / cw;
+					int sw = L(_w / cw);
 					if (sw <= 0) sw = 1;
-					int sh = _h / ch;
+					int sh = L(_h / ch);
 					if (sh <= 0) sh = 1;
 					for (int sy = 0; sy < sh; sy++) {
 						int ox = (sy % 2) * cw * 8 + conf->stageRect.left;
@@ -421,7 +421,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 			}
 
 		} else if (get("prepare") == "true" && _prepareVF) {
-			int sy = getF("itemNo") * 20;
+			int sy = L(getF("itemNo") * 20);
 			_prepareVF->draw(700, 600 + sy, 324, 20, 1, 0x99ffffff);
 		}
 	}

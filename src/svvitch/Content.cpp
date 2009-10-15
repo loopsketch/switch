@@ -5,7 +5,7 @@
 
 
 Content::Content(Renderer& renderer, float x, float y, float w, float h):
-	_log(Poco::Logger::get("")), _renderer(renderer), _duration(0), _current(0), _x(x), _y(y), _w(w), _h(h), _playing(false), _media(NULL)
+	_log(Poco::Logger::get("")), _renderer(renderer), _duration(0), _current(0), _x(x), _y(y), _w(w), _h(h), _playing(false)
 {
 }
 
@@ -18,12 +18,12 @@ void Content::initialize() {
 }
 
 bool Content::open(const MediaItemPtr media, const int offset) {
-	_media = media;
+	_mediaID = media->id();
 	return true;
 }
 
-const MediaItemPtr Content::opened() const {
-	return _media;
+const string Content::opened() const {
+	return _mediaID;
 }
 
 void Content::play() {
@@ -47,7 +47,7 @@ const bool Content::finished() {
 
 /** ファイルをクローズします */
 void Content::close() {
-	_media = NULL;
+	_mediaID.clear();
 }
 
 /** キー入力の通知 */
