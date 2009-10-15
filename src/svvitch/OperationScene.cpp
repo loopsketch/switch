@@ -42,6 +42,7 @@ OperationScene::~OperationScene() {
 	SAFE_DELETE(_contentsSelect);
 	SAFE_DELETE(_playListSelect);
 	SAFE_DELETE(_switchButton);
+	SAFE_DELETE(_updateWSButton);
 }
 
 
