@@ -50,7 +50,7 @@ OperationScene::~OperationScene() {
 // ƒV[ƒ“‚Ì‰Šú‰»
 //-------------------------------------------------------------
 bool OperationScene::initialize() {
-	_playListSelect = new ui::SelectList("playlist", _uim, 300, 100, 300, 400);
+	_playListSelect = new ui::SelectList("playlist", _uim, 410, 100, 300, 400);
 	class PlaylistSelected: public ui::SelectedListener {
 		friend class OperationScene;
 		OperationScene& _scene;
@@ -66,7 +66,7 @@ bool OperationScene::initialize() {
 		}
 	};
 	_playListSelect->setSelectedListener(new PlaylistSelected(*this));
-	_contentsSelect = new ui::SelectList("contentslist", _uim, 620, 100, 400, 200);
+	_contentsSelect = new ui::SelectList("contentslist", _uim, 720, 100, 300, 200);
 	class ContentSelected: public ui::SelectedListener {
 		friend class OperationScene;
 		OperationScene& _scene;
