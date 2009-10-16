@@ -24,7 +24,8 @@
 // デフォルトコンストラクタ
 //-------------------------------------------------------------
 MainScene::MainScene(Renderer& renderer):
-	Scene(renderer), activePrepareNextMedia(this, &MainScene::prepareNextMedia),
+	Scene(renderer),
+	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_workspace(NULL), _frame(0), _luminance(100), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
@@ -120,7 +121,7 @@ bool MainScene::setWorkspace(WorkspacePtr workspace) {
 		PlayListPtr playlist = _workspace->getPlaylist(0);
 		_playlistID = playlist->id();
 		_playlistItem = -1;
-//		activePrepareNextMedia();
+		activePrepareNextMedia();
 	} else {
 		_log.warning("no playlist, no auto starting");
 	}
@@ -148,6 +149,7 @@ void MainScene::prepareNextMedia() {
 	}
 
 	// 準備フェーズ
+	int next = (_currentContent + 1) % _contents.size();
 	if (!_currentCommand.empty()) {
 		int jump = _currentCommand.find_first_of("jump");
 		if (jump == 0) {
@@ -176,11 +178,11 @@ void MainScene::prepareNextMedia() {
 			}
 		} else if (_currentCommand == "stop") {
 			_suppressSwitch = false;
+			_contents[next]->initialize();
 			return;
 		}
 	}
 
-	int next = (_currentContent + 1) % _contents.size();
 	if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
 		PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
 		if (playlist && playlist->itemCount() > 0) {
