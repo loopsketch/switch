@@ -14,7 +14,7 @@ private:
 	string _transition;
 
 public:
-	PlayListItem(const MediaItemPtr media, const string next, const string transition):
+	PlayListItem(const MediaItemPtr media, const string& next, const string transition):
 	  _log(Poco::Logger::get("")), _media(media), _next(next), _transition(transition)
 	{
 	}
@@ -27,11 +27,11 @@ public:
 		return _media;
 	}
 
-	const string next() const {
+	const string& next() const {
 		return _next;
 	}
 
-	const string transition() const {
+	const string& transition() const {
 		return _transition;
 	}
 };

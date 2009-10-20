@@ -44,6 +44,8 @@ namespace ui {
 		LPDIRECT3DTEXTURE9 _cursor;
 		VERTEX_P _mousePoint[10];
 
+		HIMC _himc;
+
 		Poco::HashMap<string, Component*> _components;
 
 

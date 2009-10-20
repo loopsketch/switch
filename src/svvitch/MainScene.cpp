@@ -296,7 +296,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 	return false;
 }
 
-void MainScene::switchContent(ContainerPtr* container, const string playlistID, const int i) {
+void MainScene::switchContent(ContainerPtr* container, const string& playlistID, const int i) {
 //	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 	if (playlist) {

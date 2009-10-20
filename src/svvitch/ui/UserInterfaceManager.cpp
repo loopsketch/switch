@@ -34,10 +34,14 @@ namespace ui {
 		_lButton = false;
 		_mButton = false;
 		_rButton = false;
+		
+		_himc = ::ImmGetContext(_renderer.getWindowHandle());
 	}
 
 	UserInterfaceManager::~UserInterfaceManager() {
 		initialize();
+
+		::ImmReleaseContext(_renderer.getWindowHandle(), _himc);
 		SAFE_RELEASE(_cursor);
 	}
 

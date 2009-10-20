@@ -40,7 +40,7 @@ bool CaptureScene::initialize() {
 		} else if (type == "yuv2") {
 			_deviceVideoType = MEDIASUBTYPE_YUY2;
 		}
-		_samples = xml->getInt("samples", 2);
+		_samples = xml->getInt("samples", 1);
 		xml->release();
 	} catch (Poco::Exception& ex) {
 		_log.warning(ex.displayText());

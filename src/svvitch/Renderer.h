@@ -66,6 +66,8 @@ private:
 	Poco::Logger& _log;
 	mutable Poco::FastMutex _lock;
 
+	HWND _hwnd;
+
 	Configuration* _conf;
 	UINT _displayAdpters;
 	UINT _maxTextureW;
@@ -127,6 +129,9 @@ public:
 	 * 3Dデバイス関連の初期化
 	 */
 	HRESULT initialize(HINSTANCE hInstance, HWND hWnd);
+
+	/** ウィンドウハンドルを取得します */
+	const HWND getWindowHandle() const;
 
 	/**
 	 * UI用のメッセージを伝達します

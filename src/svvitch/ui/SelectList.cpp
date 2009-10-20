@@ -280,6 +280,20 @@ namespace ui {
 			c2 = (a | 0x999999) & 0xcc333366;
 		}
 		_uim->fillSquare(_x + _w - 20, _y + 21, 20, h, c1, c1, c2, c2);
+
+		int mh = _itemHeight * _items.size();
+		int vy = 0;
+		int vh = 0;
+		if (_h < mh) {
+			vy = h * -_itemY / mh;
+			vh = h * (-_itemY + _h) / mh;
+		}
+		if (vh > 0) {
+			c1 = (a | 0xffffff) & 0xcc99cccc;
+			c2 = (a | 0x999999) & 0xcc66cccc;
+			_uim->fillSquare(_x + _w - 20, _y + 21 + vy, 20, vh, c1, c1, c2, c2);
+		}
+		_uim->debugText(_x, _y, Poco::format("%0.3hf %d %d", F(-_itemY + _h) / mh, _itemY, mh));
 	}
 
 	void SelectList::setSelectedListener(SelectedListenerPtr listener) {

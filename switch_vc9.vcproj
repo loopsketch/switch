@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmbasd.lib dxerr9.lib dxguid.lib d3dx9d.lib d3d9.lib dinput8.lib winmm.lib Quartz.lib Gdiplus.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmtd.lib PocoNetmtd.lib libeay32MTd.lib ssleay32MTd.lib PocoNetSSLmtd.lib libgcc.a libcoldname.a libmingwex.a libz.a libavcodec.a libavutil.a libavformat.a libavdevice.a libswscale.a libmp3lame.a"
+				AdditionalDependencies="strmbasd.lib dxerr9.lib dxguid.lib d3dx9d.lib d3d9.lib dinput8.lib winmm.lib Quartz.lib Gdiplus.lib imm32.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmtd.lib PocoNetmtd.lib libeay32MTd.lib ssleay32MTd.lib PocoNetSSLmtd.lib libgcc.a libcoldname.a libmingwex.a libz.a libavcodec.a libavutil.a libavformat.a libavdevice.a libswscale.a libmp3lame.a"
 				AdditionalLibraryDirectories="libs"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -148,7 +148,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmbase.lib dxerr9.lib dxguid.lib dinput8.lib d3dx9.lib d3d9.lib winmm.lib Quartz.lib Gdiplus.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmt.lib PocoNetmt.lib libeay32MT.lib ssleay32MT.lib PocoNetSSLmt.lib libgcc.a libcoldname.a libmingwex.a libz.a libavcodec.a libavutil.a libavformat.a libavdevice.a libswscale.a libmp3lame.a"
+				AdditionalDependencies="strmbase.lib dxerr9.lib dxguid.lib dinput8.lib d3dx9.lib d3d9.lib winmm.lib Quartz.lib Gdiplus.lib imm32.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmt.lib PocoNetmt.lib libeay32MT.lib ssleay32MT.lib PocoNetSSLmt.lib libgcc.a libcoldname.a libmingwex.a libz.a libavcodec.a libavutil.a libavformat.a libavdevice.a libswscale.a libmp3lame.a"
 				AdditionalLibraryDirectories="libs"
 				IgnoreDefaultLibraryNames="LIBCMTD.lib"
 				GenerateDebugInformation="true"

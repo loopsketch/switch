@@ -213,6 +213,9 @@ void Renderer::finalize() {
 	Gdiplus::GdiplusShutdown(_gdiToken);
 }
 
+const HWND Renderer::getWindowHandle() const {
+	return _hwnd;
+}
 
 
 /**
@@ -803,6 +806,7 @@ const LPDIRECT3DTEXTURE9 Renderer::createTexturedText(const wstring& fontFamily,
 	WCHAR s[32] = L"";
 	Gdiplus::FontFamily* ff = NULL;
 	if (fontFamily.empty()) {
+		// フォント指定が無い場合はデフォルトのフォントを検索
 		Gdiplus::FontFamily temp[16];
 		int num = 0;
 		_fc->GetFamilies(16, temp, &num);
@@ -827,11 +831,14 @@ const LPDIRECT3DTEXTURE9 Renderer::createTexturedText(const wstring& fontFamily,
 //		_log.information(Poco::format("use font: %s", name));
 	}
 
+	// 文字列レンダリング後サイズの確認
 	Gdiplus::Rect rect(0, 0, 0, 0);
 	{
 		Gdiplus::Bitmap bitmap(1, 1, PixelFormat32bppARGB);
 		drawText(ff, fontSize, c1, c2, w1, c3, w2, c4, text, &bitmap, rect);
 	}
+
+	// 最終的な描画処理
 	LPDIRECT3DTEXTURE9 texture = NULL;
 	{
 		int x = rect.X;
