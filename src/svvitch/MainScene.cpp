@@ -27,7 +27,7 @@ MainScene::MainScene(Renderer& renderer):
 	Scene(renderer),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_workspace(NULL), _frame(0), _luminance(100), _playCount(0), _transition(NULL), _interruptMedia(NULL),
-	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
+	_prepareNextMediaResult(NULL), _playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
 	_luminance = conf->luminance;
@@ -141,13 +141,13 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 	}
 }
 
-void MainScene::prepareNextMedia() {
+bool MainScene::prepareNextMedia() {
 	// 初期化フェーズ
-	if (!_workspace) return;
+	if (!_workspace) return false;
 	int count = 5;
 	while (_transition || count-- > 0) {
 		// トランジション中は解放しないようにする。更に初期化まで1秒くらいウェイトする
-		if (_contents.empty()) return;
+		if (_contents.empty()) return false;
 		Poco::Thread::sleep(30);
 	}
 
@@ -182,7 +182,7 @@ void MainScene::prepareNextMedia() {
 		} else if (_currentCommand == "stop") {
 			_suppressSwitch = false;
 			_contents[next]->initialize();
-			return;
+			return true;
 		}
 	}
 
@@ -208,6 +208,7 @@ void MainScene::prepareNextMedia() {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
 	_workspace->checkUpdate();
+	return true;
 }
 
 bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
@@ -362,6 +363,7 @@ void MainScene::process() {
 			_currentCommand = _preparedCommand;
 			_playCount++;
 			_log.information("startup auto prepare");
+//			SAFE_DELETE(_prepareNextMediaResult);
 			activePrepareNextMedia();
 			_suppressSwitch = true;
 		} else {
@@ -520,6 +522,10 @@ void MainScene::draw2() {
 		_renderer.drawTexture(0, 670, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		if (!_currentCommand.empty()) _renderer.drawFont(0, 685, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
 		if (!_preparedTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _preparedTransition));
+		if (_prepareNextMediaResult) {
+			string available(_prepareNextMediaResult->available()?"available":"not available");
+			_renderer.drawFont(500, 700, 0xffffff, 0x000000, Poco::format("prepare result %s", available));			
+		}
 	}
 }
 

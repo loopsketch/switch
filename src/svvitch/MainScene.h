@@ -46,6 +46,7 @@ private:
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
+	Poco::ActiveResult<bool>* _prepareNextMediaResult;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
@@ -73,7 +74,7 @@ private:
 
 	void prepareContent();
 
-	void prepareNextMedia();
+	bool prepareNextMedia();
 
 public:
 
@@ -93,7 +94,7 @@ public:
 	/** 手動で切替を行います */
 	void switchContent(ContainerPtr* container, const string& playlistID, const int i = 0);
 
-	Poco::ActiveMethod<void, void, MainScene> activePrepareNextMedia;
+	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 
 
 	virtual void process();

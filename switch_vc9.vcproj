@@ -437,6 +437,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ui\Mover.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\ui\Mover.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\ui\SelectedListener.h"
 				>
 			</File>
