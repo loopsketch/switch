@@ -30,7 +30,7 @@ public:
 
 	int size();
 
-	const string opened() const;
+	const string opened();
 
 	void play();
 

@@ -27,7 +27,8 @@ void Container::add(ContentPtr c) {
 }
 
 ContentPtr Container::get(int i) {
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (_initialized) return NULL;
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_initialized) {
 		try {
 			return _list.at(i);
@@ -42,11 +43,14 @@ int Container::size() {
 }
 
 ContentPtr Container::operator[](int i) {
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (_initialized) return NULL;
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	return get(i);
 }
 
-const string Container::opened() const {
+const string Container::opened() {
+	if (_initialized) return "";
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	string mediaID;
 	for (vector<ContentPtr>::const_iterator it = _list.begin(); it != _list.end(); it++) {
 		string id = (*it)->opened();
@@ -57,14 +61,17 @@ const string Container::opened() const {
 }
 
 void Container::play() {
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->play();
 }
 
 void Container::stop() {
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->stop();
 }
 
 const bool Container::finished() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	bool finished = true;
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) {
 		finished &= (*it)->finished();
@@ -100,17 +107,21 @@ void Container::preview(const DWORD& frame) {
 }
 
 const int Container::current() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (!_list.empty()) {
-		return _list.at(0)->current();
+	if (!_initialized) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (!_list.empty()) {
+			return _list.at(0)->current();
+		}
 	}
 	return 0;
 }
 
 const int Container::duration() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (!_list.empty()) {
-		return _list.at(0)->duration();
+	if (!_initialized) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (!_list.empty()) {
+			return _list.at(0)->duration();
+		}
 	}
 	return 0;
 }
