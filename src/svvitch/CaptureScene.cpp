@@ -12,6 +12,21 @@ CaptureScene::~CaptureScene() {
 //	IGraphBuilder* gb;
 //	_capture->GetFiltergraph(&gb);
 //	SAFE_RELEASE(gb);
+	if (_mc) {
+		HRESULT hr = _mc->Stop();
+		if (SUCCEEDED(hr)) {
+			// DirectShow’âŽ~‘Ò‚¿
+			for (;;) {
+				OAFilterState fs;
+				hr = _mc->GetState(300, &fs);
+				if (hr == State_Stopped) {
+					break;
+				}
+				Sleep(100);
+			}
+		}
+	}
+
 	for (int i = 0; i < _mavgTextures.size(); i++) {
 		SAFE_RELEASE(_mavgTextures[i]);
 	}
@@ -22,6 +37,7 @@ CaptureScene::~CaptureScene() {
 	SAFE_RELEASE(_capture);
 	SAFE_RELEASE(_device);
 	SAFE_RELEASE(_gb);
+	_log.information("*release capture-scene");
 }
 
 bool CaptureScene::initialize() {
