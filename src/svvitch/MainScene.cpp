@@ -42,16 +42,11 @@ MainScene::~MainScene() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
-	_log.information("release transition");
 	SAFE_DELETE(_transition);
-	_log.information("release interrupt");
 	SAFE_DELETE(_interruptMedia);
 
-	_log.information("release playlist name");
 	SAFE_RELEASE(_playlistName);
-	_log.information("release current name");
 	SAFE_RELEASE(_currentName);
-	_log.information("release prepared name");
 	SAFE_RELEASE(_preparedName);
 
 	_log.information("save configuration");
