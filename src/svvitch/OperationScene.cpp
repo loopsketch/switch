@@ -43,6 +43,7 @@ OperationScene::~OperationScene() {
 	SAFE_DELETE(_playListSelect);
 	SAFE_DELETE(_switchButton);
 	SAFE_DELETE(_updateWSButton);
+	_log.information("*release operation-scene");
 }
 
 

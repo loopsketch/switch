@@ -16,6 +16,7 @@ DSVideoRenderer::DSVideoRenderer(Renderer& renderer, LPUNKNOWN unk, HRESULT* res
 
 DSVideoRenderer::~DSVideoRenderer() {
 	releaseTexture();
+	_log.information("*release video renderer");
 }
 
 void DSVideoRenderer::releaseTexture() {
@@ -162,9 +163,9 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 			}
 		}
 		_readTime = _readTimer.getTime();
-		timeBeginPeriod(1);
-		Sleep(2);
-		timeEndPeriod(1);
+//		timeBeginPeriod(1);
+//		Sleep(1);
+//		timeEndPeriod(1);
 	} else {
 		hr = E_UNEXPECTED;
 	}

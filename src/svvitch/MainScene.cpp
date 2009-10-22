@@ -38,16 +38,23 @@ MainScene::MainScene(Renderer& renderer):
 // デストラクタ
 //-------------------------------------------------------------
 MainScene::~MainScene() {
+	_log.information("release contents");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
+	_log.information("release transition");
 	SAFE_DELETE(_transition);
+	_log.information("release interrupt");
 	SAFE_DELETE(_interruptMedia);
 
+	_log.information("release playlist name");
 	SAFE_RELEASE(_playlistName);
+	_log.information("release current name");
 	SAFE_RELEASE(_currentName);
+	_log.information("release prepared name");
 	SAFE_RELEASE(_preparedName);
 
+	_log.information("save configuration");
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
 		if (xml) {
@@ -58,6 +65,7 @@ MainScene::~MainScene() {
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 	}
+	_log.information("*release main-scene");
 }
 
 
