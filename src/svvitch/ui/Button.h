@@ -8,6 +8,9 @@ using std::wstring;
 
 
 namespace ui {
+	/**
+	 * ƒ{ƒ^ƒ“
+	 */
 	class Button: public Component, public MouseReactionUI
 	{
 	private:
