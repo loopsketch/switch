@@ -168,6 +168,10 @@ public:
 	 */
 //	const LPDIRECTINPUTDEVICE8 getMouseDevice() const;
 
+	const int getSceneCount();
+
+	void insertScene(const int i, const string name, Scene* scene);
+
 	void addScene(const string name, Scene* scene);
 
 	Scene* getScene(const string& name);

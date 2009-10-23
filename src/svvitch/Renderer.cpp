@@ -395,6 +395,23 @@ void Renderer::notifyKeyDown(const int keycode, const bool shift, const bool ctr
 void Renderer::notifyKeyUp(const int keycode, const bool shift,const  bool ctrl) {
 }
 
+const int Renderer::getSceneCount() {
+	return _scenes.size();
+}
+
+void Renderer::insertScene(const int i, const string name, Scene* scene) {
+	int j = 0;
+	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
+		if (i <= j) {
+			_scenes.insert(it, scene);
+			_sceneMap[name] = scene;
+			return;
+		}
+		j++;
+	}
+	addScene(name, scene);
+}
+
 void Renderer::addScene(const string name, Scene* scene) {
 	_scenes.push_back(scene);
 	_sceneMap[name] = scene;
