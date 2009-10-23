@@ -157,10 +157,12 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 					break;
 				case D3DFMT_YUY2:
 					convertYUY2_RGB(dst, src, size);
-					_texture->UnlockRect(0);
 					hr = S_OK;
 					break;
 			}
+			_texture->UnlockRect(0);
+		} else {
+			_log.warning("failed capture texture lock");
 		}
 		_readTime = _readTimer.getTime();
 //		timeBeginPeriod(1);

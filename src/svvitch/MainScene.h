@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Scene.h"
 #include <d3d9.h>
 #include <d3dx9.h>
 #define DIRECTINPUT_VERSION 0x0800
@@ -19,8 +18,10 @@
 
 #include "Container.h"
 #include "Renderer.h"
-#include "Workspace.h"
+#include "Scene.h"
 #include "Transition.h"
+#include "ui/UserInterfaceManager.h"
+#include "Workspace.h"
 
 using std::string;
 using std::vector;
@@ -32,6 +33,7 @@ class MainScene: public Scene
 private:
 	Poco::FastMutex _lock;
 
+	ui::UserInterfaceManager* _uim;
 	WorkspacePtr _workspace;
 
 	DWORD _frame;
@@ -46,7 +48,6 @@ private:
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
-	Poco::ActiveResult<bool>* _prepareNextMediaResult;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
@@ -76,9 +77,11 @@ private:
 
 	bool prepareNextMedia();
 
+	void closeScene();
+
 public:
 
-	MainScene(Renderer& renderer);
+	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
 	~MainScene();
 
@@ -95,6 +98,8 @@ public:
 	void switchContent(ContainerPtr* container, const string& playlistID, const int i = 0);
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
+
+	Poco::ActiveMethod<void, void, MainScene> activeCloseScene;
 
 
 	virtual void process();

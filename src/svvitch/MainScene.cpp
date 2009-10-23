@@ -15,6 +15,7 @@
 #include "DSContent.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
+#include "MenuScene.h"
 
 
 //=============================================================
@@ -23,11 +24,12 @@
 //-------------------------------------------------------------
 // デフォルトコンストラクタ
 //-------------------------------------------------------------
-MainScene::MainScene(Renderer& renderer):
-	Scene(renderer),
+MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
+	Scene(renderer), _uim(uim),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
+	activeCloseScene(this, &MainScene::closeScene),
 	_workspace(NULL), _frame(0), _luminance(100), _playCount(0), _transition(NULL), _interruptMedia(NULL),
-	_prepareNextMediaResult(NULL), _playlistName(NULL), _currentName(NULL), _preparedName(NULL)
+	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
 	_luminance = conf->luminance;
@@ -337,6 +339,16 @@ void MainScene::switchContent(ContainerPtr* container, const string& playlistID,
 	}
 }
 
+void MainScene::closeScene() {
+	ScenePtr scene = _renderer.getScene("operation");
+	if (scene) {
+		_renderer.removeScene("operation");
+		SAFE_DELETE(scene);
+		MenuScenePtr menu = new MenuScene(_renderer, _uim);
+		_renderer.addScene("menu", menu);
+	}
+}
+
 
 void MainScene::process() {
 	switch (_keycode) {
@@ -351,10 +363,10 @@ void MainScene::process() {
 	if (!_startup && _frame > 100) {
 		_startup = true;
 		_log.information("startup auto prepare");
-		_currentContent = (_currentContent + 1) % _contents.size();
-		ContentPtr nextContent = _contents[_currentContent]->get(0);
+		int next = (_currentContent + 1) % _contents.size();
+		ContentPtr nextContent = _contents[next]->get(0);
 		if (nextContent && !nextContent->opened().empty()) {
-			_contents[_currentContent]->play();
+			_contents[next]->play();
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 				_currentName = _preparedName;
@@ -364,6 +376,7 @@ void MainScene::process() {
 			_playCount++;
 			_log.information("startup auto prepare");
 //			SAFE_DELETE(_prepareNextMediaResult);
+			_currentContent = next;
 			activePrepareNextMedia();
 			_suppressSwitch = true;
 		} else {
@@ -522,10 +535,10 @@ void MainScene::draw2() {
 		_renderer.drawTexture(0, 670, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		if (!_currentCommand.empty()) _renderer.drawFont(0, 685, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
 		if (!_preparedTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _preparedTransition));
-		if (_prepareNextMediaResult) {
-			string available(_prepareNextMediaResult->available()?"available":"not available");
-			_renderer.drawFont(500, 700, 0xffffff, 0x000000, Poco::format("prepare result %s", available));			
-		}
+//		if (_prepareNextMediaResult) {
+//			string available(_prepareNextMediaResult->available()?"available":"not available");
+//			_renderer.drawFont(500, 700, 0xffffff, 0x000000, Poco::format("prepare result %s", available));			
+//		}
 	}
 }
 

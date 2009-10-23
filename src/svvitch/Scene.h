@@ -28,3 +28,5 @@ public:
 
 	virtual void draw2();
 };
+
+typedef Scene* ScenePtr;

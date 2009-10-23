@@ -96,6 +96,7 @@ bool CaptureScene::initialize() {
 			routeCrossbar(src, _routePinNo);
 		}
 
+		// PIN_CATEGORY_PREVIEW PIN_CATEGORY_CAPTURE
 		IPin* renderPin = NULL;
 		hr = _capture->FindPin(src, PINDIR_OUTPUT, &PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, FALSE, 0, &renderPin);
 		if (FAILED(hr)) {
@@ -158,6 +159,8 @@ bool CaptureScene::initialize() {
 						videoType = "Y41P";
 					} else if (IsEqualGUID(amt->subtype, MEDIASUBTYPE_YVU9)) {
 						videoType = "YVU9";
+					} else if (IsEqualGUID(amt->subtype, MEDIASUBTYPE_YV12)) {
+						videoType = "YV12";
 					} else if (IsEqualGUID(amt->subtype, MEDIASUBTYPE_YV12)) {
 						videoType = "YV12";
 					} else {
@@ -239,6 +242,7 @@ bool CaptureScene::initialize() {
 //			SAFE_RELEASE(sc);
 		}
 
+//		hr = _capture->RenderStream(&PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, src, NULL, NULL);
 		hr = _gb->Render(renderPin);
 		SAFE_RELEASE(renderPin);
 //		SAFE_RELEASE(src);
@@ -303,33 +307,38 @@ void CaptureScene::draw1() {
 		{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
 	};
 
-	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	LPDIRECT3DSURFACE9 orgRT;
-	hr = device->GetRenderTarget(0, &orgRT);
+	if (_vr) {
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+		LPDIRECT3DSURFACE9 orgRT;
+		hr = device->GetRenderTarget(0, &orgRT);
 
-	LPDIRECT3DSURFACE9 surface;
-	_cameraImage->GetSurfaceLevel(0, &surface);
-	hr = device->SetRenderTarget(0, surface);
-	device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
-	_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1);
-	SAFE_RELEASE(surface);
+		LPDIRECT3DSURFACE9 surface;
+		_cameraImage->GetSurfaceLevel(0, &surface);
+		hr = device->SetRenderTarget(0, surface);
+		device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+		_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1);
+		SAFE_RELEASE(surface);
 
-	hr = device->SetRenderTarget(0, orgRT);
-	SAFE_RELEASE(orgRT);
+		hr = device->SetRenderTarget(0, orgRT);
+		SAFE_RELEASE(orgRT);
+	}
 }
 
 void CaptureScene::draw2() {
-	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-	device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	DWORD col = 0xffffffff;
-	_renderer.drawTexture(0, 242, 256, 192, _cameraImage, 0, col, col, col, col);
-	device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-	device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-	ConfigurationPtr conf = _renderer.config();
-//	_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, "LIVE!");
-	string s = Poco::format("LIVE! read %03lums", _vr->readTime());
-	_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, s);
+	if (_vr) {
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		DWORD col = 0xffffffff;
+		_renderer.drawTexture(0, 242, 256, 192, _cameraImage, 0, col, col, col, col);
+		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		ConfigurationPtr conf = _renderer.config();
+		string s = Poco::format("LIVE! read %03lums", _vr->readTime());
+		_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, s);
+	} else {
+		_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, "NO SIGNAL");
+	}
 }
 
 

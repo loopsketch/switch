@@ -28,6 +28,7 @@
 #include "Renderer.h"
 #include "CaptureScene.h"
 #include "MainScene.h"
+#include "MenuScene.h"
 #include "OperationScene.h"
 #include "Workspace.h"
 #include "ui/UserInterfaceManager.h"
@@ -227,7 +228,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	workspace->parse();
 	MainScenePtr mainScene = NULL;
 	if (true) {
-		mainScene = new MainScene(*_renderer);
+		mainScene = new MainScene(*_renderer, _uim);
 		if (!mainScene->setWorkspace(workspace)) {
 			MessageBox(0, L"メインシーンの生成に失敗しました", NULL, MB_OK);
 			return 0;
@@ -295,13 +296,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			timeEndPeriod(1);
 		}
 	}
-	_renderer->removeScene("capture");
-	_renderer->removeScene("operation");
+
+	ScenePtr scene = _renderer->getScene("menu");
+	if (scene) {
+		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
+		if (menu) {
+			_renderer->removeScene("menu");
+			SAFE_DELETE(menu);
+		}
+	}
+	scene = _renderer->getScene("operation");
+	if (scene) {
+		opScene = dynamic_cast<OperationScenePtr>(scene);
+		if (opScene) {
+			_renderer->removeScene("operation");
+			SAFE_DELETE(opScene);
+		}
+	}
 	_renderer->removeScene("main");
-	SAFE_DELETE(workspace);
-	SAFE_DELETE(opScene);
 	SAFE_DELETE(mainScene);
-	SAFE_DELETE(captureScene);
+
+	scene = _renderer->getScene("capture");
+	if (scene) {
+		captureScene = dynamic_cast<CaptureScenePtr>(scene);
+		if (captureScene) {
+			_renderer->removeScene("capture");
+			SAFE_DELETE(captureScene);
+		}
+	}
+	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
 	SAFE_DELETE(_renderer);
 	_log.information("*** system end");
@@ -360,7 +383,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 			if (wParam == VK_ESCAPE) {
-				PostQuitMessage(0);
+				ScenePtr scene = _renderer->getScene("menu");
+				if (scene) {
+					// menuがある状態なら終了
+					PostQuitMessage(0);
+				} else {
+					// それ以外はmainで処理
+					MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+					if (main) main->activeCloseScene();
+				}
 			} else {
 				bool shift = GetKeyState(VK_SHIFT) < 0;
 				bool ctrl = GetKeyState(VK_CONTROL) < 0;
