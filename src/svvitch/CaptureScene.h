@@ -30,6 +30,11 @@ private:
 	LPDIRECT3DTEXTURE9 _cameraImage;
 	vector<LPDIRECT3DTEXTURE9> _mavgTextures;
 
+	/** フィルタを生成します */
+	bool createFilter();
+	/** フィルタを解放します */
+	void releaseFilter();
+
 	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName);
 	bool routeCrossbar(IBaseFilter *pSrc, int no);
 	int dumpFilter(IGraphBuilder* gb);

@@ -297,6 +297,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
+	_log.information("shutdown menu");
 	ScenePtr scene = _renderer->getScene("menu");
 	if (scene) {
 		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
@@ -305,6 +306,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			SAFE_DELETE(menu);
 		}
 	}
+	_log.information("shutdown operation");
 	scene = _renderer->getScene("operation");
 	if (scene) {
 		opScene = dynamic_cast<OperationScenePtr>(scene);
@@ -316,6 +318,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	_renderer->removeScene("main");
 	SAFE_DELETE(mainScene);
 
+	_log.information("shutdown menu");
+	scene = _renderer->getScene("menu");
+	if (scene) {
+		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
+		if (menu) {
+			_renderer->removeScene("menu");
+			SAFE_DELETE(menu);
+		}
+	}
+	_renderer->removeScene("main");
+	SAFE_DELETE(mainScene);
+
+	_log.information("shutdown capture");
 	scene = _renderer->getScene("capture");
 	if (scene) {
 		captureScene = dynamic_cast<CaptureScenePtr>(scene);

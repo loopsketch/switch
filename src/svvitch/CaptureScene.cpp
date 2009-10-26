@@ -9,34 +9,11 @@ CaptureScene::CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 }
 
 CaptureScene::~CaptureScene() {
-//	IGraphBuilder* gb;
-//	_capture->GetFiltergraph(&gb);
-//	SAFE_RELEASE(gb);
-	if (_mc) {
-		HRESULT hr = _mc->Stop();
-		if (SUCCEEDED(hr)) {
-			// DirectShow’âŽ~‘Ò‚¿
-			for (;;) {
-				OAFilterState fs;
-				hr = _mc->GetState(300, &fs);
-				if (hr == State_Stopped) {
-					break;
-				}
-				Sleep(100);
-			}
-		}
-	}
-
 	for (int i = 0; i < _mavgTextures.size(); i++) {
 		SAFE_RELEASE(_mavgTextures[i]);
 	}
 	SAFE_RELEASE(_cameraImage);
 	SAFE_RELEASE(_fx);
-	SAFE_RELEASE(_mc);
-	SAFE_RELEASE(_vr);
-	SAFE_RELEASE(_capture);
-	SAFE_RELEASE(_device);
-	SAFE_RELEASE(_gb);
 	_log.information("*release capture-scene");
 }
 
@@ -62,6 +39,24 @@ bool CaptureScene::initialize() {
 		_log.warning(ex.displayText());
 	}
 
+	std::wstring wfile;
+	Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
+	LPD3DXBUFFER errors = NULL;
+	HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
+	if (errors) {
+		vector<char> text(1024);
+		memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
+		text.push_back('\0');
+		_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
+		SAFE_RELEASE(errors);
+	} else if (FAILED(hr)) {
+		_log.warning(Poco::format("failed shader: %s", string("")));
+	}
+	_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
+	return true;
+}
+
+bool CaptureScene::createFilter() {
 	HRESULT hr;
 	hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&_gb);
 	if (FAILED(hr)) {
@@ -264,26 +259,38 @@ bool CaptureScene::initialize() {
 				_log.warning("failed query interface: IMediaControl");
 			}
 		}
-
-		std::wstring wfile;
-		Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
-		LPD3DXBUFFER errors = NULL;
-		HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
-		if (errors) {
-			vector<char> text(1024);
-			memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
-			text.push_back('\0');
-			_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
-			SAFE_RELEASE(errors);
-		} else if (FAILED(hr)) {
-			_log.warning(Poco::format("failed shader: %s", string("")));
-		}
-		_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
+		return true;
 
 	} else {
 		_log.warning("not found video input device");
 	}
-	return true;
+	return false;
+}
+
+void CaptureScene::releaseFilter() {
+//	IGraphBuilder* gb;
+//	_capture->GetFiltergraph(&gb);
+//	SAFE_RELEASE(gb);
+	if (_mc) {
+		HRESULT hr = _mc->Stop();
+		if (SUCCEEDED(hr)) {
+			// DirectShow’âŽ~‘Ò‚¿
+			for (;;) {
+				OAFilterState fs;
+				hr = _mc->GetState(300, &fs);
+				if (hr == State_Stopped) {
+					break;
+				}
+				Sleep(100);
+			}
+		}
+	}
+
+	SAFE_RELEASE(_mc);
+	SAFE_RELEASE(_vr);
+	SAFE_RELEASE(_capture);
+	SAFE_RELEASE(_device);
+	SAFE_RELEASE(_gb);
 }
 
 LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {

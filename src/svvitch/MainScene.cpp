@@ -346,6 +346,8 @@ void MainScene::closeScene() {
 		SAFE_DELETE(scene);
 		MenuScenePtr menu = new MenuScene(_renderer, _uim);
 		_renderer.addScene("menu", menu);
+	} else {
+		_log.warning("not found operation scene");
 	}
 }
 
@@ -360,7 +362,7 @@ void MainScene::process() {
 			break;
 	}
 
-	if (!_startup && _frame > 100) {
+	if (!_startup && _frame > 200) {
 		_startup = true;
 		_log.information("startup auto prepare");
 		int next = (_currentContent + 1) % _contents.size();
