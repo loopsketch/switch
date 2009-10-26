@@ -430,6 +430,7 @@ void Renderer::removeScene(const string& name) {
 	if (i != _sceneMap.end()) {
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			if (i->second == *it) {
+				_sceneMap.erase(name);
 				_scenes.erase(it);
 				_log.information(Poco::format("*remove scene: %s", name));
 				break;

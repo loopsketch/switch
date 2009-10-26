@@ -235,9 +235,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		_renderer->addScene("main", mainScene);
 	}
-	OperationScenePtr opScene = NULL;
 	if (_conf.useScenes.find("operation") != string::npos) {
-		opScene = new OperationScene(*_renderer, _uim);
+		OperationScenePtr opScene = new OperationScene(*_renderer, _uim);
 		if (!opScene->setWorkspace(workspace)) {
 			MessageBox(0, L"オペレーションシーンの生成に失敗しました", NULL, MB_OK);
 			return 0;
@@ -297,42 +296,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
-	_log.information("shutdown menu");
 	ScenePtr scene = _renderer->getScene("menu");
 	if (scene) {
+		_log.information("shutdown menu");
 		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
 		if (menu) {
 			_renderer->removeScene("menu");
 			SAFE_DELETE(menu);
 		}
 	}
-	_log.information("shutdown operation");
+
 	scene = _renderer->getScene("operation");
 	if (scene) {
-		opScene = dynamic_cast<OperationScenePtr>(scene);
+		_log.information("shutdown operation");
+		OperationScenePtr opScene = dynamic_cast<OperationScenePtr>(scene);
 		if (opScene) {
 			_renderer->removeScene("operation");
 			SAFE_DELETE(opScene);
 		}
 	}
+
+	_log.information("shutdown main");
 	_renderer->removeScene("main");
 	SAFE_DELETE(mainScene);
 
-	_log.information("shutdown menu");
-	scene = _renderer->getScene("menu");
-	if (scene) {
-		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
-		if (menu) {
-			_renderer->removeScene("menu");
-			SAFE_DELETE(menu);
-		}
-	}
-	_renderer->removeScene("main");
-	SAFE_DELETE(mainScene);
-
-	_log.information("shutdown capture");
 	scene = _renderer->getScene("capture");
 	if (scene) {
+		_log.information("shutdown capture");
 		captureScene = dynamic_cast<CaptureScenePtr>(scene);
 		if (captureScene) {
 			_renderer->removeScene("capture");
