@@ -30,6 +30,7 @@
 #include "MainScene.h"
 #include "MenuScene.h"
 #include "OperationScene.h"
+#include "UserInterfaceScene.h"
 #include "Workspace.h"
 #include "ui/UserInterfaceManager.h"
 
@@ -243,6 +244,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		_renderer->addScene("operation", opScene);
 	}
+	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
+	_renderer->addScene("ui", uiScene);
 
 	// メッセージ処理および描画ループ
 	EmptyWorkingSet(GetCurrentProcess());
@@ -282,7 +285,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// 描画処理の実行
 				::QueryPerformanceCounter(&current);
 				DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
-				_uim->process(time);
 				_renderer->renderScene(time);
 //				if (lastSwapout == 0 || time - lastSwapout > 3600000) {
 //					swapout();
@@ -296,17 +298,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
-	ScenePtr scene = _renderer->getScene("menu");
-	if (scene) {
-		_log.information("shutdown menu");
-		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
-		if (menu) {
-			_renderer->removeScene("menu");
-			SAFE_DELETE(menu);
-		}
-	}
+//	ScenePtr scene = _renderer->getScene("menu");
+//	if (scene) {
+//		_log.information("shutdown menu");
+//		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
+//		if (menu) {
+//			_renderer->removeScene("menu");
+//			SAFE_DELETE(menu);
+//		}
+//	}
 
-	scene = _renderer->getScene("operation");
+	ScenePtr scene = _renderer->getScene("operation");
 	if (scene) {
 		_log.information("shutdown operation");
 		OperationScenePtr opScene = dynamic_cast<OperationScenePtr>(scene);
@@ -316,19 +318,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
-	_log.information("shutdown main");
-	_renderer->removeScene("main");
-	SAFE_DELETE(mainScene);
+//	_log.information("shutdown main");
+//	_renderer->removeScene("main");
+//	SAFE_DELETE(mainScene);
 
-	scene = _renderer->getScene("capture");
-	if (scene) {
-		_log.information("shutdown capture");
-		captureScene = dynamic_cast<CaptureScenePtr>(scene);
-		if (captureScene) {
-			_renderer->removeScene("capture");
-			SAFE_DELETE(captureScene);
-		}
-	}
+//	scene = _renderer->getScene("capture");
+//	if (scene) {
+//		_log.information("shutdown capture");
+//		captureScene = dynamic_cast<CaptureScenePtr>(scene);
+//		if (captureScene) {
+//			_renderer->removeScene("capture");
+//			SAFE_DELETE(captureScene);
+//		}
+//	}
 	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
 	SAFE_DELETE(_renderer);
@@ -407,7 +409,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				bool shift = GetKeyState(VK_SHIFT) < 0;
 				bool ctrl = GetKeyState(VK_CONTROL) < 0;
-				_renderer->notifyKeyUp(wParam, shift, ctrl);
+				if (ctrl && wParam == 'S') {
+					swapout();
+				} else {
+					_renderer->notifyKeyUp(wParam, shift, ctrl);
+				}
 			}
 			break;
 
@@ -588,6 +594,7 @@ bool guiConfiguration(void)
 
 // スワップアウト
 void swapout(void) {
+	_log.information("*** exec memory swapout");
 	EmptyWorkingSet(GetCurrentProcess());
 	return;
 

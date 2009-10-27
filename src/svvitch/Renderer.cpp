@@ -198,6 +198,9 @@ void Renderer::finalize() {
 //	DXUTShutdown();
 	SAFE_RELEASE(_fontTexture);
 
+	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
+		SAFE_DELETE(*it);
+	}
 	_scenes.clear();
 	_sceneMap.clear();
 	for (Poco::HashMap<string, LPDIRECT3DTEXTURE9>::Iterator it = _cachedTextures.begin(); it != _cachedTextures.end(); it++) {

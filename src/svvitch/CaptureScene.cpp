@@ -9,6 +9,7 @@ CaptureScene::CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 }
 
 CaptureScene::~CaptureScene() {
+	releaseFilter();
 	for (int i = 0; i < _mavgTextures.size(); i++) {
 		SAFE_RELEASE(_mavgTextures[i]);
 	}
@@ -39,21 +40,24 @@ bool CaptureScene::initialize() {
 		_log.warning(ex.displayText());
 	}
 
-	std::wstring wfile;
-	Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
-	LPD3DXBUFFER errors = NULL;
-	HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
-	if (errors) {
-		vector<char> text(1024);
-		memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
-		text.push_back('\0');
-		_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
-		SAFE_RELEASE(errors);
-	} else if (FAILED(hr)) {
-		_log.warning(Poco::format("failed shader: %s", string("")));
+	if (createFilter()) {
+		std::wstring wfile;
+		Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
+		LPD3DXBUFFER errors = NULL;
+		HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
+		if (errors) {
+			vector<char> text(1024);
+			memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
+			text.push_back('\0');
+			_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
+			SAFE_RELEASE(errors);
+		} else if (FAILED(hr)) {
+			_log.warning(Poco::format("failed shader: %s", string("")));
+		}
+		_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
+		return true;
 	}
-	_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
-	return true;
+	return false;
 }
 
 bool CaptureScene::createFilter() {

@@ -37,6 +37,7 @@ OperationScene::OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr u
 // デストラクタ
 //-------------------------------------------------------------
 OperationScene::~OperationScene() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	SAFE_DELETE(_interruptMedia);
 	SAFE_DELETE(_contentsSelect);
@@ -338,6 +339,5 @@ void OperationScene::draw2() {
 			_contents[_currentContent]->draw(_frame);
 		}
 	}
-	_uim->draw(_frame);
 }
 
