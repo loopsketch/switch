@@ -166,7 +166,7 @@ bool OperationScene::setWorkspace(WorkspacePtr workspace) {
 void OperationScene::updateContentList() {
 //	_log.information("scene updateContentList");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (_workspace->checkUpdate()) {
+	if (_workspace && _workspace->checkUpdate()) {
 		_updateWSButton->setEnabled(true);
 	}
 	_contentsSelect->removeAll();

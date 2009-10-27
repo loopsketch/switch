@@ -119,6 +119,7 @@ namespace ui {
 	}
 
 	void UserInterfaceManager::addComponent(std::string name, ComponentPtr c) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_components[name] = c;
 	}
 
