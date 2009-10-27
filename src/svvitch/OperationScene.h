@@ -68,7 +68,7 @@ private:
 public:
 	OperationScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
-	virtual ~OperationScene();
+	~OperationScene();
 
 	virtual bool initialize();
 

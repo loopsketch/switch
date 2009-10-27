@@ -87,10 +87,9 @@ private:
 
 
 public:
-
 	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
-	virtual ~MainScene();
+	~MainScene();
 
 	virtual bool initialize();
 

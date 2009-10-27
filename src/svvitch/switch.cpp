@@ -332,8 +332,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //		}
 //	}
 	SAFE_DELETE(workspace);
-	SAFE_DELETE(_uim);
 	SAFE_DELETE(_renderer);
+	SAFE_DELETE(_uim);
 	_log.information("*** system end");
 	_logFile->release();
 //	_log.shutdown();

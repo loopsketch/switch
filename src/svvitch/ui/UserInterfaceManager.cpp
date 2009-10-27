@@ -39,7 +39,7 @@ namespace ui {
 	}
 
 	UserInterfaceManager::~UserInterfaceManager() {
-		initialize();
+//		initialize();
 
 		::ImmReleaseContext(_renderer.getWindowHandle(), _himc);
 		SAFE_RELEASE(_cursor);
@@ -47,9 +47,7 @@ namespace ui {
 
 
 	void UserInterfaceManager::initialize() {
-//		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
-//			SAFE_DELETE(it->second);
-//		}
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_components.clear();
 	}
 
@@ -145,7 +143,7 @@ namespace ui {
 	void UserInterfaceManager::process(const DWORD& frame) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_mouseUpdated) {
-			for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
+			for (Poco::HashMap<string, ComponentPtr>::Iterator it = _components.begin(); it != _components.end(); it++) {
 				ui::MouseReactionUIPtr mui = dynamic_cast<ui::MouseReactionUIPtr>(it->second);
 				if (mui) mui->processMouse(_mouseX, _mouseY, _mouseZ, _lButton, _rButton);
 			}
@@ -153,13 +151,13 @@ namespace ui {
 			_mouseUpdated = false;
 		}
 
-		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
+		for (Poco::HashMap<string, ComponentPtr>::Iterator it = _components.begin(); it != _components.end(); it++) {
 			it->second->preprocess(frame);
 		}
-		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
+		for (Poco::HashMap<string, ComponentPtr>::Iterator it = _components.begin(); it != _components.end(); it++) {
 			it->second->process(frame);
 		}
-		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
+		for (Poco::HashMap<string, ComponentPtr>::Iterator it = _components.begin(); it != _components.end(); it++) {
 			it->second->postprocess(frame);
 			ui::MouseReactionUIPtr mui = dynamic_cast<ui::MouseReactionUIPtr>(it->second);
 			if (mui) mui->postprocess(frame);
@@ -168,7 +166,7 @@ namespace ui {
 
 	void UserInterfaceManager::draw(const DWORD& frame) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
+		for (Poco::HashMap<string, ComponentPtr>::Iterator it = _components.begin(); it != _components.end(); it++) {
 			it->second->draw(frame);
 		}
 

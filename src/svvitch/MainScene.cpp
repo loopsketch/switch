@@ -66,6 +66,7 @@ MainScene::~MainScene() {
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 	}
+	Poco::Thread::sleep(1000);
 	_log.information("*release main-scene");
 }
 

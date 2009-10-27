@@ -3,7 +3,7 @@
 
 
 MenuScene::MenuScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
-	Scene(renderer), _uim(uim)
+	Scene(renderer), _uim(uim), _goOperation(NULL), _goEdit(NULL), _goSetup(NULL)
 {
 }
 
@@ -11,6 +11,9 @@ MenuScene::MenuScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 // デストラクタ
 //-------------------------------------------------------------
 MenuScene::~MenuScene() {
+	SAFE_DELETE(_goOperation);
+	SAFE_DELETE(_goEdit);
+	SAFE_DELETE(_goSetup);
 	_log.information("*release menu-scene");
 }
 
@@ -19,7 +22,7 @@ bool MenuScene::initialize() {
 	if (mainScene) {
 		_goOperation = new ui::Button("gooperation", _uim, 600, 200, 200, 150);
 		_goOperation->setBackground(0xff333333);
-		_goOperation->setText("Operation");
+		_goOperation->setText("Operation Mode");
 		class GoOperationMouseListener: public ui::MouseListener {
 			friend class MainScene;
 			friend class MenuScene;
@@ -35,7 +38,7 @@ bool MenuScene::initialize() {
 
 		_goEdit = new ui::Button("goedit", _uim, 600, 360, 200, 150);
 		_goEdit->setBackground(0xff333333);
-		_goEdit->setText("Edit");
+		_goEdit->setText("Edit Mode");
 		class GoEditMouseListener: public ui::MouseListener {
 			friend class MainScene;
 			friend class MenuScene;
@@ -51,7 +54,7 @@ bool MenuScene::initialize() {
 
 		_goSetup = new ui::Button("gosetup", _uim, 600, 520, 200, 150);
 		_goSetup->setBackground(0xff333333);
-		_goSetup->setText("Setup");
+		_goSetup->setText("Setup Mode");
 		class GoSetupMouseListener: public ui::MouseListener {
 			friend class MainScene;
 			friend class MenuScene;
@@ -66,6 +69,8 @@ bool MenuScene::initialize() {
 		_goSetup->setMouseListener(new GoSetupMouseListener(*mainScene));
 
 		return true;
+	} else {
+		_log.warning("not found main-scene");
 	}
 	return false;
 }

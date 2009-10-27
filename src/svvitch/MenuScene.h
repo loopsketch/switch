@@ -20,7 +20,7 @@ private:
 public:
 	MenuScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
-	virtual ~MenuScene();
+	 ~MenuScene();
 
 	virtual bool initialize();
 

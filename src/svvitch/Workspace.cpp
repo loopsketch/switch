@@ -43,6 +43,7 @@ void Workspace::release() {
 	}
 	_mediaMap.clear();
 	_media.clear();
+	_log.information("release workspace");
 }
 
 bool Workspace::checkUpdate() {
