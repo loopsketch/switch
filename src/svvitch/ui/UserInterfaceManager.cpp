@@ -124,7 +124,8 @@ namespace ui {
 		_components[name] = c;
 	}
 
-	ComponentPtr UserInterfaceManager::getComponent(std::string name) const {
+	ComponentPtr UserInterfaceManager::getComponent(std::string name) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_components.find(name) != _components.end()) {
 			return _components.find(name)->second;
 		}
@@ -137,10 +138,12 @@ namespace ui {
 	}
 
 	void UserInterfaceManager::removeComponent(std::string name) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_components.erase(name);
 	}
 
 	void UserInterfaceManager::process(const DWORD& frame) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_mouseUpdated) {
 			for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
 				ui::MouseReactionUIPtr mui = dynamic_cast<ui::MouseReactionUIPtr>(it->second);
@@ -164,6 +167,7 @@ namespace ui {
 	}
 
 	void UserInterfaceManager::draw(const DWORD& frame) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		for (Poco::HashMap<string, Component*>::Iterator it = _components.begin(); it != _components.end(); it++) {
 			it->second->draw(frame);
 		}

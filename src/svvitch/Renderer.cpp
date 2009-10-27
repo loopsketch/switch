@@ -399,10 +399,12 @@ void Renderer::notifyKeyUp(const int keycode, const bool shift,const  bool ctrl)
 }
 
 const int Renderer::getSceneCount() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 	return _scenes.size();
 }
 
 void Renderer::insertScene(const int i, const string name, Scene* scene) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 	int j = 0;
 	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 		if (i <= j) {
@@ -416,11 +418,13 @@ void Renderer::insertScene(const int i, const string name, Scene* scene) {
 }
 
 void Renderer::addScene(const string name, Scene* scene) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 	_scenes.push_back(scene);
 	_sceneMap[name] = scene;
 }
 
 Scene* Renderer::getScene(const string& name) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 	Poco::HashMap<string, Scene*>::Iterator it = _sceneMap.find(name);
 	if (it != _sceneMap.end()) {
 		return it->second;
@@ -429,6 +433,7 @@ Scene* Renderer::getScene(const string& name) {
 }
 
 void Renderer::removeScene(const string& name) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 	Poco::HashMap<string, Scene*>::Iterator i = _sceneMap.find(name);
 	if (i != _sceneMap.end()) {
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
@@ -455,10 +460,13 @@ void Renderer::renderScene(const DWORD current) {
 		shift = _shift;
 		ctrl = _ctrl;
 	}
-	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
-		Scene* scene = (*it);
-		scene->notifyKey(keycode, shift, ctrl);
-		scene->process();
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
+		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
+			Scene* scene = (*it);
+			scene->notifyKey(keycode, shift, ctrl);
+			scene->process();
+		}
 	}
 
 	_device->SetFVF(VERTEX_FVF);
@@ -489,6 +497,7 @@ void Renderer::renderScene(const DWORD current) {
 
 	// •`‰æ1
 	if (SUCCEEDED(_device->BeginScene())) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			(*it)->draw1();
 		}
@@ -539,6 +548,7 @@ void Renderer::renderScene(const DWORD current) {
 	// •`‰æ2
 	_device->GetRenderTarget(0, &_backBuffer);
 	if (SUCCEEDED(_device->BeginScene())) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			(*it)->draw2();
 		}

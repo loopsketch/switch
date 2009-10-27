@@ -1,4 +1,6 @@
 #include "MenuScene.h"
+#include "MainScene.h"
+
 
 MenuScene::MenuScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 	Scene(renderer), _uim(uim)
@@ -13,8 +15,61 @@ MenuScene::~MenuScene() {
 }
 
 bool MenuScene::initialize() {
-	return true;
+	MainScenePtr mainScene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+	if (mainScene) {
+		_goOperation = new ui::Button("gooperation", _uim, 600, 200, 200, 150);
+		_goOperation->setBackground(0xff333333);
+		_goOperation->setText("Operation");
+		class GoOperationMouseListener: public ui::MouseListener {
+			friend class MainScene;
+			friend class MenuScene;
+			MainScene& _scene;
+			GoOperationMouseListener(MainScene& scene): _scene(scene) {
+			}
+
+			void buttonDownL() {
+				_scene.activeGoOperation();
+			}
+		};
+		_goOperation->setMouseListener(new GoOperationMouseListener(*mainScene));
+
+		_goEdit = new ui::Button("goedit", _uim, 600, 360, 200, 150);
+		_goEdit->setBackground(0xff333333);
+		_goEdit->setText("Edit");
+		class GoEditMouseListener: public ui::MouseListener {
+			friend class MainScene;
+			friend class MenuScene;
+			MainScene& _scene;
+			GoEditMouseListener(MainScene& scene): _scene(scene) {
+			}
+
+			void buttonDownL() {
+				_scene.activeGoEdit();
+			}
+		};
+		_goEdit->setMouseListener(new GoEditMouseListener(*mainScene));
+
+		_goSetup = new ui::Button("gosetup", _uim, 600, 520, 200, 150);
+		_goSetup->setBackground(0xff333333);
+		_goSetup->setText("Setup");
+		class GoSetupMouseListener: public ui::MouseListener {
+			friend class MainScene;
+			friend class MenuScene;
+			MainScene& _scene;
+			GoSetupMouseListener(MainScene& scene): _scene(scene) {
+			}
+
+			void buttonDownL() {
+				_scene.activeGoSetup();
+			}
+		};
+		_goSetup->setMouseListener(new GoSetupMouseListener(*mainScene));
+
+		return true;
+	}
+	return false;
 }
+
 
 void MenuScene::process() {
 }

@@ -77,13 +77,20 @@ private:
 
 	bool prepareNextMedia();
 
-	void closeScene();
+	void goMenuScene();
+
+	void goOperationScene();
+
+	void goEditScene();
+
+	void goSetupScene();
+
 
 public:
 
 	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
-	~MainScene();
+	virtual ~MainScene();
 
 	virtual bool initialize();
 
@@ -99,7 +106,13 @@ public:
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 
-	Poco::ActiveMethod<void, void, MainScene> activeCloseScene;
+	Poco::ActiveMethod<void, void, MainScene> activeGoMenuScene;
+
+	Poco::ActiveMethod<void, void, MainScene> activeGoOperation;
+
+	Poco::ActiveMethod<void, void, MainScene> activeGoEdit;
+
+	Poco::ActiveMethod<void, void, MainScene> activeGoSetup;
 
 
 	virtual void process();

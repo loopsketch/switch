@@ -65,6 +65,7 @@ class Renderer
 private:
 	Poco::Logger& _log;
 	mutable Poco::FastMutex _lock;
+	Poco::FastMutex _sceneLock;
 
 	HWND _hwnd;
 

@@ -6,6 +6,7 @@
 #include <Poco/format.h>
 #include <Poco/HashMap.h>
 #include <Poco/Logger.h>
+#include <Poco/Mutex.h>
 
 using std::vector;
 
@@ -31,6 +32,7 @@ namespace ui {
 	class UserInterfaceManager {
 	private:
 		Poco::Logger& _log;
+		Poco::FastMutex _lock;
 		Renderer& _renderer;
 
 		bool _mouseUpdated;
@@ -74,7 +76,7 @@ namespace ui {
 		void drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
 
 		void addComponent(std::string name, Component* c);
-		Component* getComponent(std::string name) const;
+		Component* getComponent(std::string name);
 		void removeComponent(std::string name);
 
 		void processMouse(const int x, const int y, const int lButton, const int rButton);

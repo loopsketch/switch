@@ -40,7 +40,7 @@ namespace ui {
 		}
 
 		virtual ~Component(void) {
-			_log.information("delete Component");
+//			_log.information("delete Component");
 			_uim->removeComponent(_name);
 		}
 

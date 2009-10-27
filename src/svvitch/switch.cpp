@@ -397,7 +397,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				} else {
 					// ‚»‚êˆÈŠO‚Ímain‚Åˆ—
 					MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
-					if (main) main->activeCloseScene();
+					if (main) main->activeGoMenuScene();
 				}
 			} else {
 				bool shift = GetKeyState(VK_SHIFT) < 0;
