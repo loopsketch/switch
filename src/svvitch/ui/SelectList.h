@@ -4,6 +4,7 @@
 #include "MouseReactionUI.h"
 #include "SelectedListener.h"
 #include "Button.h"
+#include "Mover.h"
 
 #include <vector>
 
@@ -50,6 +51,7 @@ namespace ui {
 		Poco::FastMutex _lock;
 		ui::ButtonPtr _up;
 		ui::ButtonPtr _down;
+		ui::MoverPtr _knob;
 		vector<SelectListItemPtr> _items;
 		int _itemY;
 		int _itemHeight;

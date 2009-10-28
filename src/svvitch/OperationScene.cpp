@@ -12,6 +12,7 @@
 #include "Text.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
+#include "ui/Mover.h"
 #include "ui/MouseListener.h"
 #include "ui/SelectedListener.h"
 #include "Utils.h"
@@ -52,6 +53,7 @@ OperationScene::~OperationScene() {
 // ƒV[ƒ“‚Ì‰Šú‰»
 //-------------------------------------------------------------
 bool OperationScene::initialize() {
+//	ui::MoverPtr m = new ui::Mover("movertest", _uim, 500, 500, 200, 100);
 	_playListSelect = new ui::SelectList("playlist", _uim, 410, 100, 300, 400);
 	class PlaylistSelected: public ui::SelectedListener {
 		friend class OperationScene;

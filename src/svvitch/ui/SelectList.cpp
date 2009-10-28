@@ -60,7 +60,7 @@ namespace ui {
 	{
 		_background = 0x99333333;
 		_up = new ui::Button(name + "_up", _uim, x + w - 20, y, 20, 20);
-		_up->setBackground(0xff333366);
+		_up->setBackground(0xff9999cc);
 		_up->setText(L"£");
 		class UpMouseListener: public ui::MouseListener {
 			friend class SelectList;
@@ -75,7 +75,7 @@ namespace ui {
 		_up->setMouseListener(new UpMouseListener(*this));
 
 		_down = new ui::Button(name + "_down", _uim, x + w - 20, y + h - 20, 20, 20);
-		_down->setBackground(0xff333366);
+		_down->setBackground(0xff9999cc);
 		_down->setText(L"¥");
 		class DownMouseListener: public ui::MouseListener {
 			friend class SelectList;
@@ -88,6 +88,9 @@ namespace ui {
 			}
 		};
 		_down->setMouseListener(new DownMouseListener(*this));
+		_knob = new ui::Mover(name + "_knob", _uim, x + w - 20, y + 20, 20, 20);
+		_knob->setBackground(0xff9999cc);
+		_knob->setMovingBounds(x + w - 20, y + 20, 0, h - 40);
 	}
 
 	SelectList::~SelectList(void) {
@@ -96,6 +99,7 @@ namespace ui {
 		SAFE_DELETE(_listener);
 		SAFE_DELETE(_up);
 		SAFE_DELETE(_down);
+		SAFE_DELETE(_knob);
 	}
 
 	void SelectList::upItems() {
@@ -273,14 +277,14 @@ namespace ui {
 		device->SetScissorRect(&scissorRect);
 		device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
 
-		if (_dragKnob) {
-			c1 = (a | 0xffffff) & 0xccff9999;
-			c2 = (a | 0x999999) & 0xcccc6666;
-		} else {
-			c1 = (a | 0xffffff) & 0xcc333366;
-			c2 = (a | 0x999999) & 0xcc333366;
-		}
-		_uim->fillSquare(_x + _w - 20, _y + 21, 20, h, c1, c1, c2, c2);
+//		if (_dragKnob) {
+//			c1 = (a | 0xffffff) & 0xccff9999;
+//			c2 = (a | 0x999999) & 0xcccc6666;
+//		} else {
+//			c1 = (a | 0xffffff) & 0xcc333366;
+//			c2 = (a | 0x999999) & 0xcc333366;
+//		}
+//		_uim->fillSquare(_x + _w - 20, _y + 21, 20, h, c1, c1, c2, c2);
 
 		int mh = _itemHeight * _items.size();
 		int vy = 0;
@@ -292,7 +296,7 @@ namespace ui {
 		if (vh > 0) {
 			c1 = (a | 0xffffff) & 0xcc99cccc;
 			c2 = (a | 0x999999) & 0xcc66cccc;
-			_uim->fillSquare(_x + _w - 20, _y + 21 + vy, 20, vh, c1, c1, c2, c2);
+//			_uim->fillSquare(_x + _w - 20, _y + 21 + vy, 20, vh, c1, c1, c2, c2);
 		}
 //		_uim->debugText(_x, _y, Poco::format("%0.3hf %d %d", F(-_itemY + _h) / mh, vh, h));
 	}

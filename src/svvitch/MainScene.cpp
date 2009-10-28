@@ -32,7 +32,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 	activeGoOperation(this, &MainScene::goOperationScene),
 	activeGoEdit(this, &MainScene::goEditScene),
 	activeGoSetup(this, &MainScene::goSetupScene),
-	_workspace(NULL), _frame(0), _luminance(100), _playCount(0), _transition(NULL), _interruptMedia(NULL),
+	_workspace(NULL), _frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
@@ -48,6 +48,11 @@ MainScene::~MainScene() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
+	int  count = 50;
+	while (_preparing) {
+		if (count-- == 0) break;
+		Sleep(100);
+	}
 	SAFE_DELETE(_transition);
 	SAFE_DELETE(_interruptMedia);
 
@@ -66,7 +71,6 @@ MainScene::~MainScene() {
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 	}
-	Poco::Thread::sleep(1000);
 	_log.information("*release main-scene");
 }
 
@@ -159,6 +163,7 @@ bool MainScene::prepareNextMedia() {
 	}
 
 	// 準備フェーズ
+	_preparing = true;
 	int next = (_currentContent + 1) % _contents.size();
 	if (!_currentCommand.empty()) {
 		int jump = _currentCommand.find_first_of("jump");
@@ -189,6 +194,7 @@ bool MainScene::prepareNextMedia() {
 		} else if (_currentCommand == "stop") {
 			_suppressSwitch = false;
 			_contents[next]->initialize();
+			_preparing = false;
 			return true;
 		}
 	}
@@ -215,6 +221,7 @@ bool MainScene::prepareNextMedia() {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
 	_workspace->checkUpdate();
+	_preparing = false;
 	return true;
 }
 

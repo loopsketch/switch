@@ -13,10 +13,21 @@ namespace ui {
 	private:
 		Poco::FastMutex _lock;
 
+		int _mx;
+		int _my;
+		int _mw;
+		int _mh;
+
+		int _dx;
+		int _dy;
+
 	public:
 		Mover(string name, UserInterfaceManagerPtr uim, int x = 0, int y = 0, int w = 0, int h = 0, float alpha= 1.0f);
 
 		virtual ~Mover(void);
+
+		/** ˆÚ“®‰Â”\—Ìˆæ‚Ìİ’è */
+		void setMovingBounds(int x, int y, int w, int h);
 
 		/** ˆ— */
 		virtual void process(const DWORD& frame);

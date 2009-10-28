@@ -48,6 +48,7 @@ private:
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
+	bool _preparing;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;

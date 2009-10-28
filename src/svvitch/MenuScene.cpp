@@ -20,7 +20,7 @@ MenuScene::~MenuScene() {
 bool MenuScene::initialize() {
 	MainScenePtr mainScene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (mainScene) {
-		_goOperation = new ui::Button("gooperation", _uim, 600, 200, 200, 150);
+		_goOperation = new ui::Button("gooperation", _uim, 600, 100, 300, 150);
 		_goOperation->setBackground(0xff333333);
 		_goOperation->setText("Operation Mode");
 		class GoOperationMouseListener: public ui::MouseListener {
@@ -36,7 +36,7 @@ bool MenuScene::initialize() {
 		};
 		_goOperation->setMouseListener(new GoOperationMouseListener(*mainScene));
 
-		_goEdit = new ui::Button("goedit", _uim, 600, 360, 200, 150);
+		_goEdit = new ui::Button("goedit", _uim, 600, 260, 300, 150);
 		_goEdit->setBackground(0xff333333);
 		_goEdit->setText("Edit Mode");
 		class GoEditMouseListener: public ui::MouseListener {
@@ -52,7 +52,7 @@ bool MenuScene::initialize() {
 		};
 		_goEdit->setMouseListener(new GoEditMouseListener(*mainScene));
 
-		_goSetup = new ui::Button("gosetup", _uim, 600, 520, 200, 150);
+		_goSetup = new ui::Button("gosetup", _uim, 600, 420, 300, 150);
 		_goSetup->setBackground(0xff333333);
 		_goSetup->setText("Setup Mode");
 		class GoSetupMouseListener: public ui::MouseListener {

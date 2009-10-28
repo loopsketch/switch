@@ -25,9 +25,16 @@ namespace ui {
 		bool _rButtonDown;
 		bool _rButtonUp;
 
+		int _dragX;
+		int _dragY;
+		bool _lButtonDrag;
+		bool _rButtonDrag;
+
 	public:
 		MouseReactionUI(ComponentPtr component):
-			_component(component), _listener(NULL), _mouseX(0), _mouseY(0), _mouseZ(0), _mouseOver(false), _lButton(false), _rButton(false)
+			_component(component), _listener(NULL), _mouseX(0), _mouseY(0), _mouseZ(0),
+			_mouseOver(false), _lButton(false), _rButton(false),
+			_dragX(0), _dragY(0), _lButtonDrag(false), _rButtonDrag(false)
 		{
 		}
 
@@ -71,6 +78,19 @@ namespace ui {
 
 		/** processの後処理。1フレームに1度だけ処理される */
 		void postprocess(const DWORD& frame) {
+			if (_lButtonDown) {
+				_dragX = _mouseX;
+				_dragY = _mouseY;
+				_lButtonDrag = true;
+			}
+			if (_lButtonUp) _lButtonDrag = false;
+			if (_rButtonDown) {
+				_dragX = _mouseX;
+				_dragY = _mouseY;
+				_rButtonDrag = true;
+			}
+			if (_rButtonUp) _rButtonDrag = false;
+
 			// ボタン操作検出のエッジ処理のための後処理
 			_lButtonDown = false;
 			_lButtonUp = false;
