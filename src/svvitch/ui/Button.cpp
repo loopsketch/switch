@@ -11,12 +11,12 @@ namespace ui {
 
 	Button::~Button(void) {
 		_log.information("delete Button");
-//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_RELEASE(_text);
 	}
 
 	void Button::setText(const string& text) {
-//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_RELEASE(_text);
 		if (!text.empty()) {
 			_text = _uim->drawText(L"", 18, _color, _color, 1, 0xff000000, 0, 0, text);
@@ -24,6 +24,7 @@ namespace ui {
 	}
 
 	void Button::setText(const wstring& wtext) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_RELEASE(_text);
 		if (!wtext.empty()) {
 			string text;
@@ -33,7 +34,7 @@ namespace ui {
 	}
 
 	void Button::setTexture(const LPDIRECT3DTEXTURE9 texture) {
-//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_RELEASE(_text);
 		_text = texture;
 	}
@@ -53,13 +54,13 @@ namespace ui {
 	}
 
 	void Button::draw(const DWORD& frame) {
-//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		DWORD a = ((DWORD)(255 * _alpha)) << 24;
 		DWORD c1 = (a | 0xffffff) & _background;
 		DWORD c2 = (a | 0x999999) & _background;
 		_uim->fillSquare(_x, _y + _dy, _w, _h, c1, c1, c2, c2);
 
 		if (_text) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			int x = _x;
 			int y = _y;
 			D3DSURFACE_DESC desc;

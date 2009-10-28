@@ -92,6 +92,7 @@ namespace ui {
 
 	SelectList::~SelectList(void) {
 		removeAll();
+//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_DELETE(_listener);
 		SAFE_DELETE(_up);
 		SAFE_DELETE(_down);
