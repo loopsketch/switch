@@ -88,7 +88,7 @@ namespace ui {
 			}
 		};
 		_down->setMouseListener(new DownMouseListener(*this));
-		_knob = new ui::Mover(name + "_knob", _uim, x + w - 20, y + 20, 20, 20);
+		_knob = new ui::Mover(name + "_knob", _uim, x + w - 20, y + 20, 20, h - 40);
 		_knob->setBackground(0xff9999cc);
 		_knob->setMovingBounds(x + w - 20, y + 20, 0, h - 40);
 	}
@@ -103,8 +103,8 @@ namespace ui {
 	}
 
 	void SelectList::upItems() {
-		int itemHeightTotal = _itemHeight * _items.size();
-		if (_h < itemHeightTotal) {
+		int allItemHeight = _itemHeight * _items.size();
+		if (_h < allItemHeight) {
 			if (_itemY + _itemHeight > 0) {
 				_itemY = 0;
 			} else {
@@ -114,9 +114,9 @@ namespace ui {
 	}
 
 	void SelectList::downItems() {
-		int itemHeightTotal = _itemHeight * _items.size();
-		if (_h < itemHeightTotal) {
-			int min = _h - itemHeightTotal;
+		int allItemHeight = _itemHeight * _items.size();
+		if (_h < allItemHeight) {
+			int min = _h - allItemHeight;
 			if (_itemY - _itemHeight < min) {
 				_itemY = min;
 			} else {
@@ -172,8 +172,14 @@ namespace ui {
 			_items.push_back(item);
 			if (_itemHeight < item->getHeight()) _itemHeight = item->getHeight();
 			int mh = _h - 40;
-			int h = mh * mh / F(_itemHeight * _items.size());
-			_knob->setSize(20, h);
+			int allItemH = _itemHeight * _items.size();
+			if (mh < allItemH) {
+				int nh = mh * mh / F(_itemHeight * _items.size());
+				_knob->setSize(20, nh);
+				_knob->setEnabled(true);
+			} else {
+				_knob->setEnabled(false);
+			}
 		}
 	}
 
@@ -212,7 +218,12 @@ namespace ui {
 			}
 		}
 
-		_itemY = _y + 40 - _knob->getY();
+		int mh = _h - 40;
+		int allItemH = _itemHeight * _items.size();
+		if (mh < allItemH) {
+			int dh = mh * mh / F(allItemH) - mh;
+			_itemY = (_h - allItemH) * (_y + 20 - _knob->getY()) / dh;
+		}
 	}
 
 	void SelectList::draw(const DWORD& frame) {
