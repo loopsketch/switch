@@ -441,6 +441,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ui\Component.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\ui\Component.h"
 				>
 			</File>

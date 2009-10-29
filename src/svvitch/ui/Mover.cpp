@@ -19,6 +19,14 @@ namespace ui {
 		_mh = h;
 	}
 
+	int Mover::getX() {
+		return _x + _dx;
+	}
+
+	int Mover::getY() {
+		return _y + _dy;
+	}
+
 	void Mover::process(const DWORD& frame) {
 		if (_enabled && _mouseOver) {
 			(_alpha < 0.8f)? _alpha += 0.05f: _alpha = 0.8f;
@@ -39,11 +47,12 @@ namespace ui {
 				int yh = _my + _mh - _y - _h;
 				if (_dy < yl) _dy = yl; else if (_dy > yh) _dy = yh;
 			}
+		} else {
+			if (_dx != 0) _x = _x + _dx;
+			if (_dy != 0) _y = _y + _dy; 
+			_dx = 0;
+			_dy = 0;
 		}
-		if (_dx != 0) _x = _x + _dx;
-		if (_dy != 0) _y = _y + _dy; 
-		_dx = 0;
-		_dy = 0;
 	}
 
 	void Mover::draw(const DWORD& frame) {

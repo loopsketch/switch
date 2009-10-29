@@ -32,85 +32,54 @@ namespace ui {
 		DWORD _border;
 
 	public:
-		Component(string name, UserInterfaceManagerPtr uim, int x, int y, int w, int h, float alpha):
-			_log(Poco::Logger::get("")), _name(name), _uim(uim), _enabled(true), _x(x), _y(y), _w(w), _h(h), _alpha(alpha),
-			_color(0xccffffff), _background(0xcc000000), _border(0xccffffff)
-		{
-			_uim->addComponent(name, this);
-		}
+		Component(string name, UserInterfaceManagerPtr uim, int x, int y, int w, int h, float alpha);
 
-		virtual ~Component(void) {
-//			_log.information("delete Component");
-			_uim->removeComponent(_name);
-		}
+		virtual ~Component(void);
 
-		UserInterfaceManagerPtr getUserInterfaceManager() {
-			return _uim;
-		}
+		UserInterfaceManagerPtr getUserInterfaceManager();
 
 		/** 有効かどうか */
-		bool getEnabled() const {
-			return _enabled;
-		}
+		bool getEnabled() const;
 
-		void setEnabled(bool enabled) {
-			_enabled = enabled;
-		}
+		void setEnabled(bool enabled);
 
 		/** カラー設定 */
-		void setColor(const DWORD color) {
-			_color = color;
-		}
+		void setColor(const DWORD color);
 
 		/** 背景色設定 */
-		void setBackground(const DWORD color) {
-			_background = color;
-		}
+		void setBackground(const DWORD color);
+
+		/** 位置を設定 */
+		void setPosition(int x, int y);
 
 		/** サイズを設定 */
-		void setSize(int w, int h) {
-			_w = w;
-			_h = h;
-		}
+		void setSize(int w, int h);
 
-		int getY() {
-			return _y;
-		}
+		/** 位置を取得 */
+		virtual int getX();
+		virtual int getY();
 
-		int getWidth() {
-			return _w;
-		}
-
-		int getHeight() {
-			return _h;
-		}
+		/** サイズを取得 */
+		virtual int getWidth();
+		virtual int getHeight();
 
 		/** サブコンポーネント追加 */
-		void add(Component* ui) {
-			_child.push_back(ui);
-		}
+		void add(Component* ui);
 
 		/** 指定座標がコンポーネント内かどうか */
-		bool contains(int x, int y) {
-			return x >= _x && y >= _y && x <= _x + _w && y <= _y + _h;
-		}
+		bool contains(int x, int y);
 
 		/** processの前処理。1フレームに1度だけ処理される */
-		virtual void preprocess(const DWORD& frame) {
-		}
+		virtual void preprocess(const DWORD& frame);
 
 		/** 1フレームに1度だけ処理される */
-		virtual void process(const DWORD& frame) {
-		}
+		virtual void process(const DWORD& frame);
 
 		/** processの後処理。1フレームに1度だけ処理される */
-		virtual void postprocess(const DWORD& frame) {
-		}
+		virtual void postprocess(const DWORD& frame);
 
 		/** 描画 */
-		virtual void draw(const DWORD& frame) {
-		}
-
+		virtual void draw(const DWORD& frame);
 	};
 
 	typedef Component* ComponentPtr;

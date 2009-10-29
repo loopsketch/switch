@@ -193,9 +193,6 @@ namespace ui {
 		int y = _mouseY - (_y + 21);
 		int h = _h - 42;
 		if (_mouseOver) {
-//			if (x > 0 && x < 20 && y > 0 && y < h && _lButtonDown) {
-//				_dragKnob = true;
-//			}
 			if (_mouseZ > 0) {
 				upItems();
 				_mouseZ -= 120;
@@ -214,24 +211,8 @@ namespace ui {
 				}
 			}
 		}
-		if (_lButtonUp) {
-			_dragKnob = false;
-		}
 
-		_itemY = _y + 20 - _knob->getY();
-
-		if (_dragKnob) {
-			// サム内でドラック中
-			int mh = _itemHeight * _items.size();
-			if (_h < mh) {
-				if (y < 0) {
-					y = 0;
-				} else if (y > h) {
-					y = h;
-				}
-				_itemY = -((mh - _h) * y / (h - 1));
-			}
-		}
+		_itemY = _y + 40 - _knob->getY();
 	}
 
 	void SelectList::draw(const DWORD& frame) {

@@ -29,6 +29,10 @@ namespace ui {
 		/** ˆÚ“®‰Â”\—Ìˆæ‚Ìİ’è */
 		void setMovingBounds(int x, int y, int w, int h);
 
+		virtual int getX();
+
+		virtual int getY();
+
 		/** ˆ— */
 		virtual void process(const DWORD& frame);
 
