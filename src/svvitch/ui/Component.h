@@ -67,6 +67,24 @@ namespace ui {
 			_background = color;
 		}
 
+		/** サイズを設定 */
+		void setSize(int w, int h) {
+			_w = w;
+			_h = h;
+		}
+
+		int getY() {
+			return _y;
+		}
+
+		int getWidth() {
+			return _w;
+		}
+
+		int getHeight() {
+			return _h;
+		}
+
 		/** サブコンポーネント追加 */
 		void add(Component* ui) {
 			_child.push_back(ui);

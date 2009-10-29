@@ -171,6 +171,9 @@ namespace ui {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			_items.push_back(item);
 			if (_itemHeight < item->getHeight()) _itemHeight = item->getHeight();
+			int mh = _h - 40;
+			int h = mh * mh / F(_itemHeight * _items.size());
+			_knob->setSize(20, h);
 		}
 	}
 
@@ -190,9 +193,9 @@ namespace ui {
 		int y = _mouseY - (_y + 21);
 		int h = _h - 42;
 		if (_mouseOver) {
-			if (x > 0 && x < 20 && y > 0 && y < h && _lButtonDown) {
-				_dragKnob = true;
-			}
+//			if (x > 0 && x < 20 && y > 0 && y < h && _lButtonDown) {
+//				_dragKnob = true;
+//			}
 			if (_mouseZ > 0) {
 				upItems();
 				_mouseZ -= 120;
@@ -214,6 +217,8 @@ namespace ui {
 		if (_lButtonUp) {
 			_dragKnob = false;
 		}
+
+		_itemY = _y + 20 - _knob->getY();
 
 		if (_dragKnob) {
 			// サム内でドラック中
