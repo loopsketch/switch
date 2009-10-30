@@ -90,7 +90,7 @@ namespace ui {
 		_down->setMouseListener(new DownMouseListener(*this));
 		_knob = new ui::Mover(name + "_knob", _uim, x + w - 20, y + 20, 20, h - 40);
 		_knob->setBackground(0xff9999cc);
-		_knob->setMovingBounds(x + w - 20, y + 20, 0, h - 40);
+		_knob->setMovingBounds(0, 0, 0, h - 40);
 	}
 
 	SelectList::~SelectList(void) {
@@ -105,10 +105,14 @@ namespace ui {
 	void SelectList::upItems() {
 		int allItemHeight = _itemHeight * _items.size();
 		if (_h < allItemHeight) {
-			if (_itemY + _itemHeight > 0) {
-				_itemY = 0;
+			int ny = _knob->getY();
+			int nh = _knob->getHeight();
+
+			if (ny > 0) {
+				_knob->setY(0);
+//				_itemY = 0;
 			} else {
-				_itemY += _itemHeight;
+//				_itemY += _itemHeight;
 			}
 		}
 	}

@@ -2,7 +2,7 @@
 
 namespace ui {
 	Mover::Mover(string name, UserInterfaceManagerPtr uim, int x, int y, int w, int h, float alpha):
-		Component(name, uim, x, y, w, h, alpha), MouseReactionUI(this), _dx(0), _dy(0)
+		Component(name, uim, x, y, w, h, alpha), MouseReactionUI(this), _mx(0), _my(0), _mw(w), _mh(h)
 	{
 	}
 
@@ -19,12 +19,16 @@ namespace ui {
 		_mh = h;
 	}
 
-	int Mover::getX() {
-		return _x + _dx;
+	int Mover::getMX() {
+		return _mx;
 	}
 
-	int Mover::getY() {
-		return _y + _dy;
+	int Mover::getMY() {
+		return _my;
+	}
+
+	bool Mover::contains(int x, int y) {
+		return x >= _x + _mx && y >= _y + _my && x <= _x + _mx + _w && y <= _y + _my + _h;
 	}
 
 	void Mover::process(const DWORD& frame) {
@@ -36,22 +40,25 @@ namespace ui {
 
 		if (_lButtonDrag) {
 			if (_mw > 0) {
-				_dx = _mouseX - _dragX;
-				int xl = _mx - _x;
-				int xh = _mx + _mw - _x - _w;
-				if (_dx < xl) _dx = xl; else if (_dx > xh) _dx = xh;
+				int dx = _dragDX;
+				if (_mx + dx < 0) {
+					dx = -_mx;
+				} else if (_mx + dx > _mw) {
+					dx = _mw - _mx;
+				}
+				_mx += dx;
+				_dragX += dx;
 			}
 			if (_mh > 0) {
-				_dy = _mouseY - _dragY;
-				int yl = _my - _y;
-				int yh = _my + _mh - _y - _h;
-				if (_dy < yl) _dy = yl; else if (_dy > yh) _dy = yh;
+				int dy = _dragDY;
+				if (_my + dy < 0) {
+					dy = -_my;
+				} else if (_my + dy > _mh) {
+					dy = _mh - _my;
+				}
+				_my += dy;
+				_dragY += dy;
 			}
-		} else {
-			if (_dx != 0) _x = _x + _dx;
-			if (_dy != 0) _y = _y + _dy; 
-			_dx = 0;
-			_dy = 0;
 		}
 	}
 
@@ -64,12 +71,12 @@ namespace ui {
 			c1 = (a | 0xffffff) & 0xffccccff;
 			c2 = (a | 0x999999) & 0xffcccccc;
 		}
-		_uim->fillSquare(_x + _dx, _y + _dy, _w, _h, c1, c1, c2, c2);
+		_uim->fillSquare(_x + _mx, _y + _my, _w, _h, c1, c1, c2, c2);
 
 		if (_border) {
 			c1 = (a | 0xffffff) & _border;
 			c2 = (a | 0x999999) & _border;
-			_uim->drawSquare(_x + _dx, _y + _dy, _w, _h, c1, c1, c2, c2);
+			_uim->drawSquare(_x + _mx, _y + _my, _w, _h, c1, c1, c2, c2);
 		}
 	}
 }

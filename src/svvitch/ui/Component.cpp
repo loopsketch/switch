@@ -38,6 +38,14 @@ namespace ui {
 		_y = y;
 	}
 
+	void Component::setX(int x) {
+		_x = x;
+	}
+
+	void Component::setY(int y) {
+		_y = y;
+	}
+
 	void Component::setSize(int w, int h) {
 		_w = w;
 		_h = h;

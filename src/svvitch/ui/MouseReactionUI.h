@@ -27,6 +27,8 @@ namespace ui {
 
 		int _dragX;
 		int _dragY;
+		int _dragDX;
+		int _dragDY;
 		bool _lButtonDrag;
 		bool _rButtonDrag;
 
@@ -90,6 +92,10 @@ namespace ui {
 				_rButtonDrag = true;
 			}
 			if (_rButtonUp) _rButtonDrag = false;
+			if (_lButtonDrag || _rButtonDrag) {
+				_dragDX = _mouseX - _dragX;
+				_dragDY = _mouseY - _dragY;
+			}
 
 			// ボタン操作検出のエッジ処理のための後処理
 			_lButtonDown = false;

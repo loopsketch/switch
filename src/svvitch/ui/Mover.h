@@ -18,9 +18,6 @@ namespace ui {
 		int _mw;
 		int _mh;
 
-		int _dx;
-		int _dy;
-
 	public:
 		Mover(string name, UserInterfaceManagerPtr uim, int x = 0, int y = 0, int w = 0, int h = 0, float alpha= 1.0f);
 
@@ -29,9 +26,12 @@ namespace ui {
 		/** 移動可能領域の設定 */
 		void setMovingBounds(int x, int y, int w, int h);
 
-		virtual int getX();
+		int getMX();
 
-		virtual int getY();
+		int getMY();
+
+		/** 指定座標がコンポーネント内かどうか */
+		bool contains(int x, int y);
 
 		/** 処理 */
 		virtual void process(const DWORD& frame);

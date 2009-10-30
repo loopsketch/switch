@@ -51,17 +51,19 @@ namespace ui {
 
 		/** 位置を設定 */
 		void setPosition(int x, int y);
+		void setX(int x);
+		void setY(int y);
 
 		/** サイズを設定 */
 		void setSize(int w, int h);
 
 		/** 位置を取得 */
-		virtual int getX();
-		virtual int getY();
+		int getX();
+		int getY();
 
 		/** サイズを取得 */
-		virtual int getWidth();
-		virtual int getHeight();
+		int getWidth();
+		int getHeight();
 
 		/** サブコンポーネント追加 */
 		void add(Component* ui);
