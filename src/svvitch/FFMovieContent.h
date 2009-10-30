@@ -29,6 +29,7 @@ class FFMovieContent: public Content, Poco::Runnable
 {
 private:
 	Poco::FastMutex _lock;
+	Poco::FastMutex _openLock;
 	Poco::FastMutex _frameLock;
 
 	Poco::Thread _thread;

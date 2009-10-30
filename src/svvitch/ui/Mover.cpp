@@ -73,6 +73,9 @@ namespace ui {
 		}
 		_uim->fillSquare(_x + _mx, _y + _my, _w, _h, c1, c1, c2, c2);
 
+		// 
+		_uim->drawLine(_dragX, _dragY, 0xffff3333, _dragX, _dragY, 0xff3333);
+
 		if (_border) {
 			c1 = (a | 0xffffff) & _border;
 			c2 = (a | 0x999999) & _border;

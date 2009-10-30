@@ -9,6 +9,7 @@ FFMovieContent::FFMovieContent(Renderer& renderer):
 }
 
 FFMovieContent::~FFMovieContent() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_openLock);
 	initialize();
 }
 
@@ -25,6 +26,7 @@ void FFMovieContent::initialize() {
 
 /** ファイルをオープンします */
 bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_openLock);
 	initialize();
 
 	MediaItemFilePtr mif = media->files()[0];
