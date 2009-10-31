@@ -30,9 +30,6 @@ namespace ui {
 
 		int getMY();
 
-		/** 指定座標がコンポーネント内かどうか */
-		bool contains(int x, int y);
-
 		/** 処理 */
 		virtual void process(const DWORD& frame);
 

@@ -27,11 +27,8 @@ namespace ui {
 		return _my;
 	}
 
-	bool Mover::contains(int x, int y) {
-		return x >= _x + _mx && y >= _y + _my && x <= _x + _mx + _w && y <= _y + _my + _h;
-	}
-
 	void Mover::process(const DWORD& frame) {
+		_mouseOver = (_mouseX >= _x + _mx && _mouseY >= _y + _my && _mouseX <= _x + _mx + _w && _mouseY <= _y + _my + _h);
 		if (_enabled && _mouseOver) {
 			(_alpha < 0.8f)? _alpha += 0.05f: _alpha = 0.8f;
 		} else {
