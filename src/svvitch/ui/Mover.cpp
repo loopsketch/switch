@@ -19,12 +19,28 @@ namespace ui {
 		_mh = h;
 	}
 
+	void Mover::setMX(int mx) {
+		_mx = mx;
+	}
+
+	void Mover::setMY(int my) {
+		_my = my;
+	}
+
 	int Mover::getMX() {
 		return _mx;
 	}
 
 	int Mover::getMY() {
 		return _my;
+	}
+
+	int Mover::getMW() {
+		return _mw;
+	}
+
+	int Mover::getMH() {
+		return _mh;
 	}
 
 	void Mover::process(const DWORD& frame) {
@@ -37,24 +53,22 @@ namespace ui {
 
 		if (_lButtonDrag) {
 			if (_mw > 0) {
-				int dx = _dragDX;
-				if (_mx + dx < 0) {
-					dx = -_mx;
-				} else if (_mx + dx > _mw) {
-					dx = _mw - _mx;
+				if (_mx + _dragDX < 0) {
+					_dragDX = -_mx;
+				} else if (_mx + _w + _dragDX > _mw) {
+					_dragDX = _mw - _mx - _w;
 				}
-				_mx += dx;
-				_dragX += dx;
+				_mx += _dragDX;
+				_dragX = _dragDX;
 			}
 			if (_mh > 0) {
-				int dy = _dragDY;
-				if (_my + dy < 0) {
-					dy = -_my;
-				} else if (_my + dy > _mh) {
-					dy = _mh - _my;
+				if (_my + _dragDY < 0) {
+					_dragDY = -_my;
+				} else if (_my + _h + _dragDY > _mh) {
+					_dragDY = _mh - _my - _h;
 				}
-				_my += dy;
-				_dragY += dy;
+				_my += _dragDY;
+				_dragY += _dragDY;
 			}
 		}
 	}

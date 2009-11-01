@@ -12,8 +12,9 @@ PC上で作成できる動画ファイル、静止画ファイルの送出の他、テキストファイルをテロッ
 
 「switch」の特徴は次のとおりです。
 ・DirectXを使ったWindowsアプリケーションです。
-・動画の再生にはffmpegのエンジン(libavcodec)を利用します。
-・VSyncに同期させるために、動画ファイルについては30fpsである必要があります。
+・動画の再生にはFFmpegのエンジン(libavcodec)を利用します。
+・VSyncを基準クロックとしますが、単純に分周しているだけなので、動画ファイルは30fpsで
+　準備してください。
 ・フレームを1枚1枚テクスチャとしてバッファするので、素材と素材の間も綺麗につなぐこと
 　ができます。
 
@@ -27,8 +28,8 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 <ffmpeg>※MinGWやlibmp3lameなど含む
 <POCO C++ Libraries>
 <OpenSSL>※pocoにてSSL関連を扱う場合
-<Microsoft DirectX 9.0 SDK (December 2004)>
-<Windows Software Development Kit (SDK) for Windows Server 2008 and .NET Framework 3.5>
+<Microsoft DirectX 9.0 SDK (August 2009)>
+<Windows Software Development Kit (SDK) for Windows 7 and .NET Framework 3.5 Service Pack 1>
 ※DirectShowを使うためbaseclassesが必要
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
 ※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
@@ -45,3 +46,5 @@ switch.exe          実行ファイル
 switch-config.dtd   基本設定ファイルのDTD
 switch-config.xml   基本設定ファイル
 workspace.xml       コンテンツ定義ファイル
+
+■ リリースファイル一覧

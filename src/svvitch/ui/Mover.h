@@ -23,12 +23,18 @@ namespace ui {
 
 		virtual ~Mover(void);
 
-		/** 移動可能領域の設定 */
+		/** 移動位置を設定 */
+		void setMX(int mx);
+		void setMY(int my);
+
+		/** 移動位置、領域の設定 */
 		void setMovingBounds(int x, int y, int w, int h);
 
+		/** 移動位置、領域を取得 */
 		int getMX();
-
 		int getMY();
+		int getMW();
+		int getMH();
 
 		/** 処理 */
 		virtual void process(const DWORD& frame);

@@ -105,14 +105,12 @@ namespace ui {
 	void SelectList::upItems() {
 		int allItemHeight = _itemHeight * _items.size();
 		if (_h < allItemHeight) {
-			int ny = _knob->getY();
-			int nh = _knob->getHeight();
-
-			if (ny > 0) {
-				_knob->setY(0);
-//				_itemY = 0;
+			int ny = _knob->getMY();
+			int nd = _knob->getMH() / _items.size();
+			if (ny > nd) {
+				_knob->setMY((ny - nd) / nd * nd);
 			} else {
-//				_itemY += _itemHeight;
+				_knob->setMY(0);
 			}
 		}
 	}
@@ -120,11 +118,13 @@ namespace ui {
 	void SelectList::downItems() {
 		int allItemHeight = _itemHeight * _items.size();
 		if (_h < allItemHeight) {
-			int min = _h - allItemHeight;
-			if (_itemY - _itemHeight < min) {
-				_itemY = min;
+			int ny = _knob->getMY();
+			int mh = _knob->getMH();
+			int nd = _knob->getMH() / _items.size();
+			if (ny < mh - _knob->getHeight()) {
+				_knob->setMY((ny + nd) / nd * nd);
 			} else {
-				_itemY -= _itemHeight;
+				_knob->setMY(mh - _knob->getHeight());
 			}
 		}
 	}
@@ -177,8 +177,8 @@ namespace ui {
 			if (_itemHeight < item->getHeight()) _itemHeight = item->getHeight();
 			int mh = _h - 40;
 			int allItemH = _itemHeight * _items.size();
-			if (mh < allItemH) {
-				int nh = mh * mh / F(_itemHeight * _items.size());
+			if (mh < _h) {
+				int nh = mh * _h / allItemH;
 				_knob->setSize(20, nh);
 				_knob->setEnabled(true);
 			} else {
@@ -222,11 +222,10 @@ namespace ui {
 			}
 		}
 
-		int mh = _h - 40;
 		int allItemH = _itemHeight * _items.size();
-		if (mh < allItemH) {
-			int dh = mh * mh / F(allItemH) - mh;
-			_itemY = (_h - allItemH) * (_y + 20 - _knob->getY()) / dh;
+		if (_h < allItemH) {
+			int mh = _h - 40;
+			_itemY = (_h - allItemH) * _knob->getMY() / (_knob->getMH() - _knob->getHeight());
 		}
 	}
 
@@ -300,6 +299,7 @@ namespace ui {
 //			_uim->fillSquare(_x + _w - 20, _y + 21 + vy, 20, vh, c1, c1, c2, c2);
 		}
 //		_uim->debugText(_x, _y, Poco::format("%0.3hf %d %d", F(-_itemY + _h) / mh, vh, h));
+//		_uim->debugText(_x, _y, Poco::format("%d %d %d", _x, _y, (int)(_knob->getHeight() / _items.size())));
 	}
 
 	void SelectList::setSelectedListener(SelectedListenerPtr listener) {
