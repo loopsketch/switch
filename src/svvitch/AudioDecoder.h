@@ -44,6 +44,7 @@ private:
 	}
 
 	virtual ~AudioDecoder() {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_worker = NULL;
 		_thread.join();
 
@@ -52,6 +53,7 @@ private:
 
 
 	void start() {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		AVCodecContext* avctx = _ic->streams[_audio]->codec;
 		WORD sampleBit;
 		string type;

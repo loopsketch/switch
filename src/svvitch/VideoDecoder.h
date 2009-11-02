@@ -221,6 +221,7 @@ class VideoDecoder: public BaseDecoder, Poco::Runnable
 friend class FFMovieContent;
 private:
 	Poco::FastMutex _lock;
+	Poco::FastMutex _startLock;
 
 	Poco::Thread _thread;
 	Poco::Runnable* _worker;
@@ -250,6 +251,7 @@ private:
 	}
 
 	virtual ~VideoDecoder() {
+		Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
 		_worker = NULL;
 		_thread.join();
 
@@ -281,6 +283,7 @@ private:
 	}
 
 	void start() {
+		Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
 		AVCodecContext* avctx = _ic->streams[_video]->codec;
 //		avctx->thread_count = 4;
 //		int res = avcodec_thread_init(avctx, 4);
