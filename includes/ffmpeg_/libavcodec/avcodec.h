@@ -199,6 +199,7 @@ enum CodecID {
     CODEC_ID_DPX,
     CODEC_ID_MAD,
     CODEC_ID_FRWU,
+    CODEC_ID_FLASHSV2,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -3065,6 +3066,16 @@ AVCodec *av_codec_next(AVCodec *c);
  * Returns the LIBAVCODEC_VERSION_INT constant.
  */
 unsigned avcodec_version(void);
+
+/**
+ * Returns the libavcodec build-time configuration.
+ */
+const char * avcodec_configuration(void);
+
+/**
+ * Returns the libavcodec license.
+ */
+const char * avcodec_license(void);
 
 /**
  * Initializes libavcodec.
