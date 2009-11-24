@@ -39,7 +39,7 @@ private:
 
 
 	AudioDecoder(Renderer& renderer, AVFormatContext* ic, const int audio): BaseDecoder(),
-		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _running(false)
+		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _bufferOffset(0), _bufferSize(0), _running(false)
 	{
 	}
 
