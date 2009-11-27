@@ -42,9 +42,11 @@ void SwitchRequestHandler::run() {
 		if (urls[0] == "remote") {
 			remote();
 		} else {
-			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, request().getURI());
+			response().setContentType("text/html; charset=UTF-8");
+			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found command: %s", urls[0]));
 		}
 	} else {
+		response().setContentType("text/html; charset=UTF-8");
 		sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, request().getURI());
 	}
 //	response().setChunkedTransferEncoding(true);
@@ -56,8 +58,6 @@ void SwitchRequestHandler::run() {
 }
 
 void SwitchRequestHandler::remote() {
-	response().setChunkedTransferEncoding(true);
-	response().setContentType("text/plain; charset=UTF-8");
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		string playlistID = form().get("pl");
@@ -65,6 +65,8 @@ void SwitchRequestHandler::remote() {
 			_log.information(Poco::format("playlist: %s", playlistID));
 			ContainerPtr c = new Container(*_renderer);
 			bool result = scene->prepareMedia(c, playlistID);
+			response().setChunkedTransferEncoding(true);
+			response().setContentType("text/plain; charset=UTF-8");
 			if (result) {
 				response().send() << Poco::format("%s", playlistID);
 			} else {
@@ -72,9 +74,11 @@ void SwitchRequestHandler::remote() {
 			}
 			SAFE_DELETE(c);
 		} else {
+			response().setContentType("text/html; charset=UTF-8");
 			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, "empty playlist ID");
 		}
 	} else {
+			response().setContentType("text/html; charset=UTF-8");
 		sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, "scene not found");
 	}
 }

@@ -82,4 +82,5 @@ void svvitch::split(const string& s, char c, vector<string>& v) {
 
 		if (j == string::npos) v.push_back(s.substr(i, s.length()));
 	}
+	if (v.empty()) v.push_back(s);
 }
