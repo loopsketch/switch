@@ -47,7 +47,6 @@ public:
 
 	const MediaItemPtr getMedia(string id);
 
-
 	const int getPlaylistCount();
 
 	const PlayListPtr getPlaylist(int i);

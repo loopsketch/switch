@@ -28,8 +28,6 @@
 #include "Renderer.h"
 #include "CaptureScene.h"
 #include "MainScene.h"
-#include "MenuScene.h"
-#include "OperationScene.h"
 #include "UserInterfaceScene.h"
 #include "Workspace.h"
 #include "ui/UserInterfaceManager.h"
@@ -236,14 +234,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		_renderer->addScene("main", mainScene);
 	}
-	if (_conf.useScenes.find("operation") != string::npos) {
-		OperationScenePtr opScene = new OperationScene(*_renderer, _uim);
-		if (!opScene->setWorkspace(workspace)) {
-			MessageBox(0, L"オペレーションシーンの生成に失敗しました", NULL, MB_OK);
-			return 0;
-		}
-		_renderer->addScene("operation", opScene);
-	}
 	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
 	_renderer->addScene("ui", uiScene);
 
@@ -295,26 +285,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			timeBeginPeriod(1);
 			Sleep(3);
 			timeEndPeriod(1);
-		}
-	}
-
-//	ScenePtr scene = _renderer->getScene("menu");
-//	if (scene) {
-//		_log.information("shutdown menu");
-//		MenuScenePtr menu = dynamic_cast<MenuScenePtr>(scene);
-//		if (menu) {
-//			_renderer->removeScene("menu");
-//			SAFE_DELETE(menu);
-//		}
-//	}
-
-	ScenePtr scene = _renderer->getScene("operation");
-	if (scene) {
-		_log.information("shutdown operation");
-		OperationScenePtr opScene = dynamic_cast<OperationScenePtr>(scene);
-		if (opScene) {
-			_renderer->removeScene("operation");
-			SAFE_DELETE(opScene);
 		}
 	}
 
@@ -390,15 +360,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 			if (wParam == VK_ESCAPE) {
-				ScenePtr scene = _renderer->getScene("menu");
-				if (scene) {
-					// menuがある状態なら終了
-					PostQuitMessage(0);
-				} else {
-					// それ以外はmainで処理
-					MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
-					if (main) main->activeGoMenuScene();
-				}
+				PostQuitMessage(0);
 			} else {
 				bool shift = GetKeyState(VK_SHIFT) < 0;
 				bool ctrl = GetKeyState(VK_CONTROL) < 0;

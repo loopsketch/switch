@@ -15,8 +15,6 @@
 #include "DSContent.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
-#include "MenuScene.h"
-#include "OperationScene.h"
 
 
 //=============================================================
@@ -28,10 +26,6 @@
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 	Scene(renderer), _uim(uim),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
-	activeGoMenuScene(this, &MainScene::goMenuScene),
-	activeGoOperation(this, &MainScene::goOperationScene),
-	activeGoEdit(this, &MainScene::goEditScene),
-	activeGoSetup(this, &MainScene::goSetupScene),
 	_workspace(NULL), _frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
@@ -351,49 +345,6 @@ void MainScene::switchContent(ContainerPtr* container, const string& playlistID,
 	}
 }
 
-void MainScene::goMenuScene() {
-	ScenePtr scene = _renderer.getScene("operation");
-	if (scene) {
-		_renderer.removeScene("operation");
-		SAFE_DELETE(scene);
-		MenuScenePtr menu = new MenuScene(_renderer, _uim);
-		if (menu->initialize()) {
-			_renderer.addScene("menu", menu);
-		}
-	} else {
-		_log.warning("not found operation scene");
-	}
-}
-
-void MainScene::goOperationScene() {
-	ScenePtr scene = _renderer.getScene("operation");
-	if (!scene) {
-		OperationScenePtr opScene = new OperationScene(_renderer, _uim);
-		if (opScene->setWorkspace(_workspace)) {
-			_renderer.addScene("operation", opScene);
-
-			scene = _renderer.getScene("menu");
-			if (scene) {
-				_renderer.removeScene("menu");
-				SAFE_DELETE(scene);
-			} else {
-				_log.warning("not found menu scene");
-			}
-		} else {
-			_log.warning("failed operation scene set workspace");
-		}
-	} else {
-		_log.warning("already registed operation scene");
-	}
-}
-
-void MainScene::goEditScene() {
-	_log.warning("under construction");
-}
-
-void MainScene::goSetupScene() {
-	_log.warning("under construction");
-}
 
 void MainScene::process() {
 	switch (_keycode) {

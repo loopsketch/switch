@@ -78,14 +78,6 @@ private:
 
 	bool prepareNextMedia();
 
-	void goMenuScene();
-
-	void goOperationScene();
-
-	void goEditScene();
-
-	void goSetupScene();
-
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
@@ -105,14 +97,6 @@ public:
 	void switchContent(ContainerPtr* container, const string& playlistID, const int i = 0);
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
-
-	Poco::ActiveMethod<void, void, MainScene> activeGoMenuScene;
-
-	Poco::ActiveMethod<void, void, MainScene> activeGoOperation;
-
-	Poco::ActiveMethod<void, void, MainScene> activeGoEdit;
-
-	Poco::ActiveMethod<void, void, MainScene> activeGoSetup;
 
 
 	virtual void process();
