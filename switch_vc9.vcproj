@@ -229,14 +229,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\MenuScene.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\OperationScene.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\Renderer.cpp"
 				>
 			</File>
@@ -344,14 +336,6 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\MediaItem.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\MenuScene.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\OperationScene.h"
 				>
 			</File>
 			<File

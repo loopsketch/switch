@@ -20,7 +20,6 @@ Renderer::Renderer(Configuration* conf): _log(Poco::Logger::get("")), _conf(conf
 }
 
 Renderer::~Renderer() {
-	SAFE_DELETE(_fc);
 	finalize();
 }
 
@@ -196,8 +195,6 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
  */
 void Renderer::finalize() {
 //	DXUTShutdown();
-	SAFE_RELEASE(_fontTexture);
-
 	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 		SAFE_DELETE(*it);
 	}
@@ -208,11 +205,13 @@ void Renderer::finalize() {
 	}
 	_cachedTextures.clear();
 
+	SAFE_RELEASE(_fontTexture);
 	SAFE_RELEASE(_captureTexture);
 	SAFE_RELEASE(_backBuffer);
 	SAFE_RELEASE(_device);
 	SAFE_RELEASE(_d3d);
 	SAFE_DELETE(_presentParams);
+	SAFE_DELETE(_fc);
 	Gdiplus::GdiplusShutdown(_gdiToken);
 }
 

@@ -288,21 +288,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
-//	_log.information("shutdown main");
-//	_renderer->removeScene("main");
-//	SAFE_DELETE(mainScene);
-
-//	scene = _renderer->getScene("capture");
-//	if (scene) {
-//		_log.information("shutdown capture");
-//		captureScene = dynamic_cast<CaptureScenePtr>(scene);
-//		if (captureScene) {
-//			_renderer->removeScene("capture");
-//			SAFE_DELETE(captureScene);
-//		}
-//	}
-	SAFE_DELETE(workspace);
+	_log.information("shutdown main");
 	SAFE_DELETE(_renderer);
+	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
 	_log.information("*** system end");
 	_logFile->release();
