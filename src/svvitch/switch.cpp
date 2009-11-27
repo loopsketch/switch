@@ -3,6 +3,7 @@
 // アプリケーションの実装
 //
 
+#include <winsock2.h>
 #include <windows.h>
 #include <psapi.h>
 #include <gdiplus.h>
@@ -22,6 +23,9 @@
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
 #include <Poco/PatternFormatter.h>
+#include <Poco/Net/HTTPServer.h>
+#include <Poco/Net/HTTPServerParams.h>
+#include <Poco/Net/ServerSocket.h>
 
 #include "switch.h"
 #include "Configuration.h"
@@ -30,6 +34,7 @@
 #include "MainScene.h"
 #include "UserInterfaceScene.h"
 #include "Workspace.h"
+#include "WebAPI.h"
 #include "ui/UserInterfaceManager.h"
 
 extern "C" {
@@ -237,6 +242,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
 	_renderer->addScene("ui", uiScene);
 
+	Poco::ThreadPool::defaultPool().addCapacity(8);
+	Poco::Net::HTTPServerParams* params = new Poco::Net::HTTPServerParams;
+	params->setMaxQueued(50);
+	params->setMaxThreads(8);
+	Poco::Net::ServerSocket socket(9090);
+	Poco::Net::HTTPServer* server = new Poco::Net::HTTPServer(new SwitchRequestHandlerFactory(_renderer), socket, params);
+	server->start();
+
 	// メッセージ処理および描画ループ
 	EmptyWorkingSet(GetCurrentProcess());
 	LARGE_INTEGER freq;
@@ -288,7 +301,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 	}
 
-	_log.information("shutdown main");
+	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
+	server->stop();
+	while (server->currentThreads() > 0) Sleep(200);
+	SAFE_DELETE(server);
+
+	_log.information("shutdown system");
 	SAFE_DELETE(_renderer);
 	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);

@@ -261,6 +261,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\WebAPI.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\Workspace.cpp"
 				>
 			</File>
@@ -388,6 +392,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\VideoDecoder.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\WebAPI.h"
 				>
 			</File>
 			<File
