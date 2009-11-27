@@ -1,5 +1,6 @@
 #include <Poco/Logger.h>
 #include <Poco/Net/HTTPServer.h>
+#include <Poco/Net/AbstractHTTPRequestHandler.h>
 #include <Poco/Net/HTTPRequestHandler.h>
 #include <Poco/Net/HTTPRequestHandlerFactory.h>
 #include <Poco/Net/HTTPServerParams.h>
@@ -11,26 +12,30 @@
 #include "Renderer.h"
 
 
+using Poco::Net::AbstractHTTPRequestHandler;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
 using Poco::Net::HTTPServerRequest;
 using Poco::Net::HTTPServerResponse;
+using Poco::Net::HTTPResponse;
 
 
 /**
  * HTTPリクエストハンドラ
  */
-class SwitchRequestHandler: public HTTPRequestHandler {
+class SwitchRequestHandler: public AbstractHTTPRequestHandler {
 private:
 	Poco::Logger& _log;
 	RendererPtr _renderer;
 
+	void remote();
+
 public:
 	SwitchRequestHandler(RendererPtr renderer);
 
-	~SwitchRequestHandler();
+	virtual ~SwitchRequestHandler();
 
-	void handleRequest(HTTPServerRequest& request, HTTPServerResponse& response);
+	void run();
 };
 
 
@@ -45,7 +50,7 @@ private:
 public:
 	SwitchRequestHandlerFactory(RendererPtr renderer);
 
-	~SwitchRequestHandlerFactory();
+	virtual ~SwitchRequestHandlerFactory();
 
 	HTTPRequestHandler* createRequestHandler(const HTTPServerRequest& request);
 };

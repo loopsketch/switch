@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 using std::string;
 using std::wstring;
@@ -21,4 +22,7 @@ namespace svvitch {
 
 	/** ファイルのMD5シグネイチャを取得 */
 	string md5(const string& file);
+
+	/** 文字列分割 */
+	void split(const string& s, char c, std::vector<string>& v);
 }
