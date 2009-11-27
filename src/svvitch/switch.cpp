@@ -466,8 +466,8 @@ bool guiConfiguration(void)
 		string useClip(_conf.useClip?"use":"not use");
 		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
-		int cw = xml->getInt("display.split.w", 0);
-		int ch = xml->getInt("display.split.h", 0);
+		int cw = xml->getInt("display.split.width", 0);
+		int ch = xml->getInt("display.split.height", 0);
 		_conf.splitSize.cx = cw;
 		_conf.splitSize.cy = ch;
 		string splitType = xml->getString("display.split.type", "");
