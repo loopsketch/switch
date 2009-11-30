@@ -3,9 +3,12 @@
 #include <Poco/format.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/Net/HTMLForm.h>
+#include <Poco/URI.h>
 
 #include "MainScene.h"
 #include "Utils.h"
+
+using Poco::URI;
 
 
 SwitchRequestHandlerFactory::SwitchRequestHandlerFactory(RendererPtr renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
@@ -31,10 +34,29 @@ SwitchRequestHandler::~SwitchRequestHandler() {
 void SwitchRequestHandler::run() {
 	_log.information("request from " + request().clientAddress().toString());
 
+	URI uri(request().getURI());
+	if (request().getMethod() == "GET") {
+		_log.information(Poco::format("query: %s", uri.getQuery()));
+		Poco::RegularExpression re("&");
+		vector<string> pairs;
+		int res = re.split(uri.getQuery(), pairs);
+		_log.information(Poco::format("query x%d", res));
+		for (vector<string>::iterator it = pairs.begin(); it != pairs.end(); it++) {
+			_log.information(Poco::format("query[%s]", (*it)));
+			string::size_type pos = (*it).find_first_of("=");
+			if (pos != string::npos) {
+				string name = (*it).substr(0, pos);
+				string value = (*it).substr(pos + 1);
+				_log.information(Poco::format("query[%s]=[%s]", name, value));
+				if (!form().has(name)) {
+					form().set(name, value);
+				}
+			}
+		}
+	}
 	vector<string> urls;
-	svvitch::split(request().getURI().substr(1), '/', urls);
+	svvitch::split(uri.getPath().substr(1), '/', urls);
 	int count = urls.size();
-//	Poco::RegularExpression re("/");
 //	int count = re.split(request.getURI(), 0, urls);
 	if (!urls.empty()) {
 //		int num = 0;
