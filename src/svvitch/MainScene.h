@@ -28,6 +28,7 @@ using std::vector;
 using std::queue;
 
 
+
 class MainScene: public Scene
 {
 private:
@@ -49,6 +50,13 @@ private:
 	vector<ContainerPtr> _contents;
 	int _currentContent;
 	bool _preparing;
+
+	/** 再生準備済コンテンツ */
+	ContainerPtr _prepared;
+	/** 再生準備済プレイリスト */
+	string _preparedPlaylistID;
+	/** 再生準備済プレイリストアイテム */
+	int _preparedItem;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
@@ -91,10 +99,13 @@ public:
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** containerの準備を行います */
+	bool prepare(const string& playlistID, const int i = 0);
+
+	/** containerの準備を行います */
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 	/** 手動で切替を行います */
-	void switchContent(ContainerPtr* container, const string& playlistID, const int i = 0);
+	void switchContent();
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 

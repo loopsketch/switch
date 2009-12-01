@@ -1,5 +1,12 @@
 #include "WebAPI.h"
 
+#include <Poco/DOM/AutoPtr.h>
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/Text.h>
+#include <Poco/DOM/AutoPtr.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/XML/XMLWriter.h>
 #include <Poco/format.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/Net/HTMLForm.h>
@@ -8,7 +15,14 @@
 #include "MainScene.h"
 #include "Utils.h"
 
+using Poco::RegularExpression;
 using Poco::URI;
+using Poco::XML::Document;
+using Poco::XML::Element;
+using Poco::XML::Text;
+using Poco::XML::AutoPtr;
+using Poco::XML::DOMWriter;
+using Poco::XML::XMLWriter;
 
 
 SwitchRequestHandlerFactory::SwitchRequestHandlerFactory(RendererPtr renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
@@ -34,73 +48,69 @@ SwitchRequestHandler::~SwitchRequestHandler() {
 void SwitchRequestHandler::run() {
 	_log.information("request from " + request().clientAddress().toString());
 
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/xml; charset=UTF-8");
 	URI uri(request().getURI());
-	if (request().getMethod() == "GET") {
-		_log.information(Poco::format("query: %s", uri.getQuery()));
-		Poco::RegularExpression re("&");
-		vector<string> pairs;
-		int res = re.split(uri.getQuery(), pairs);
-		_log.information(Poco::format("query x%d", res));
-		for (vector<string>::iterator it = pairs.begin(); it != pairs.end(); it++) {
-			_log.information(Poco::format("query[%s]", (*it)));
-			string::size_type pos = (*it).find_first_of("=");
-			if (pos != string::npos) {
-				string name = (*it).substr(0, pos);
-				string value = (*it).substr(pos + 1);
-				_log.information(Poco::format("query[%s]=[%s]", name, value));
-				if (!form().has(name)) {
-					form().set(name, value);
-				}
-			}
-		}
-	}
 	vector<string> urls;
 	svvitch::split(uri.getPath().substr(1), '/', urls);
 	int count = urls.size();
-//	int count = re.split(request.getURI(), 0, urls);
 	if (!urls.empty()) {
-//		int num = 0;
-//		Poco::NumberParser::tryParse(v[2], num);
-		if (urls[0] == "remote") {
-			remote();
+		if        (urls[0] == "set") {
+			set();
+		} else if (urls[0] == "get") {
+			get();
+		} else if (urls[0] == "switch") {
+			svvitch();
 		} else {
-			response().setContentType("text/html; charset=UTF-8");
 			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found command: %s", urls[0]));
 		}
 	} else {
-		response().setContentType("text/html; charset=UTF-8");
 		sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, request().getURI());
 	}
-//	response().setChunkedTransferEncoding(true);
-//	response().setContentType("text/plain; charset=UTF-8");
-
-//	std::ostream& os = response().send();
-//	os << Poco::format("%s split %d", request().getURI(), count);
-//	os.flush();
 }
 
-void SwitchRequestHandler::remote() {
+void SwitchRequestHandler::set() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		string playlistID = form().get("pl");
+		int playlistIndex = 0;
+		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
 		if (!playlistID.empty()) {
 			_log.information(Poco::format("playlist: %s", playlistID));
-			ContainerPtr c = new Container(*_renderer);
-			bool result = scene->prepareMedia(c, playlistID);
-			response().setChunkedTransferEncoding(true);
-			response().setContentType("text/plain; charset=UTF-8");
+			bool result = scene->prepare(playlistID, playlistIndex);
 			if (result) {
-				response().send() << Poco::format("%s", playlistID);
+				writeResult(200, Poco::format("%s", playlistID));
 			} else {
-				response().send() << Poco::format("failed prepared %s", playlistID);
+				writeResult(500, Poco::format("failed prepared %s", playlistID));
 			}
-			SAFE_DELETE(c);
 		} else {
-			response().setContentType("text/html; charset=UTF-8");
-			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, "empty playlist ID");
+			writeResult(500, "empty playlist ID");
 		}
 	} else {
-			response().setContentType("text/html; charset=UTF-8");
-		sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, "scene not found");
+		writeResult(500, "scene not found");
 	}
 }
+
+void SwitchRequestHandler::get() {
+	writeResult(500, "not implemnted");
+}
+
+void SwitchRequestHandler::svvitch() {
+	writeResult(500, "not implemnted");
+}
+
+void SwitchRequestHandler::writeResult(const int code, const string& description) {
+	AutoPtr<Document> doc = new Document();
+	AutoPtr<Element> remote = doc->createElement("remote");
+	doc->appendChild(remote);
+	AutoPtr<Element> result = doc->createElement("result");
+	result->setAttribute("code", Poco::format("%d", code));
+	AutoPtr<Text> resultText = doc->createTextNode(description);
+	result->appendChild(resultText);
+	remote->appendChild(result);
+	DOMWriter writer;
+	writer.setNewLine("\n");
+	writer.setOptions(XMLWriter::PRETTY_PRINT);
+	writer.writeNode(response().send(), doc);
+}
+

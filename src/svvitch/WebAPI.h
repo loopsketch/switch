@@ -28,7 +28,10 @@ private:
 	Poco::Logger& _log;
 	RendererPtr _renderer;
 
-	void remote();
+	void get();
+	void set();
+	void svvitch();
+	void writeResult(const int code, const string& description);
 
 public:
 	SwitchRequestHandler(RendererPtr renderer);

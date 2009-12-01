@@ -26,7 +26,7 @@
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 	Scene(renderer), _uim(uim),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
-	_workspace(NULL), _frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
+	_workspace(NULL), _frame(0), _luminance(100), _preparing(false), _prepared(NULL), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
@@ -219,8 +219,21 @@ bool MainScene::prepareNextMedia() {
 	return true;
 }
 
+bool MainScene::prepare(const string& playlistID, const int i) {
+	ContainerPtr c = new Container(_renderer);
+	if (prepareMedia(c, playlistID, i)) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		SAFE_DELETE(_prepared);
+		_prepared = c;
+		_preparedPlaylistID = playlistID;
+		_preparedItem = i;
+		return true;
+	}
+	SAFE_DELETE(c);
+	return false;
+}
+
 bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_log.information(Poco::format("prepare: %s-%d", playlistID, i));
 	container->initialize();
 	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
@@ -308,40 +321,37 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 	return false;
 }
 
-void MainScene::switchContent(ContainerPtr* container, const string& playlistID, const int i) {
-//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
-	if (playlist) {
-		if (playlist->itemCount() > i) {
-			PlayListItemPtr item = playlist->items()[i];
-			int next = (_currentContent + 1) % _contents.size();
-			ContainerPtr tmp = _contents[next];
-			_contents[next] = *container;
-			*container = tmp;
-			_log.information(Poco::format("switch content: %s-%d:%s", playlistID, i, item->media()->name()));
+void MainScene::switchContent() {
+	PlayListPtr playlist = _workspace->getPlaylist(_preparedPlaylistID);
+	if (_prepared && playlist && playlist->itemCount() > _preparedItem) {
+		PlayListItemPtr item = playlist->items()[_preparedItem];
+		int next = (_currentContent + 1) % _contents.size();
+		ContainerPtr tmp = _contents[next];
+		_contents[next] = _prepared;
+		_prepared = tmp;
+		_log.information(Poco::format("switch content: %s-%d:%s", _preparedPlaylistID, _preparedItem, item->media()->name()));
 
-			LPDIRECT3DTEXTURE9 t1 = NULL;
-			if (_playlistID != playlistID) {
-				_playlistID = playlistID;
-				t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-			}
-			LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
-			{
-				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				if (t1) {
-					SAFE_RELEASE(_playlistName);
-					_playlistName = t1;
-				}
-				SAFE_RELEASE(_preparedName);
-				_preparedName = t2;
-			}
-			_playlistItem = i;
-			_preparedCommand = item->next();
-			_preparedTransition = item->transition();
-			_doSwitch = true;
+		LPDIRECT3DTEXTURE9 t1 = NULL;
+		if (_playlistID != _preparedPlaylistID) {
+			_playlistID = _preparedPlaylistID;
+			t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
 		}
+		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			if (t1) {
+				SAFE_RELEASE(_playlistName);
+				_playlistName = t1;
+			}
+			SAFE_RELEASE(_preparedName);
+			_preparedName = t2;
+		}
+		_playlistItem = _preparedItem;
+		_preparedCommand = item->next();
+		_preparedTransition = item->transition();
+		_doSwitch = true;
 	} else {
-		_log.warning(Poco::format("not find playlist: %s", playlistID));
+		_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
 	}
 }
 
