@@ -42,6 +42,7 @@ MainScene::~MainScene() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
+	SAFE_DELETE(_prepared);
 	int  count = 50;
 	while (_preparing) {
 		if (count-- == 0) break;

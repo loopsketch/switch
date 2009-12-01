@@ -96,7 +96,13 @@ void SwitchRequestHandler::get() {
 }
 
 void SwitchRequestHandler::svvitch() {
-	writeResult(500, "not implemnted");
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	if (scene) {
+		scene->switchContent();
+		writeResult(200, "switch content");
+	} else {
+		writeResult(500, "scene not found");
+	}
 }
 
 void SwitchRequestHandler::writeResult(const int code, const string& description) {
