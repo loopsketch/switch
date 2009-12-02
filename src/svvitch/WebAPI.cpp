@@ -53,8 +53,8 @@ SwitchPartHandler::~SwitchPartHandler() {
 void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is) {
 	string type = header.get("Content-Type", "(unspecified)");
 	if (header.has("Content-Disposition")) {
-		string contentDisposition;
-		svvitch::sjis_utf8(header["Content-Disposition"], contentDisposition);
+		string contentDisposition = header["Content-Disposition"];
+//		svvitch::sjis_utf8(header["Content-Disposition"], contentDisposition);
 		string disp;
 		Poco::Net::NameValueCollection params;
 		MessageHeader::splitParameters(contentDisposition, disp, params);
@@ -110,6 +110,8 @@ void SwitchRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerR
 	_request  = &request;
 	_response = &response;
 
+	_log.information(Poco::format("contenttype %s", request.getContentType()));
+	_log.information(Poco::format("encoding %s", request.getTransferEncoding()));
 	doRequest();
 }
 
@@ -137,7 +139,7 @@ void SwitchRequestHandler::doRequest() {
 void SwitchRequestHandler::set() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
-		_log.information(Poco::format("file: [%s]", form().get("filename", "none")));
+		_log.information(Poco::format("name: [%s]", form().get("name", "none")));
 		string playlistID = form().get("pl", "");
 		int playlistIndex = 0;
 		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
