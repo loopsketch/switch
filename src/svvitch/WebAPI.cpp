@@ -53,17 +53,19 @@ SwitchPartHandler::~SwitchPartHandler() {
 void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is) {
 	string type = header.get("Content-Type", "(unspecified)");
 	if (header.has("Content-Disposition")) {
+		string contentDisposition;
+		svvitch::sjis_utf8(header["Content-Disposition"], contentDisposition);
 		string disp;
 		Poco::Net::NameValueCollection params;
-		MessageHeader::splitParameters(header["Content-Disposition"], disp, params);
+		MessageHeader::splitParameters(contentDisposition, disp, params);
 		string name = params.get("name", "(unnamed)"); // formプロパティ名
-		string fileName;
-		svvitch::sjis_utf8(params.get("filename", "unnamed")., fileName);
-
-		int pos = fileName.find_last_of('\u00a5');
-		if (pos != string::npos) {
-			// フルパスの場合、ファイル名だけを抽出
-			fileName = fileName.substr(pos + 1);
+		string fileName = params.get("filename", "unnamed");
+		Poco::RegularExpression re(".*filename=\"((.+\\\\)*(.+))\".*");
+		if (re.match(contentDisposition)) {
+			// IEのフルパス対策
+			fileName = contentDisposition;
+			re.subst(fileName, "$3");
+			_log.information("fileName: " + fileName);
 		}
 
 		Poco::File rootDir("uploads");
@@ -76,9 +78,9 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 			Poco::File rename(rootDir.path() + "/" + fileName);
 			if (rename.exists()) rename.remove();
 			f.renameTo(rename.path());
-			_log.information(Poco::format("file[%s] %s %d", name, fileName, type, size));
+			_log.information(Poco::format("file %s %s %d", fileName, type, size));
 		} catch (Poco::PathSyntaxException& ex) {
-			_log.warning(Poco::format("failed download file[%s] %s", fileName, ex.displayText()));
+			_log.warning(Poco::format("failed download path[%s] %s", fileName, ex.displayText()));
 		} catch (Poco::FileException& ex) {
 			_log.warning(Poco::format("failed download file[%s] %s", fileName, ex.displayText()));
 		}
