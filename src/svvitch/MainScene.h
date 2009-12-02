@@ -90,13 +90,13 @@ private:
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
 
-	~MainScene();
+	virtual ~MainScene();
 
-	virtual bool initialize();
+	bool initialize();
 
-	virtual bool setWorkspace(WorkspacePtr workspace);
+	bool setWorkspace(WorkspacePtr workspace);
 
-	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
+	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** container‚Ì€”õ‚ğs‚¢‚Ü‚· */
 	bool prepare(const string& playlistID, const int i = 0);

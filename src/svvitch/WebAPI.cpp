@@ -1,5 +1,6 @@
 #include "WebAPI.h"
 
+#include <Poco/NumberFormatter.h>
 #include <Poco/DOM/AutoPtr.h>
 #include <Poco/DOM/Document.h>
 #include <Poco/DOM/Element.h>
@@ -7,10 +8,14 @@
 #include <Poco/DOM/AutoPtr.h>
 #include <Poco/DOM/DOMWriter.h>
 #include <Poco/XML/XMLWriter.h>
+#include <Poco/File.h>
 #include <Poco/format.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/Net/HTMLForm.h>
 #include <Poco/URI.h>
+#include <Poco/FileStream.h>
+#include <Poco/Path.h>
+#include <Poco/StreamCopier.h>
 
 #include "MainScene.h"
 #include "Utils.h"
@@ -37,19 +42,77 @@ HTTPRequestHandler* SwitchRequestHandlerFactory::createRequestHandler(const HTTP
 }
 
 
-SwitchRequestHandler::SwitchRequestHandler(RendererPtr renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
+SwitchPartHandler::SwitchPartHandler(): _log(Poco::Logger::get("")) {
+	_log.information("create SwitchPartHandler");
+}
+
+SwitchPartHandler::~SwitchPartHandler() {
+	_log.information("release SwitchPartHandler");
+}
+
+void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is) {
+	string type = header.get("Content-Type", "(unspecified)");
+	if (header.has("Content-Disposition")) {
+		string disp;
+		Poco::Net::NameValueCollection params;
+		MessageHeader::splitParameters(header["Content-Disposition"], disp, params);
+		string name = params.get("name", "(unnamed)"); // formプロパティ名
+		string fileName;
+		svvitch::sjis_utf8(params.get("filename", "unnamed")., fileName);
+
+		int pos = fileName.find_last_of('\u00a5');
+		if (pos != string::npos) {
+			// フルパスの場合、ファイル名だけを抽出
+			fileName = fileName.substr(pos + 1);
+		}
+
+		Poco::File rootDir("uploads");
+		if (!rootDir.exists()) rootDir.createDirectories();
+		Poco::File f(rootDir.path() + "/" + fileName + ".part");
+		try {
+			Poco::FileOutputStream os(f.path());
+			int size = Poco::StreamCopier::copyStream(is, os, 512 * 1024);
+			os.close();
+			Poco::File rename(rootDir.path() + "/" + fileName);
+			if (rename.exists()) rename.remove();
+			f.renameTo(rename.path());
+			_log.information(Poco::format("file[%s] %s %d", name, fileName, type, size));
+		} catch (Poco::PathSyntaxException& ex) {
+			_log.warning(Poco::format("failed download file[%s] %s", fileName, ex.displayText()));
+		} catch (Poco::FileException& ex) {
+			_log.warning(Poco::format("failed download file[%s] %s", fileName, ex.displayText()));
+		}
+	}
+}
+
+
+SwitchRequestHandler::SwitchRequestHandler(RendererPtr renderer):
+	_log(Poco::Logger::get("")), _renderer(renderer), _request(NULL), _response(NULL), _form(NULL) {
 	_log.information("create SwitchRequestHandler");
 }
 
 SwitchRequestHandler::~SwitchRequestHandler() {
+	SAFE_DELETE(_form);
 	_log.information("release SwitchRequestHandler");
 }
 
-void SwitchRequestHandler::run() {
-	_log.information("request from " + request().clientAddress().toString());
+HTMLForm& SwitchRequestHandler::form() {
+	if (!_form) {
+		SwitchPartHandler partHandler;
+		_form = new HTMLForm(request(), request().stream(), partHandler);
+	}
+	return *_form;
+}
 
-	response().setChunkedTransferEncoding(true);
-	response().setContentType("text/xml; charset=UTF-8");
+void SwitchRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerResponse& response) {
+	_request  = &request;
+	_response = &response;
+
+	doRequest();
+}
+
+void SwitchRequestHandler::doRequest() {
+	_log.information(Poco::format("request from %s", request().clientAddress().toString()));
 	URI uri(request().getURI());
 	vector<string> urls;
 	svvitch::split(uri.getPath().substr(1), '/', urls);
@@ -60,19 +123,20 @@ void SwitchRequestHandler::run() {
 		} else if (urls[0] == "get") {
 			get();
 		} else if (urls[0] == "switch") {
-			svvitch();
-		} else {
-			sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found command: %s", urls[0]));
+			switchContent();
 		}
-	} else {
-		sendErrorResponse(HTTPResponse::HTTP_NOT_FOUND, request().getURI());
+	}
+
+	if (!response().sent()) {
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found: %s", request().getURI()));
 	}
 }
 
 void SwitchRequestHandler::set() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
-		string playlistID = form().get("pl");
+		_log.information(Poco::format("file: [%s]", form().get("filename", "none")));
+		string playlistID = form().get("pl", "");
 		int playlistIndex = 0;
 		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
 		if (!playlistID.empty()) {
@@ -81,27 +145,29 @@ void SwitchRequestHandler::set() {
 			if (result) {
 				writeResult(200, Poco::format("%s", playlistID));
 			} else {
-				writeResult(500, Poco::format("failed prepared %s", playlistID));
+				sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, Poco::format("failed prepared %s", playlistID));
 			}
 		} else {
-			writeResult(500, "empty playlist ID");
+			sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "empty playlist ID");
 		}
 	} else {
-		writeResult(500, "scene not found");
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 	}
 }
 
 void SwitchRequestHandler::get() {
-	writeResult(500, "not implemnted");
+	sendResponse(HTTPResponse::HTTP_NOT_IMPLEMENTED, "not implemented");
 }
 
-void SwitchRequestHandler::svvitch() {
+void SwitchRequestHandler::switchContent() {
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/xml; charset=UTF-8");
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		scene->switchContent();
 		writeResult(200, "switch content");
 	} else {
-		writeResult(500, "scene not found");
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 	}
 }
 
@@ -117,6 +183,15 @@ void SwitchRequestHandler::writeResult(const int code, const string& description
 	DOMWriter writer;
 	writer.setNewLine("\n");
 	writer.setOptions(XMLWriter::PRETTY_PRINT);
+
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/xml; charset=UTF-8");
 	writer.writeNode(response().send(), doc);
 }
 
+void SwitchRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const string& message) {
+	response().setStatusAndReason(status, message);
+
+	string statusCode(Poco::NumberFormatter::format(static_cast<int>(response().getStatus())));
+	response().send() << Poco::format("%s - %s", statusCode, message);
+}
