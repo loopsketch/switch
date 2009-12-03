@@ -21,7 +21,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspac
 	Scene(renderer), _uim(uim), _workspace(workspace),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_frame(0), _luminance(100), _preparing(false), _prepared(NULL), _playCount(0), _transition(NULL), _interruptMedia(NULL),
-	_playlistName(NULL), _currentName(NULL), _nextName(NULL)
+	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
 	_luminance = conf->luminance;
@@ -44,6 +44,7 @@ MainScene::~MainScene() {
 
 	SAFE_RELEASE(_playlistName);
 	SAFE_RELEASE(_currentName);
+	SAFE_RELEASE(_nextPlaylistName);
 	SAFE_RELEASE(_nextName);
 
 	_log.information("save configuration");
@@ -176,14 +177,14 @@ bool MainScene::prepareNextMedia() {
 		if (playlist && playlist->itemCount() > 0) {
 			_playlistItem = (_playlistItem + 1) % playlist->itemCount();
 			PlayListItemPtr item = playlist->items()[_playlistItem];
-			_preparedCommand = item->next();
-			_preparedTransition = item->transition();
+			_nextCommand = item->next();
+			_nextTransition = item->transition();
 			LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
 			LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				SAFE_RELEASE(_playlistName);
-				_playlistName = t1;
+				SAFE_RELEASE(_nextPlaylistName);
+				_nextPlaylistName = t1;
 				SAFE_RELEASE(_nextName);
 				_nextName = t2;
 			}
@@ -192,7 +193,7 @@ bool MainScene::prepareNextMedia() {
 	} else {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
-	_workspace.checkUpdate();
+//	_workspace.checkUpdate();
 	_preparing = false;
 	return true;
 }
@@ -309,24 +310,19 @@ void MainScene::switchContent() {
 		_prepared = tmp;
 		_log.information(Poco::format("switch content: %s-%d:%s", _nextPlaylistID, _nextItem, item->media()->name()));
 
-		LPDIRECT3DTEXTURE9 t1 = NULL;
-		if (_playlistID != _nextPlaylistID) {
-			_playlistID = _nextPlaylistID;
-			t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-		}
-		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			if (t1) {
-				SAFE_RELEASE(_playlistName);
-				_playlistName = t1;
-			}
-			SAFE_RELEASE(_nextName);
-			_nextName = t2;
+			SAFE_RELEASE(_playlistName);
+			_playlistName = _nextPlaylistName;
+			_nextPlaylistName = NULL;
+			SAFE_RELEASE(_currentName);
+			_currentName = _nextName;
+			_nextName = NULL;
 		}
+		_playlistID = _nextPlaylistID;
 		_playlistItem = _nextItem;
-		_preparedCommand = item->next();
-		_preparedTransition = item->transition();
+		_nextCommand = item->next();
+		_nextTransition = item->transition();
 		_doSwitch = true;
 	} else {
 		_log.warning(Poco::format("not find playlist: %s", _nextPlaylistID));
@@ -353,10 +349,14 @@ void MainScene::process() {
 			_contents[next]->play();
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				SAFE_RELEASE(_playlistName);
+				_playlistName = _nextPlaylistName;
+				_nextPlaylistName = NULL;
+				SAFE_RELEASE(_currentName);
 				_currentName = _nextName;
 				_nextName = NULL;
 			}
-			_currentCommand = _preparedCommand;
+			_currentCommand = _nextCommand;
 			_playCount++;
 			_log.information("startup auto prepare");
 //			SAFE_DELETE(_prepareNextMediaResult);
@@ -399,17 +399,17 @@ void MainScene::process() {
 					_currentName = _nextName;
 					_nextName = NULL;
 				}
-				_currentCommand = _preparedCommand;
+				_currentCommand = _nextCommand;
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
 				if (currentContent) {
-					if (_preparedTransition == "slide") {
+					if (_nextTransition == "slide") {
 						const ConfigurationPtr conf = _renderer.config();
 						int cw = conf->splitSize.cx;
 						int ch = conf->splitSize.cy;
 						_transition = new SlideTransition(currentContent, nextContent, 0, ch);
-					} else if (_preparedTransition == "dissolve") {
+					} else if (_nextTransition == "dissolve") {
 						_transition = new DissolveTransition(currentContent, nextContent);
 					}
 					if (_transition) _transition->initialize(_frame);
@@ -503,7 +503,7 @@ void MainScene::draw2() {
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
 		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
 		if (!_currentCommand.empty()) _renderer.drawFont(0, 680, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
-		if (!_preparedTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _preparedTransition));
+		if (!_nextTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _nextTransition));
 
 		_renderer.drawTexture(500, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		_renderer.drawTexture(500, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);

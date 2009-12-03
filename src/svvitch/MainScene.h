@@ -63,11 +63,13 @@ private:
 	/** 再生中のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _currentName;
 	/** 準備済のコンテンツ名 */
+	LPDIRECT3DTEXTURE9 _nextPlaylistName;
+	/** 準備済のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _nextName;
 	/** 準備済のコマンド */
-	string _preparedCommand;
+	string _nextCommand;
 	/** 準備済のトランジション */
-	string _preparedTransition;
+	string _nextTransition;
 
 	/** 再生回数 */
 	int _playCount;

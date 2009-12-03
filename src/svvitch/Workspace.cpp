@@ -112,8 +112,8 @@ bool Workspace::parse() {
 						} else  if (type == "cvcap") {
 							typeCode = MediaTypeCvCap;
 						}
-						Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.find(id);
-						if (it != _mediaMap.end()) {
+						Poco::HashMap<string, MediaItemPtr>::Iterator find = _mediaMap.find(id);
+						if (find != _mediaMap.end()) {
 							_log.warning(Poco::format("already registed media, delete old item: %s", id));
 							for (vector<MediaItemPtr>::iterator it = _media.begin(); it != _media.end(); it++) {
 								MediaItemPtr media = *it;
@@ -122,8 +122,8 @@ bool Workspace::parse() {
 									break;
 								}
 							}
-							SAFE_DELETE(it->second);
-							_mediaMap.erase(id);
+							SAFE_DELETE(find->second);
+							_mediaMap.erase(find);
 						}
 						MediaItemPtr media  = new MediaItem(typeCode, id, name, duration, files);
 						_mediaMap[id] = media;
