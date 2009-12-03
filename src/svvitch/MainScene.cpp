@@ -203,8 +203,8 @@ bool MainScene::prepare(const string& playlistID, const int i) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_DELETE(_prepared);
 		_prepared = c;
-		_preparedPlaylistID = playlistID;
-		_preparedItem = i;
+		_nextPlaylistID = playlistID;
+		_nextItem = i;
 		return true;
 	}
 	SAFE_DELETE(c);
@@ -300,18 +300,18 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 }
 
 void MainScene::switchContent() {
-	PlayListPtr playlist = _workspace.getPlaylist(_preparedPlaylistID);
-	if (_prepared && playlist && playlist->itemCount() > _preparedItem) {
-		PlayListItemPtr item = playlist->items()[_preparedItem];
+	PlayListPtr playlist = _workspace.getPlaylist(_nextPlaylistID);
+	if (_prepared && playlist && playlist->itemCount() > _nextItem) {
+		PlayListItemPtr item = playlist->items()[_nextItem];
 		int next = (_currentContent + 1) % _contents.size();
 		ContainerPtr tmp = _contents[next];
 		_contents[next] = _prepared;
 		_prepared = tmp;
-		_log.information(Poco::format("switch content: %s-%d:%s", _preparedPlaylistID, _preparedItem, item->media()->name()));
+		_log.information(Poco::format("switch content: %s-%d:%s", _nextPlaylistID, _nextItem, item->media()->name()));
 
 		LPDIRECT3DTEXTURE9 t1 = NULL;
-		if (_playlistID != _preparedPlaylistID) {
-			_playlistID = _preparedPlaylistID;
+		if (_playlistID != _nextPlaylistID) {
+			_playlistID = _nextPlaylistID;
 			t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
 		}
 		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
@@ -324,12 +324,12 @@ void MainScene::switchContent() {
 			SAFE_RELEASE(_preparedName);
 			_preparedName = t2;
 		}
-		_playlistItem = _preparedItem;
+		_playlistItem = _nextItem;
 		_preparedCommand = item->next();
 		_preparedTransition = item->transition();
 		_doSwitch = true;
 	} else {
-		_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
+		_log.warning(Poco::format("not find playlist: %s", _nextPlaylistID));
 	}
 }
 

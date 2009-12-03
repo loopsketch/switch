@@ -54,9 +54,9 @@ private:
 	/** 再生準備済コンテンツ */
 	ContainerPtr _prepared;
 	/** 再生準備済プレイリスト */
-	string _preparedPlaylistID;
+	string _nextPlaylistID;
 	/** 再生準備済プレイリストアイテム */
-	int _preparedItem;
+	int _nextItem;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
