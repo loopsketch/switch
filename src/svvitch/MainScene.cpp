@@ -21,7 +21,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspac
 	Scene(renderer), _uim(uim), _workspace(workspace),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_frame(0), _luminance(100), _preparing(false), _prepared(NULL), _playCount(0), _transition(NULL), _interruptMedia(NULL),
-	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
+	_playlistName(NULL), _currentName(NULL), _nextName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
 	_luminance = conf->luminance;
@@ -44,7 +44,7 @@ MainScene::~MainScene() {
 
 	SAFE_RELEASE(_playlistName);
 	SAFE_RELEASE(_currentName);
-	SAFE_RELEASE(_preparedName);
+	SAFE_RELEASE(_nextName);
 
 	_log.information("save configuration");
 	try {
@@ -184,8 +184,8 @@ bool MainScene::prepareNextMedia() {
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 				SAFE_RELEASE(_playlistName);
 				_playlistName = t1;
-				SAFE_RELEASE(_preparedName);
-				_preparedName = t2;
+				SAFE_RELEASE(_nextName);
+				_nextName = t2;
 			}
 		}
 		_suppressSwitch = false;
@@ -321,8 +321,8 @@ void MainScene::switchContent() {
 				SAFE_RELEASE(_playlistName);
 				_playlistName = t1;
 			}
-			SAFE_RELEASE(_preparedName);
-			_preparedName = t2;
+			SAFE_RELEASE(_nextName);
+			_nextName = t2;
 		}
 		_playlistItem = _nextItem;
 		_preparedCommand = item->next();
@@ -353,8 +353,8 @@ void MainScene::process() {
 			_contents[next]->play();
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				_currentName = _preparedName;
-				_preparedName = NULL;
+				_currentName = _nextName;
+				_nextName = NULL;
 			}
 			_currentCommand = _preparedCommand;
 			_playCount++;
@@ -396,8 +396,8 @@ void MainScene::process() {
 				_contents[next]->play();
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					_currentName = _preparedName;
-					_preparedName = NULL;
+					_currentName = _nextName;
+					_nextName = NULL;
 				}
 				_currentCommand = _preparedCommand;
 				_playCount++;
@@ -507,7 +507,7 @@ void MainScene::draw2() {
 
 		_renderer.drawTexture(500, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		_renderer.drawTexture(500, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(500, 670, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(500, 670, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");

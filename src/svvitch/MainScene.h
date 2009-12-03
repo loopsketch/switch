@@ -63,7 +63,7 @@ private:
 	/** 再生中のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _currentName;
 	/** 準備済のコンテンツ名 */
-	LPDIRECT3DTEXTURE9 _preparedName;
+	LPDIRECT3DTEXTURE9 _nextName;
 	/** 準備済のコマンド */
 	string _preparedCommand;
 	/** 準備済のトランジション */
