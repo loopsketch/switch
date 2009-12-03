@@ -34,8 +34,8 @@ class MainScene: public Scene
 private:
 	Poco::FastMutex _lock;
 
-	ui::UserInterfaceManager* _uim;
-	WorkspacePtr _workspace;
+	ui::UserInterfaceManager& _uim;
+	Workspace& _workspace;
 
 	DWORD _frame;
 	int _luminance;
@@ -88,13 +88,12 @@ private:
 
 
 public:
-	MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
+	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace);
 
 	virtual ~MainScene();
 
+	/** èâä˙âª */
 	bool initialize();
-
-	bool setWorkspace(WorkspacePtr workspace);
 
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 

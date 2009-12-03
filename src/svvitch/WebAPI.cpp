@@ -138,8 +138,8 @@ void SwitchRequestHandler::doRequest() {
 void SwitchRequestHandler::set() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
-		_log.information(Poco::format("name: [%s]", form().get("name", "none")));
 		string playlistID = form().get("pl", "");
+		_log.information(Poco::format("set playlist: [%s]", playlistID));
 		int playlistIndex = 0;
 		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
 		if (!playlistID.empty()) {

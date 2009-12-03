@@ -115,6 +115,13 @@ bool Workspace::parse() {
 						Poco::HashMap<string, MediaItemPtr>::Iterator it = _mediaMap.find(id);
 						if (it != _mediaMap.end()) {
 							_log.warning(Poco::format("already registed media, delete old item: %s", id));
+							for (vector<MediaItemPtr>::iterator it = _media.begin(); it != _media.end(); it++) {
+								MediaItemPtr media = *it;
+								if (id == media->id()) {
+									it = _media.erase(it);
+									break;
+								}
+							}
 							SAFE_DELETE(it->second);
 							_mediaMap.erase(id);
 						}

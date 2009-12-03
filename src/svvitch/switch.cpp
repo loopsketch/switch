@@ -232,11 +232,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	workspace->parse();
 	MainScenePtr mainScene = NULL;
 	if (true) {
-		mainScene = new MainScene(*_renderer, _uim);
-		if (!mainScene->setWorkspace(workspace)) {
-			MessageBox(0, L"ƒƒCƒ“ƒV[ƒ“‚Ì¶¬‚ÉŽ¸”s‚µ‚Ü‚µ‚½", NULL, MB_OK);
-			return 0;
-		}
+		mainScene = new MainScene(*_renderer, *_uim, *workspace);
 		_renderer->addScene("main", mainScene);
 	}
 	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
@@ -310,7 +306,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SAFE_DELETE(_renderer);
 	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
-	_log.information("*** system end");
 	_logFile->release();
 //	_log.shutdown();
 	CoUninitialize();
@@ -370,7 +365,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			} else {
 				bool shift = GetKeyState(VK_SHIFT) < 0;
 				bool ctrl = GetKeyState(VK_CONTROL) < 0;
-				_renderer->notifyKeyDown(wParam, shift, ctrl);
+				if (_renderer) _renderer->notifyKeyDown(wParam, shift, ctrl);
 			}
 			break;
 		case WM_KEYUP:
@@ -380,23 +375,23 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				if (ctrl && wParam == 'S') {
 					swapout();
 				} else {
-					_renderer->notifyKeyUp(wParam, shift, ctrl);
+					if (_renderer) _renderer->notifyKeyUp(wParam, shift, ctrl);
 				}
 			}
 			break;
 
 		case WM_MOUSEMOVE:
-			_uim->notifyMouseMove(LOWORD(lParam), HIWORD(lParam));
+			if (_uim) _uim->notifyMouseMove(LOWORD(lParam), HIWORD(lParam));
 			break;
 		case WM_MOUSEWHEEL:
-			_uim->notifyMouseWheel((SHORT)HIWORD(wParam));
+			if (_uim) _uim->notifyMouseWheel((SHORT)HIWORD(wParam));
 			break;
 		case WM_LBUTTONDOWN:
-			_uim->notifyButtonDownL(LOWORD(lParam), HIWORD(lParam));
+			if (_uim) _uim->notifyButtonDownL(LOWORD(lParam), HIWORD(lParam));
 			::SetCapture(hWnd);
 			break;
 		case WM_LBUTTONUP:
-			_uim->notifyButtonUpL(LOWORD(lParam), HIWORD(lParam));
+			if (_uim) _uim->notifyButtonUpL(LOWORD(lParam), HIWORD(lParam));
 			::ReleaseCapture();
 			break;
 		case WM_RBUTTONDOWN:
@@ -404,7 +399,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			::SetCapture(hWnd);
 			break;
 		case WM_RBUTTONUP:
-			_uim->notifyButtonUpR(LOWORD(lParam), HIWORD(lParam));
+			if (_uim) _uim->notifyButtonUpR(LOWORD(lParam), HIWORD(lParam));
 			::ReleaseCapture();
 			break;
 

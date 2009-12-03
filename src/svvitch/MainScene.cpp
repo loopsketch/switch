@@ -17,16 +17,10 @@
 #include "DissolveTransition.h"
 
 
-//=============================================================
-// 実装
-//=============================================================
-//-------------------------------------------------------------
-// デフォルトコンストラクタ
-//-------------------------------------------------------------
-MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
-	Scene(renderer), _uim(uim),
+MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace):
+	Scene(renderer), _uim(uim), _workspace(workspace),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
-	_workspace(NULL), _frame(0), _luminance(100), _preparing(false), _prepared(NULL), _playCount(0), _transition(NULL), _interruptMedia(NULL),
+	_frame(0), _luminance(100), _preparing(false), _prepared(NULL), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _preparedName(NULL)
 {
 	ConfigurationPtr conf = _renderer.config();
@@ -34,9 +28,6 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim):
 	initialize();
 }
 
-//-------------------------------------------------------------
-// デストラクタ
-//-------------------------------------------------------------
 MainScene::~MainScene() {
 	_log.information("release contents");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -70,9 +61,6 @@ MainScene::~MainScene() {
 }
 
 
-//-------------------------------------------------------------
-// シーンの初期化
-//-------------------------------------------------------------
 bool MainScene::initialize() {
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
@@ -112,31 +100,21 @@ bool MainScene::initialize() {
 	_frame = 0;
 	_log.information("*initialized MainScene");
 	_startup = false;
+	if (_workspace.getPlaylistCount() > 0) {
+		// playlistがある場合は最初のplaylistを自動スタートする
+		PlayListPtr playlist = _workspace.getPlaylist(0);
+		if (playlist) {
+			_playlistID = playlist->id();
+			_playlistItem = -1;
+			activePrepareNextMedia();
+		}
+	} else {
+		_log.warning("no playlist, no auto starting");
+	}
 	_log.information("*created main-scene");
 	return true;
 }
 
-//-------------------------------------------------------------
-// シーンを生成
-// 引数
-//		pD3DDevice : IDirect3DDevice9 インターフェイスへのポインタ
-// 戻り値
-//		成功したらS_OK
-//-------------------------------------------------------------
-bool MainScene::setWorkspace(WorkspacePtr workspace) {
-	_workspace = workspace;
-	if (_workspace->getPlaylistCount() > 0) {
-		// playlistがある場合は最初のplaylistを自動スタートする
-		PlayListPtr playlist = _workspace->getPlaylist(0);
-		_playlistID = playlist->id();
-		_playlistItem = -1;
-		activePrepareNextMedia();
-	} else {
-		_log.warning("no playlist, no auto starting");
-	}
-
-	return true;
-}
 
 void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) {
 	_keycode = keycode;
@@ -149,7 +127,6 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 
 bool MainScene::prepareNextMedia() {
 	// 初期化フェーズ
-	if (!_workspace) return false;
 	int count = 5;
 	while (_transition || count-- > 0) {
 		// トランジション中は解放しないようにする。更に初期化まで1秒くらいウェイトする
@@ -173,7 +150,7 @@ bool MainScene::prepareNextMedia() {
 			} else {
 				playlistID = s;
 			}
-			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+			PlayListPtr playlist = _workspace.getPlaylist(playlistID);
 			if (playlist) {
 				if (playlist->itemCount() > j) {
 					_playlistID = playlist->id();
@@ -195,7 +172,7 @@ bool MainScene::prepareNextMedia() {
 	}
 
 	if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
-		PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
+		PlayListPtr playlist = _workspace.getPlaylist(_playlistID);
 		if (playlist && playlist->itemCount() > 0) {
 			_playlistItem = (_playlistItem + 1) % playlist->itemCount();
 			PlayListItemPtr item = playlist->items()[_playlistItem];
@@ -215,7 +192,7 @@ bool MainScene::prepareNextMedia() {
 	} else {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
-	_workspace->checkUpdate();
+	_workspace.checkUpdate();
 	_preparing = false;
 	return true;
 }
@@ -237,7 +214,7 @@ bool MainScene::prepare(const string& playlistID, const int i) {
 bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
 	_log.information(Poco::format("prepare: %s-%d", playlistID, i));
 	container->initialize();
-	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+	PlayListPtr playlist = _workspace.getPlaylist(playlistID);
 	if (playlist && playlist->itemCount() > 0) {
 		PlayListItemPtr item = playlist->items()[i % playlist->itemCount()];
 		MediaItemPtr media = item->media();
@@ -323,7 +300,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 }
 
 void MainScene::switchContent() {
-	PlayListPtr playlist = _workspace->getPlaylist(_preparedPlaylistID);
+	PlayListPtr playlist = _workspace.getPlaylist(_preparedPlaylistID);
 	if (_prepared && playlist && playlist->itemCount() > _preparedItem) {
 		PlayListItemPtr item = playlist->items()[_preparedItem];
 		int next = (_currentContent + 1) % _contents.size();
@@ -464,11 +441,6 @@ void MainScene::process() {
 	_frame++;
 }
 
-//-------------------------------------------------------------
-// オブジェクト等の描画
-// 引数
-//		pD3DDevice : IDirect3DDevice9 インターフェイスへのポインタ
-//-------------------------------------------------------------
 void MainScene::draw1() {
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -487,7 +459,7 @@ void MainScene::draw1() {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(conf->mainRect.left, conf->mainRect.top, conf->mainRect.right, conf->mainRect.bottom, NULL, 0, col, col, col, col);
 	}
-	_renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
+//	_renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
 }
 
 void MainScene::draw2() {
@@ -501,10 +473,12 @@ void MainScene::draw2() {
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 	}
 
+	string status1;
+	string status2;
 	if (_currentContent >= 0) {
 		ContentPtr c = _contents[_currentContent]->get(0);
 		if (c && !c->opened().empty()) {
-			MediaItemPtr media = _workspace->getMedia(c->opened());
+			MediaItemPtr media = _workspace.getMedia(c->opened());
 			int current = c->current();
 			int duration = c->duration();
 			string time;
@@ -514,38 +488,29 @@ void MainScene::draw2() {
 				DWORD timeLeft = movie->timeLeft();
 				Uint32 fps = movie->getFPS();
 				float avgTime = movie->getAvgTime();
+				status1 = Poco::format("%03lufps(%03.2hfms)", fps, avgTime);
 				time = Poco::format("%02lu:%02lu.%03lu %02lu:%02lu.%03lu", currentTime / 60000, currentTime / 1000 % 60, currentTime % 1000 , timeLeft / 60000, timeLeft / 1000 % 60, timeLeft % 1000);
-				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
-				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-				_renderer.drawFontTextureText(0, 595, 12, 16, 0xccffffff, Poco::format("%03lufps(%03.2hfms)", fps, avgTime));
 			} else {
-				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
-				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+//				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
+//				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
-			_renderer.drawFontTextureText(0, 610, 12, 16, 0xccffffff, Poco::format("%04d/%04d %s", current, duration, time));
+			status2 = Poco::format("%04d/%04d %s", current, duration, time);
 		}
-	}
-	if (!_currentCommand.empty()) {
-		_renderer.drawFontTextureText(0, 625, 12, 16, 0xccffffff, Poco::format(">%s", _currentCommand));
 	}
 
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		int next = (_currentContent + 1) % _contents.size();
-//		FFMovieContentPtr nextMovie = dynamic_cast<FFMovieContentPtr>(_contents[next]->get(0));
-//		FFMovieContentPtr nextMovie = (FFMovieContentPtr)_contents[next]->get(0);
-		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
-
-		_renderer.drawTexture(0, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(0, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(0, 670, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		if (!_currentCommand.empty()) _renderer.drawFont(0, 685, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
+		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
+		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
+		if (!_currentCommand.empty()) _renderer.drawFont(0, 680, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
 		if (!_preparedTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _preparedTransition));
-//		if (_prepareNextMediaResult) {
-//			string available(_prepareNextMediaResult->available()?"available":"not available");
-//			_renderer.drawFont(500, 700, 0xffffff, 0x000000, Poco::format("prepare result %s", available));			
-//		}
+
+		_renderer.drawTexture(500, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(500, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(500, 670, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+
+		int next = (_currentContent + 1) % _contents.size();
+		string wait(_contents[next]->opened().empty()?"preparing":"ready");
+		_renderer.drawFontTextureText(0, 720, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
 	}
 }
-
