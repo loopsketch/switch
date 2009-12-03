@@ -53,8 +53,7 @@ SwitchPartHandler::~SwitchPartHandler() {
 void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is) {
 	string type = header.get("Content-Type", "(unspecified)");
 	if (header.has("Content-Disposition")) {
-		string contentDisposition = header["Content-Disposition"];
-//		svvitch::sjis_utf8(header["Content-Disposition"], contentDisposition);
+		string contentDisposition = header["Content-Disposition"]; // UTF-8ベースのページであればUTF-8になるようです
 		string disp;
 		Poco::Net::NameValueCollection params;
 		MessageHeader::splitParameters(contentDisposition, disp, params);
