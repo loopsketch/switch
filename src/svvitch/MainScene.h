@@ -33,6 +33,7 @@ class MainScene: public Scene
 {
 private:
 	Poco::FastMutex _lock;
+	Poco::FastMutex _switchLock;
 
 	ui::UserInterfaceManager& _uim;
 	Workspace& _workspace;
