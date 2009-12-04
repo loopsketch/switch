@@ -1,5 +1,6 @@
+var root = "http://" + display[0] + ":9090/";
+
 $(document).ready(function() {
-	var root = "http://" + display[0] + ":9090/";
 	$.ajax({
 		type: "GET",
 		url: root + "get/playlist",
@@ -8,25 +9,18 @@ $(document).ready(function() {
 		async: false,
 		success: function(data) {
 			$.each(data["playlists"], function() {
-				$("#message").append(this["id"] + "<br>");
+				var id = this["id"];
+				var item = $("<div>").addClass("playlist-item");
+				item.attr("playlist-id", this["id"]);
+				item.text("プレイリスト(" + this["id"] + ")");
+				item.click(function() {
+					setPlaylist(id);
+					$("div[playlist-id]").removeClass("playlist-item-selected");
+					item.addClass("playlist-item-selected");
+				});
+				$("#playlist-selector").append(item);
 			});
 		}
-	});
-
-	$("#setPlaylist").click(function() {
-		var playlist = $("#playlist-id").val();
-		$.ajax({
-			type: "GET",
-			url: root + "set/playlist",
-			data: {pl: playlist},
-			dataType: "jsonp",
-			success: function(data) {
-				$("#message").text(data["playlist"] + "に設定しました.");
-			},
-			error: function(request, status, ex) {
-				$("#message").text("エラー発生: " + status);
-			}
-		});
 	});
 
 	$("#doSwitch").click(function() {
@@ -36,3 +30,18 @@ $(document).ready(function() {
 	});
 	$("#message").text('操作開始できます.');
 });
+
+function setPlaylist(id) {
+	$.ajax({
+		type: "GET",
+		url: root + "set/playlist",
+		data: {pl: id},
+		dataType: "jsonp",
+		success: function(data) {
+			$("#message").text(data["playlist"] + "に設定しました.");
+		},
+		error: function(request, status, ex) {
+			$("#message").text("エラー発生: " + status);
+		}
+	});
+}

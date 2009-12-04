@@ -1,7 +1,25 @@
+#playlist-selector {
+    background: #fefefe;
+    border: 1px solid #b2d1ff;
+    margin: 4px 4px 4px 4px;
+    padding: 1px 2px 1px 2px;
+	width: 200px;
+	height: 150px;
+    float: left;
+}
+.playlist-item {
+    border: 1px solid #b2d1ff;
+    margin: 1px 0px 1px 0px;
+}
+
+.playlist-item-selected {
+    background: #ffcc66;
+}
+
 .message {
     background: #f3f8fc url(images/skin/information.png) 8px 50% no-repeat;
     border: 1px solid #b2d1ff;
     color: #006dba;
-    margin: 10px 0 5px 0;
-    padding: 5px 5px 5px 30px;
+    margin: 4px 0 4px 4px;
+    padding: 4px 4px 4px 30px;
 }

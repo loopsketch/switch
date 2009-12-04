@@ -6,20 +6,17 @@
 	<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 	<script type="text/javascript"<!--
 		var display = new Array();
-		display.push("localhost");
+		display.push("192.168.1.141");
 	// --></script>
 	<script type="text/javascript" src="js/webtaku.js"></script>
 </head>
 <body>
 	<h1>webTAKU</h1>
 	<div id="message" class="message"></div>
-	<form>
-		<input type="text" id="playlist-id" value="" size="30" />
-		<input type="button" value="プレイリスト送信" id="setPlaylist" />
-	</form>
-
+	<div id="playlist-selector"></div>
 	<form>
 		<input type="button" value="切替" id="doSwitch" />
 	</form>
+	<div id="footer"></div>
 </body>
 </html>
