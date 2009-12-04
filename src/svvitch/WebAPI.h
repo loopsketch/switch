@@ -60,13 +60,16 @@ private:
 
 	void doRequest();
 
-	void get();
+	/** İ’èŒn */
+	void set(const string& name);
 
-	void set();
+	/** æ“¾Œn */
+	void get(const string& name);
 
 	void switchContent();
 
-	void sendJSONP(string functionName, map<string, string>& json);
+	/** map‚ğJSONPŒ`®‚Å‘—M‚µ‚Ü‚· */
+	void sendJSONP(const string& functionName, const map<string, string>& json);
 
 	void writeResult(const int code, const string& description);
 

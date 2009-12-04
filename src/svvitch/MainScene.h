@@ -97,6 +97,8 @@ public:
 	/** ‰Šú‰» */
 	bool initialize();
 
+	Workspace& getWorkspace();
+
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** container‚Ì€”õ‚ğs‚¢‚Ü‚· */

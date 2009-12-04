@@ -122,9 +122,9 @@ void SwitchRequestHandler::doRequest() {
 	int count = urls.size();
 	if (!urls.empty()) {
 		if        (urls[0] == "set") {
-			set();
+			if (urls.size() > 1) set(urls[1]);
 		} else if (urls[0] == "get") {
-			get();
+			if (urls.size() > 1) get(urls[1]);
 		} else if (urls[0] == "switch") {
 			switchContent();
 		}
@@ -135,35 +135,73 @@ void SwitchRequestHandler::doRequest() {
 	}
 }
 
-void SwitchRequestHandler::set() {
+void SwitchRequestHandler::set(const string& name) {
+	string message;
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
-		string playlistID = form().get("pl", "");
-		int playlistIndex = 0;
-		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
-		_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
-		if (!playlistID.empty()) {
+		if (name == "playlist") {
+			string playlistID = form().get("pl", "");
+			int playlistIndex = 0;
+			if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
+			_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
 			_log.information(Poco::format("playlist: %s", playlistID));
 			bool result = scene->prepare(playlistID, playlistIndex);
 			if (result) {
 				map<string, string> params;
-				params["playlist"] = playlistID;
+				params["playlist"] = Poco::format("\"%s\"", playlistID);
 				params["index"] = Poco::format("%d", playlistIndex);
 				sendJSONP(form().get("callback", ""), params);
-//				writeResult(200, Poco::format("%s,%d", playlistID, playlistIndex));
+				return;
 			} else {
-				sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, Poco::format("failed prepared %s", playlistID));
+				message = Poco::format("failed prepared [%s]", playlistID);
 			}
 		} else {
-			sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "empty playlist ID");
+			message = "property not found";
 		}
 	} else {
-		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+		message = "scene not found";
 	}
+	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 }
 
-void SwitchRequestHandler::get() {
-	sendResponse(HTTPResponse::HTTP_NOT_IMPLEMENTED, "not implemented");
+void SwitchRequestHandler::get(const string& name) {
+	string message;
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	if (scene) {
+		Workspace& workspace = scene->getWorkspace();
+		if (name == "playlist") {
+			string playlistID = form().get("pl", "");
+			vector<string> playlists;
+			for (int i = 0; i < workspace.getPlaylistCount();i ++) {
+				PlayListPtr playlist = workspace.getPlaylist(i);
+				if (!playlistID.empty() && playlistID != playlist->id()) continue;
+				map<string, string> params;
+				params["id"] = Poco::format("\"%s\"", playlist->id());
+				vector<string> ids;
+				const vector<PlayListItemPtr> items = playlist->items();
+				for (vector<PlayListItemPtr>::const_iterator it = items.begin(); it != items.end(); it++) {
+					ids.push_back(Poco::format("\"%s\"", (*it)->media()->id()));
+				}
+				string itemJSON;
+				svvitch::formatJSONArray(ids, itemJSON);
+				params["items"] = itemJSON;
+				string playlistJSON;
+				svvitch::formatJSON(params, playlistJSON);
+				playlists.push_back(playlistJSON);
+			}
+			map<string, string> result;
+			string playlistsJSON;
+			svvitch::formatJSONArray(playlists, playlistsJSON);
+			result["playlists"] = playlistsJSON;
+			sendJSONP(form().get("callback", ""), result);
+			return;
+		} else {
+			message = "property not found";
+		}
+	} else {
+		message = "scene not found";
+	}
+	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 }
 
 void SwitchRequestHandler::switchContent() {
@@ -176,13 +214,10 @@ void SwitchRequestHandler::switchContent() {
 	}
 }
 
-void SwitchRequestHandler::sendJSONP(string functionName, map<string, string>& json) {
+void SwitchRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
 	string params;
-	for (std::map<string, string>::iterator it = json.begin(); it != json.end(); it++) {
-		if (!params.empty()) params = params + string(", ");
-		params = params + Poco::format("'%s':'%s'", it->first, it->second);
-	}
-	response().send() << Poco::format("%s({%s});", functionName, params);
+	svvitch::formatJSON(json, params);
+	response().send() << Poco::format("%s(%s);", functionName, params);
 }
 
 void SwitchRequestHandler::writeResult(const int code, const string& description) {

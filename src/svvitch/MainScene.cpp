@@ -117,6 +117,11 @@ bool MainScene::initialize() {
 }
 
 
+Workspace& MainScene::getWorkspace() {
+	return _workspace;
+}
+
+
 void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) {
 	_keycode = keycode;
 	_shift = shift;

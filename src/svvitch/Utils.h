@@ -1,10 +1,13 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
+using std::map;
 using std::string;
 using std::wstring;
+using std::vector;
 
 
 namespace svvitch {
@@ -23,6 +26,15 @@ namespace svvitch {
 	/** ファイルのMD5シグネイチャを取得 */
 	string md5(const string& file);
 
+	/** 文字列結合 */
+	void join(const vector<string>& v, char c, string& s);
+
 	/** 文字列分割 */
-	void split(const string& s, char c, std::vector<string>& v);
+	void split(const string& s, char c, vector<string>& v, int splits = 0);
+
+	/** JSON文字列生成 */
+	void formatJSON(const map<string, string>& json, string& s);
+
+	/** JSON配列文字列生成 */
+	void formatJSONArray(const vector<string>& list, string& s);
 }

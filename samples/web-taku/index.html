@@ -5,32 +5,10 @@
 	<link rel="stylesheet" href="main.css" />
 	<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 	<script type="text/javascript"<!--
-		$(document).ready(function() {
-			var root = 'http://localhost:9090/';
-			$("#setPlaylist").click(function() {
-				var playlist = $("#playlist-id").val();
-				$.ajax({
-					type: "GET",
-					url: root + "set",
-					data: {pl: playlist},
-					dataType: 'jsonp',
-					success: function(data) {
-						$("#message").text(data['playlist'] + 'に設定しました.');
-					},
-					error: function(request, status, ex) {
-						$("#message").text('エラー発生: ' + status);
-					}
-				});
-			});
-
-			$("#doSwitch").click(function() {
-				$.get(root + 'switch', {}, function(data) {
-					$("#message").text('切替えました.');
-				});
-			});
-			$("#message").text('操作開始できます.');
-		});
+		var display = new Array();
+		display.push("localhost");
 	// --></script>
+	<script type="text/javascript" src="js/webtaku.js"></script>
 </head>
 <body>
 	<h1>webTAKU</h1>

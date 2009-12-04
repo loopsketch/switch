@@ -6,6 +6,7 @@
 #include <vector>
 #include <Poco/MD5Engine.h>
 #include <Poco/DigestStream.h>
+#include <Poco/format.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/UnicodeConverter.h>
 
@@ -70,17 +71,50 @@ string svvitch::md5(const string& file) {
 	return string("");
 }
 
+void svvitch::join(const vector<string>& v, char c, string& s) {
+	s.clear();
+	for (vector<string>::const_iterator p = v.begin(); p != v.end(); p++) {
+		s += *p;
+		if (p != v.end() -1) s += c;
+	}
+}
 
-void svvitch::split(const string& s, char c, vector<string>& v) {
-	string::size_type i = 0;
+void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
+	string::size_type pos = 0;
 	string::size_type j = s.find(c);
 
+	int count = 0;
 	while (j != string::npos) {
-		v.push_back(s.substr(i, j - i));
-		i = ++j;
+		if (splits > 0 && count == splits) {
+			v.push_back(s.substr(pos));
+			break;
+		}
+		v.push_back(s.substr(pos, j - pos));
+		pos = ++j;
 		j = s.find(c, j);
 
-		if (j == string::npos) v.push_back(s.substr(i, s.length()));
+		if (j == string::npos) v.push_back(s.substr(pos, s.length()));
+		count++;
 	}
 	if (v.empty()) v.push_back(s);
+}
+
+void svvitch::formatJSON(const map<string, string>& json, string& s) {
+	vector<string> params;
+	for (map<string, string>::const_iterator it = json.begin(); it != json.end(); it++) {
+		params.push_back(Poco::format("\"%s\":%s", it->first, it->second));
+	}
+	string v;
+	svvitch::join(params, ',', v);
+	s = Poco::format("{%s}", v);
+}
+
+void svvitch::formatJSONArray(const vector<string>& list, string& s) {
+	vector<string> params;
+	for (vector<string>::const_iterator it = list.begin(); it != list.end(); it++) {
+		params.push_back(*it);
+	}
+	string v;
+	svvitch::join(params, ',', v);
+	s = Poco::format("[%s]", v);
 }
