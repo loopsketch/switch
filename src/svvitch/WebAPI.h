@@ -16,7 +16,10 @@
 #include "Renderer.h"
 
 #include <iostream>
+#include <map>
 
+using std::map;
+using std::string;
 using Poco::Net::HTMLForm;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
@@ -62,6 +65,8 @@ private:
 	void set();
 
 	void switchContent();
+
+	void sendJSONP(string functionName, map<string, string>& json);
 
 	void writeResult(const int code, const string& description);
 

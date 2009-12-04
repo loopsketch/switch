@@ -201,7 +201,7 @@ bool MainScene::prepareNextMedia() {
 bool MainScene::prepare(const string& playlistID, const int i) {
 	ContainerPtr c = new Container(_renderer);
 	if (prepareMedia(c, playlistID, i)) {
-		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+//		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_DELETE(_prepared);
 		_prepared = c;
 		_nextPlaylistID = playlistID;

@@ -139,14 +139,18 @@ void SwitchRequestHandler::set() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		string playlistID = form().get("pl", "");
-		_log.information(Poco::format("set playlist: [%s]", playlistID));
 		int playlistIndex = 0;
 		if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
+		_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
 		if (!playlistID.empty()) {
 			_log.information(Poco::format("playlist: %s", playlistID));
 			bool result = scene->prepare(playlistID, playlistIndex);
 			if (result) {
-				writeResult(200, Poco::format("%s", playlistID));
+				map<string, string> params;
+				params["playlist"] = playlistID;
+				params["index"] = Poco::format("%d", playlistIndex);
+				sendJSONP(form().get("callback", ""), params);
+//				writeResult(200, Poco::format("%s,%d", playlistID, playlistIndex));
 			} else {
 				sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, Poco::format("failed prepared %s", playlistID));
 			}
@@ -163,8 +167,6 @@ void SwitchRequestHandler::get() {
 }
 
 void SwitchRequestHandler::switchContent() {
-	response().setChunkedTransferEncoding(true);
-	response().setContentType("text/xml; charset=UTF-8");
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		scene->switchContent();
@@ -174,7 +176,17 @@ void SwitchRequestHandler::switchContent() {
 	}
 }
 
+void SwitchRequestHandler::sendJSONP(string functionName, map<string, string>& json) {
+	string params;
+	for (std::map<string, string>::iterator it = json.begin(); it != json.end(); it++) {
+		if (!params.empty()) params = params + string(", ");
+		params = params + Poco::format("'%s':'%s'", it->first, it->second);
+	}
+	response().send() << Poco::format("%s({%s});", functionName, params);
+}
+
 void SwitchRequestHandler::writeResult(const int code, const string& description) {
+
 	AutoPtr<Document> doc = new Document();
 	AutoPtr<Element> remote = doc->createElement("remote");
 	doc->appendChild(remote);
@@ -184,11 +196,12 @@ void SwitchRequestHandler::writeResult(const int code, const string& description
 	result->appendChild(resultText);
 	remote->appendChild(result);
 	DOMWriter writer;
-	writer.setNewLine("\n");
-	writer.setOptions(XMLWriter::PRETTY_PRINT);
+	writer.setNewLine("\r\n");
+	writer.setOptions(XMLWriter::WRITE_XML_DECLARATION | XMLWriter::PRETTY_PRINT);
 
-	response().setChunkedTransferEncoding(true);
-	response().setContentType("text/xml; charset=UTF-8");
+//	response().setStatus(HTTPResponse::HTTP_OK);
+//	response().setChunkedTransferEncoding(true);
+//	response().setContentType("text/xml");
 	writer.writeNode(response().send(), doc);
 }
 
@@ -196,5 +209,7 @@ void SwitchRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const s
 	response().setStatusAndReason(status, message);
 
 	string statusCode(Poco::NumberFormatter::format(static_cast<int>(response().getStatus())));
+//	response().setChunkedTransferEncoding(true);
+//	response().setContentType("text/plain");
 	response().send() << Poco::format("%s - %s", statusCode, message);
 }
