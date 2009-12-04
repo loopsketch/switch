@@ -113,7 +113,7 @@ public:
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 	/** è“®‚ÅØ‘Ö‚ğs‚¢‚Ü‚· */
-	void switchContent();
+	bool switchContent();
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 

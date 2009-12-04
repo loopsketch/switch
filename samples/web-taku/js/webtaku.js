@@ -3,6 +3,8 @@ display.push("127.0.0.1");
 var root = "http://" + display[0] + ":9090/";
 
 $(document).ready(function() {
+	$("#error").hide();
+	$("#message").hide();
 	$.ajax({
 		type: "GET",
 		url: root + "get/playlist",
@@ -14,7 +16,7 @@ $(document).ready(function() {
 				var id = this["id"];
 				var item = $("<div>").addClass("playlist-item");
 				item.attr("playlist-id", this["id"]);
-				item.text("プレイリスト(" + this["id"] + ")");
+				item.text(this["name"]);
 				item.click(function() {
 					setPlaylist(id);
 					$("div[playlist-id]").removeClass("playlist-item-selected");
@@ -28,7 +30,8 @@ $(document).ready(function() {
 	$("#doSwitch").click(function() {
 		switchContent();
 	});
-	$("#message").text('操作開始できます.');
+	$("#error").hide();
+	$("#message").text('操作開始できます.').fadeIn(1000);
 });
 
 function switchContent() {
@@ -37,10 +40,17 @@ function switchContent() {
 		url: root + "switch",
 		dataType: "jsonp",
 		success: function(data) {
-			if (data["switched"]) $("#message").text('切替えました.');
+			if (data["switched"]) {
+				$("#error").hide();
+				$("#message").text('切替えました.').fadeIn(1000);
+			} else {
+				$("#message").hide();
+				$("#error").text('切替えられません.').fadeIn(1000);
+			}
 		},
 		error: function(request, status, ex) {
-			$("#message").text("エラー発生: " + status);
+			$("#message").hide();
+			$("#error").text("エラー発生: " + status).fadeIn(1000);
 		}
 	});
 }
@@ -52,10 +62,17 @@ function setPlaylist(id) {
 		data: {pl: id},
 		dataType: "jsonp",
 		success: function(data) {
-			$("#message").text(data["playlist"] + "に設定しました.");
+			if (data["playlist"]) {
+				$("#error").hide();
+				$("#message").text(data["name"] + "のプレイリストを準備しました.").fadeIn(1000);
+			} else {
+				$("#message").hide();
+				$("#error").text('プレイリストを準備できません.').fadeIn(1000);
+			}
 		},
 		error: function(request, status, ex) {
-			$("#message").text("エラー発生: " + status);
+			$("#message").hide();
+			$("#error").text("エラー発生: " + status).fadeIn(1000);
 		}
 	});
 }

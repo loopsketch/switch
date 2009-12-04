@@ -146,15 +146,16 @@ void SwitchRequestHandler::set(const string& name) {
 			_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
 			_log.information(Poco::format("playlist: %s", playlistID));
 			bool result = scene->prepare(playlistID, playlistIndex);
+			map<string, string> params;
 			if (result) {
-				map<string, string> params;
+				Workspace& workspace = scene->getWorkspace();
+				PlayListPtr playlist = workspace.getPlaylist(playlistID);
+				if (playlist) params["name"] = Poco::format("\"%s\"", playlist->name());
 				params["playlist"] = Poco::format("\"%s\"", playlistID);
 				params["index"] = Poco::format("%d", playlistIndex);
-				sendJSONP(form().get("callback", ""), params);
-				return;
-			} else {
-				message = Poco::format("failed prepared [%s]", playlistID);
 			}
+			sendJSONP(form().get("callback", ""), params);
+			return;
 		} else {
 			message = "property not found";
 		}
@@ -177,22 +178,17 @@ void SwitchRequestHandler::get(const string& name) {
 				if (!playlistID.empty() && playlistID != playlist->id()) continue;
 				map<string, string> params;
 				params["id"] = Poco::format("\"%s\"", playlist->id());
+				params["name"] = Poco::format("\"%s\"", playlist->name());
 				vector<string> ids;
 				const vector<PlayListItemPtr> items = playlist->items();
 				for (vector<PlayListItemPtr>::const_iterator it = items.begin(); it != items.end(); it++) {
 					ids.push_back(Poco::format("\"%s\"", (*it)->media()->id()));
 				}
-				string itemJSON;
-				svvitch::formatJSONArray(ids, itemJSON);
-				params["items"] = itemJSON;
-				string playlistJSON;
-				svvitch::formatJSON(params, playlistJSON);
-				playlists.push_back(playlistJSON);
+				params["items"] = svvitch::formatJSONArray(ids);
+				playlists.push_back(svvitch::formatJSON(params));
 			}
 			map<string, string> result;
-			string playlistsJSON;
-			svvitch::formatJSONArray(playlists, playlistsJSON);
-			result["playlists"] = playlistsJSON;
+			result["playlists"] = svvitch::formatJSONArray(playlists);
 			sendJSONP(form().get("callback", ""), result);
 			return;
 		} else {
@@ -207,9 +203,9 @@ void SwitchRequestHandler::get(const string& name) {
 void SwitchRequestHandler::switchContent() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
-		scene->switchContent();
+		;
 		map<string, string> params;
-		params["switched"] = "true";
+		params["switched"] = scene->switchContent()?"true":"false";
 		sendJSONP(form().get("callback", ""), params);
 	} else {
 		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
@@ -217,9 +213,7 @@ void SwitchRequestHandler::switchContent() {
 }
 
 void SwitchRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
-	string params;
-	svvitch::formatJSON(json, params);
-	response().send() << Poco::format("%s(%s);", functionName, params);
+	response().send() << Poco::format("%s(%s);", functionName, svvitch::formatJSON(json));
 }
 
 void SwitchRequestHandler::writeResult(const int code, const string& description) {

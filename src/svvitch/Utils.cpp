@@ -71,12 +71,13 @@ string svvitch::md5(const string& file) {
 	return string("");
 }
 
-void svvitch::join(const vector<string>& v, char c, string& s) {
-	s.clear();
+string svvitch::join(const vector<string>& v, const string& c) {
+	string s;
 	for (vector<string>::const_iterator p = v.begin(); p != v.end(); p++) {
 		s += *p;
 		if (p != v.end() -1) s += c;
 	}
+	return s;
 }
 
 void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
@@ -99,22 +100,18 @@ void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
 	if (v.empty()) v.push_back(s);
 }
 
-void svvitch::formatJSON(const map<string, string>& json, string& s) {
+string svvitch::formatJSON(const map<string, string>& json) {
 	vector<string> params;
 	for (map<string, string>::const_iterator it = json.begin(); it != json.end(); it++) {
 		params.push_back(Poco::format("\"%s\":%s", it->first, it->second));
 	}
-	string v;
-	svvitch::join(params, ',', v);
-	s = Poco::format("{%s}", v);
+	return Poco::format("{%s}", svvitch::join(params, ","));
 }
 
-void svvitch::formatJSONArray(const vector<string>& list, string& s) {
+string svvitch::formatJSONArray(const vector<string>& list) {
 	vector<string> params;
 	for (vector<string>::const_iterator it = list.begin(); it != list.end(); it++) {
 		params.push_back(*it);
 	}
-	string v;
-	svvitch::join(params, ',', v);
-	s = Poco::format("[%s]", v);
+	return Poco::format("[%s]", svvitch::join(params, ","));
 }

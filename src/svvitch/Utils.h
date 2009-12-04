@@ -27,14 +27,14 @@ namespace svvitch {
 	string md5(const string& file);
 
 	/** •¶š—ñŒ‹‡ */
-	void join(const vector<string>& v, char c, string& s);
+	string join(const vector<string>& v, const string& c);
 
 	/** •¶š—ñ•ªŠ„ */
 	void split(const string& s, char c, vector<string>& v, int splits = 0);
 
 	/** JSON•¶š—ñ¶¬ */
-	void formatJSON(const map<string, string>& json, string& s);
+	string formatJSON(const map<string, string>& json);
 
 	/** JSON”z—ñ•¶š—ñ¶¬ */
-	void formatJSONArray(const vector<string>& list, string& s);
+	string formatJSONArray(const vector<string>& list);
 }

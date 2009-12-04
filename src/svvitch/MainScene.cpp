@@ -179,26 +179,29 @@ bool MainScene::prepareNextMedia() {
 		}
 	}
 
-	if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
-		PlayListPtr playlist = _workspace.getPlaylist(_playlistID);
-		if (playlist && playlist->itemCount() > 0) {
-			_playlistItem = (_playlistItem + 1) % playlist->itemCount();
-			PlayListItemPtr item = playlist->items()[_playlistItem];
-			_nextCommand = item->next();
-			_nextTransition = item->transition();
-			LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
-			LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
-			{
-				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				SAFE_RELEASE(_nextPlaylistName);
-				_nextPlaylistName = t1;
-				SAFE_RELEASE(_nextName);
-				_nextName = t2;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+		if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
+			PlayListPtr playlist = _workspace.getPlaylist(_playlistID);
+			if (playlist && playlist->itemCount() > 0) {
+				_playlistItem = (_playlistItem + 1) % playlist->itemCount();
+				PlayListItemPtr item = playlist->items()[_playlistItem];
+				_nextCommand = item->next();
+				_nextTransition = item->transition();
+				LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlist->name());
+				LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, item->media()->name());
+				{
+					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					SAFE_RELEASE(_nextPlaylistName);
+					_nextPlaylistName = t1;
+					SAFE_RELEASE(_nextName);
+					_nextName = t2;
+				}
 			}
+			_suppressSwitch = false;
+		} else {
+			_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 		}
-		_suppressSwitch = false;
-	} else {
-		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
 //	_workspace.checkUpdate();
 	_preparing = false;
@@ -323,7 +326,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 	return false;
 }
 
-void MainScene::switchContent() {
+bool MainScene::switchContent() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 	if (_prepared) {
 		PlayListPtr playlist = _workspace.getPlaylist(_preparedPlaylistID);
@@ -355,12 +358,13 @@ void MainScene::switchContent() {
 					SAFE_RELEASE(_preparedName);
 				}
 				SAFE_DELETE(_prepared);
+				return true;
 			}
 		} else {
 			_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
 		}
-	} else {
 	}
+	return false;
 }
 
 
