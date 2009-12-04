@@ -51,18 +51,11 @@ private:
 	int _currentContent;
 	bool _preparing;
 
-	/** 再生準備済コンテンツ */
-	ContainerPtr _prepared;
-	/** 再生準備済プレイリスト */
-	string _nextPlaylistID;
-	/** 再生準備済プレイリストアイテム */
-	int _nextItem;
-
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
 	/** 再生中のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _currentName;
-	/** 準備済のコンテンツ名 */
+	/** 準備済のプレイリスト名 */
 	LPDIRECT3DTEXTURE9 _nextPlaylistName;
 	/** 準備済のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _nextName;
@@ -70,6 +63,17 @@ private:
 	string _nextCommand;
 	/** 準備済のトランジション */
 	string _nextTransition;
+
+	/** 切替準備コンテンツ */
+	ContainerPtr _prepared;
+	/** 切替準備プレイリスト */
+	string _preparedPlaylistID;
+	/** 切替準備プレイリストアイテム */
+	int _preparedItem;
+	/** 切替準備のプレイリスト名 */
+	LPDIRECT3DTEXTURE9 _preparedPlaylistName;
+	/** 切替準備のコンテンツ名 */
+	LPDIRECT3DTEXTURE9 _preparedName;
 
 	/** 再生回数 */
 	int _playCount;
