@@ -208,7 +208,9 @@ void SwitchRequestHandler::switchContent() {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		scene->switchContent();
-		writeResult(200, "switch content");
+		map<string, string> params;
+		params["switched"] = "true";
+		sendJSONP(form().get("callback", ""), params);
 	} else {
 		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 	}
