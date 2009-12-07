@@ -1,5 +1,9 @@
 #include "WebAPI.h"
 
+#include <Poco/DateTime.h>
+#include <Poco/Timezone.h>
+#include <Poco/DateTimeFormat.h>
+#include <Poco/DateTimeFormatter.h>
 #include <Poco/NumberFormatter.h>
 #include <Poco/DOM/AutoPtr.h>
 #include <Poco/DOM/Document.h>
@@ -8,7 +12,6 @@
 #include <Poco/DOM/AutoPtr.h>
 #include <Poco/DOM/DOMWriter.h>
 #include <Poco/XML/XMLWriter.h>
-#include <Poco/File.h>
 #include <Poco/format.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/Net/HTMLForm.h>
@@ -67,14 +70,14 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 			_log.information("fileName: " + fileName);
 		}
 
-		Poco::File rootDir("uploads");
+		File rootDir("uploads");
 		if (!rootDir.exists()) rootDir.createDirectories();
-		Poco::File f(rootDir.path() + "/" + fileName + ".part");
+		File f(rootDir.path() + "/" + fileName + ".part");
 		try {
 			Poco::FileOutputStream os(f.path());
 			int size = Poco::StreamCopier::copyStream(is, os, 512 * 1024);
 			os.close();
-			Poco::File rename(rootDir.path() + "/" + fileName);
+			File rename(rootDir.path() + "/" + fileName);
 			if (rename.exists()) rename.remove();
 			f.renameTo(rename.path());
 			_log.information(Poco::format("file %s %s %d", fileName, type, size));
@@ -118,20 +121,41 @@ void SwitchRequestHandler::doRequest() {
 	_log.information(Poco::format("request from %s", request().clientAddress().toString()));
 	URI uri(request().getURI());
 	vector<string> urls;
-	svvitch::split(uri.getPath().substr(1), '/', urls);
+	svvitch::split(uri.getPath().substr(1), '/', urls, 2);
 	int count = urls.size();
 	if (!urls.empty()) {
-		if        (urls[0] == "set") {
-			if (urls.size() > 1) set(urls[1]);
-		} else if (urls[0] == "get") {
-			if (urls.size() > 1) get(urls[1]);
-		} else if (urls[0] == "switch") {
+		if        (urls[0] == "switch") {
 			switchContent();
+		} else if (urls[0] == "set") {
+			if (urls.size() == 2) set(urls[1]);
+		} else if (urls[0] == "get") {
+			if (urls.size() == 2) get(urls[1]);
+		} else if (urls[0] == "files") {
+			if (urls.size() == 2) {
+				files(urls[1]);
+			} else {
+				files(".");
+			}
+		} else if (urls[0] == "upload") {
+			if (urls.size() == 2) upload(urls[1]);
+		} else if (urls[0] == "download") {
+			if (urls.size() == 2) download(urls[1]);
 		}
 	}
 
 	if (!response().sent()) {
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found: %s", request().getURI()));
+	}
+}
+
+void SwitchRequestHandler::switchContent() {
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	if (scene) {
+		map<string, string> params;
+		params["switched"] = scene->switchContent()?"true":"false";
+		sendJSONP(form().get("callback", ""), params);
+	} else {
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 	}
 }
 
@@ -203,28 +227,90 @@ void SwitchRequestHandler::get(const string& name) {
 	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 }
 
-void SwitchRequestHandler::switchContent() {
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
-	if (scene) {
-		;
-		map<string, string> params;
-		params["switched"] = scene->switchContent()?"true":"false";
-		sendJSONP(form().get("callback", ""), params);
+void SwitchRequestHandler::files(const string& path) {
+	File f(".");
+	if (!path.empty()) f = File(path);
+	_log.information(Poco::format("files: %s", f.path()));
+	map<string, string> result;
+	result["files"] = fileToJSON(f);
+	sendJSONP(form().get("callback", ""), result);
+}
+
+string SwitchRequestHandler::fileToJSON(const File f) {
+	string name;
+	int i = f.path().find_last_of("\\");
+	if (i == string::npos) {
+		name = f.path();
 	} else {
-		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+		name = f.path().substr(i + 1);
+	}
+	if (name.length() > 1 && name.at(0) == '.') return "";
+
+	if (f.isDirectory()) {
+		vector<string> files;
+		vector<File> list;
+		f.list(list);
+		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+//			string json = fileToJSON(*it);
+//			files.push_back(json);
+			File sub = *it;
+			string subName;
+			int i = sub.path().find_last_of("\\");
+			if (i == string::npos) {
+				subName = sub.path();
+			} else {
+				subName = sub.path().substr(i + 1);
+			}
+			if (subName.length() > 1 && subName.at(0) != '.') {
+				files.push_back(Poco::format("\"%s\"", subName));
+			}
+		}
+		return svvitch::formatJSONArray(files);
+	}
+	map<string, string> params;
+	params["name"] = Poco::format("\"%s\"", name);
+	Poco::DateTime modified(f.getLastModified());
+	modified.makeLocal(Poco::Timezone::tzd());
+	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
+	params["size"] = Poco::NumberFormatter::format(static_cast<int>(f.getSize()));
+	return svvitch::formatJSON(params);
+}
+
+void SwitchRequestHandler::download(const string& path) {
+	if (!path.empty()) {
+		_log.information(Poco::format("download: %s", path));
+		File f(path);
+//		Timestamp dateTime = f.getLastModified();
+		File::FileSize length = f.getSize();
+//		set("Last-Modified", DateTimeFormatter::format(dateTime, DateTimeFormat::HTTP_FORMAT));
+
+		Poco::FileInputStream is(path);
+		if (is.good()) {
+			response().setContentLength(static_cast<int>(length));
+			response().setContentType("application/octet-stream");
+			response().setChunkedTransferEncoding(false);
+			Poco::StreamCopier::copyStream(is, response().send());
+		} else {
+			throw Poco::OpenFileException(path);
+		}
+	}
+}
+
+void SwitchRequestHandler::upload(const string& path) {
+	if (!path.empty()) {
+		_log.information(Poco::format("download: %s", path));
 	}
 }
 
 void SwitchRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
-//        $res->headers->header( CacheControl => 'no-cache' );
-//        $res->headers->header( Expires      => '-1' );
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/javascript; charset=UTF-8");
 	response().add("CacheControl", "no-cache");
 	response().add("Expires", "-1");
 	response().send() << Poco::format("%s(%s);", functionName, svvitch::formatJSON(json));
 }
 
 void SwitchRequestHandler::writeResult(const int code, const string& description) {
-
 	AutoPtr<Document> doc = new Document();
 	AutoPtr<Element> remote = doc->createElement("remote");
 	doc->appendChild(remote);
@@ -237,9 +323,8 @@ void SwitchRequestHandler::writeResult(const int code, const string& description
 	writer.setNewLine("\r\n");
 	writer.setOptions(XMLWriter::WRITE_XML_DECLARATION | XMLWriter::PRETTY_PRINT);
 
-//	response().setStatus(HTTPResponse::HTTP_OK);
-//	response().setChunkedTransferEncoding(true);
-//	response().setContentType("text/xml");
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/xml; charset=UTF-8");
 	writer.writeNode(response().send(), doc);
 }
 
@@ -247,7 +332,7 @@ void SwitchRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const s
 	response().setStatusAndReason(status, message);
 
 	string statusCode(Poco::NumberFormatter::format(static_cast<int>(response().getStatus())));
-//	response().setChunkedTransferEncoding(true);
-//	response().setContentType("text/plain");
+	response().setChunkedTransferEncoding(true);
+	response().setContentType("text/plain");
 	response().send() << Poco::format("%s - %s", statusCode, message);
 }

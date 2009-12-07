@@ -1,4 +1,5 @@
 
+#include <Poco/File.h>
 #include <Poco/Logger.h>
 #include <Poco/Net/AbstractHTTPRequestHandler.h>
 #include <Poco/Net/HTMLForm.h>
@@ -20,6 +21,7 @@
 
 using std::map;
 using std::string;
+using Poco::File;
 using Poco::Net::HTMLForm;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
@@ -60,13 +62,26 @@ private:
 
 	void doRequest();
 
+	/** 切替 */
+	void switchContent();
+
 	/** 設定系 */
 	void set(const string& name);
 
 	/** 取得系 */
 	void get(const string& name);
 
-	void switchContent();
+	/** ファイル一覧 */
+	void files(const string& name);
+
+	/** ファイルをJSON化する */
+	string fileToJSON(const File f);
+
+	/** ダウンロード */
+	void download(const string& name);
+
+	/** アップロード */
+	void upload(const string& name);
 
 	/** mapをJSONP形式で送信します */
 	void sendJSONP(const string& functionName, const map<string, string>& json);
