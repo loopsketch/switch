@@ -434,9 +434,14 @@ void MainScene::process() {
 				_contents[next]->play();
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					SAFE_RELEASE(_playlistName);
+//					LPDIRECT3DTEXTURE9 tmp = _playlistName;
 					_playlistName = _nextPlaylistName;
+//					_nextPlaylistName = tmp;
+//					tmp = _currentName;
 					_nextPlaylistName = NULL;
 					_currentName = _nextName;
+//					_nextName = tmp;
 					_nextName = NULL;
 				}
 				_currentCommand = _nextCommand;

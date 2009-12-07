@@ -170,7 +170,10 @@ void SwitchRequestHandler::get(const string& name) {
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
 	if (scene) {
 		Workspace& workspace = scene->getWorkspace();
-		if (name == "playlist") {
+		if (name == "workspace") {
+			response().sendFile("workspace.xml", "text/xml");
+			return;
+		} else if (name == "playlist") {
 			string playlistID = form().get("pl", "");
 			vector<string> playlists;
 			for (int i = 0; i < workspace.getPlaylistCount();i ++) {
@@ -213,6 +216,10 @@ void SwitchRequestHandler::switchContent() {
 }
 
 void SwitchRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
+//        $res->headers->header( CacheControl => 'no-cache' );
+//        $res->headers->header( Expires      => '-1' );
+	response().add("CacheControl", "no-cache");
+	response().add("Expires", "-1");
 	response().send() << Poco::format("%s(%s);", functionName, svvitch::formatJSON(json));
 }
 
