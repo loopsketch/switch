@@ -482,14 +482,6 @@ void Renderer::renderScene(const DWORD current) {
 		SAFE_RELEASE(backBuffer);
 	}
 
-//	if (_captureTexture) {
-//		LPDIRECT3DSURFACE9 backBuffer = NULL;
-//		hr = _captureTexture->GetSurfaceLevel(0, &backBuffer);
-//		if (SUCCEEDED(hr)) {
-//			_device->SetRenderTarget(0, backBuffer);
-//			SAFE_RELEASE(backBuffer);
-//		}
-//	}
 	if (FAILED(_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f),  1.0f, 0))) {
 		return;
 	}
@@ -515,20 +507,22 @@ void Renderer::renderScene(const DWORD current) {
 	if (_displayAdpters > 1) {
 		swapChain1->Present(NULL, NULL, NULL, NULL, 0);
 
-		LPDIRECT3DSURFACE9 backBuffer = NULL;
-		HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
-		if (SUCCEEDED(hr)) {
-			LPDIRECT3DSURFACE9 dst = NULL;
-			hr = _captureTexture->GetSurfaceLevel(0, &dst);
+		if (_captureTexture) {
+			LPDIRECT3DSURFACE9 backBuffer = NULL;
+			HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 			if (SUCCEEDED(hr)) {
-				_device->StretchRect(backBuffer, NULL, dst, NULL, D3DTEXF_NONE);
-				SAFE_RELEASE(dst);
+				LPDIRECT3DSURFACE9 dst = NULL;
+				hr = _captureTexture->GetSurfaceLevel(0, &dst);
+				if (SUCCEEDED(hr)) {
+					_device->StretchRect(backBuffer, NULL, dst, NULL, D3DTEXF_NONE);
+					SAFE_RELEASE(dst);
+				} else {
+					_log.warning("failed get capture surface");
+				}
+				SAFE_RELEASE(backBuffer);
 			} else {
-				_log.warning("failed get capture surface");
+				_log.warning("failed get back buffer");
 			}
-			SAFE_RELEASE(backBuffer);
-		} else {
-			_log.warning("failed get back buffer");
 		}
 
 		hr = _device->GetSwapChain(1, &swapChain2);
@@ -575,6 +569,24 @@ void Renderer::renderScene(const DWORD current) {
 	} else {
 		if (FAILED(_device->Present(0, 0, 0, 0))) {
 			_device->Reset(&_presentParams[0]);
+		}
+
+		if (_captureTexture) {
+			LPDIRECT3DSURFACE9 backBuffer = NULL;
+			HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+			if (SUCCEEDED(hr)) {
+				LPDIRECT3DSURFACE9 dst = NULL;
+				hr = _captureTexture->GetSurfaceLevel(0, &dst);
+				if (SUCCEEDED(hr)) {
+					_device->StretchRect(backBuffer, NULL, dst, NULL, D3DTEXF_NONE);
+					SAFE_RELEASE(dst);
+				} else {
+					_log.warning("failed get capture surface");
+				}
+				SAFE_RELEASE(backBuffer);
+			} else {
+				_log.warning("failed get back buffer");
+			}
 		}
 	}
 

@@ -231,9 +231,13 @@ void SwitchRequestHandler::files(const string& path) {
 	File f(".");
 	if (!path.empty()) f = File(path);
 	_log.information(Poco::format("files: %s", f.path()));
-	map<string, string> result;
-	result["files"] = fileToJSON(f);
-	sendJSONP(form().get("callback", ""), result);
+	try {
+		map<string, string> result;
+		result["files"] = fileToJSON(f);
+		sendJSONP(form().get("callback", ""), result);
+	} catch (Poco::FileException ex) {
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	}
 }
 
 string SwitchRequestHandler::fileToJSON(const File f) {
@@ -278,20 +282,21 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 
 void SwitchRequestHandler::download(const string& path) {
 	if (!path.empty()) {
-		_log.information(Poco::format("download: %s", path));
 		File f(path);
-//		Timestamp dateTime = f.getLastModified();
-		File::FileSize length = f.getSize();
-//		set("Last-Modified", DateTimeFormatter::format(dateTime, DateTimeFormat::HTTP_FORMAT));
-
-		Poco::FileInputStream is(path);
-		if (is.good()) {
-			response().setContentLength(static_cast<int>(length));
-			response().setContentType("application/octet-stream");
-			response().setChunkedTransferEncoding(false);
-			Poco::StreamCopier::copyStream(is, response().send());
-		} else {
-			throw Poco::OpenFileException(path);
+		_log.information(Poco::format("download: %s", f.path()));
+		try {
+			Poco::FileInputStream is(path);
+			if (is.good()) {
+				File::FileSize length = f.getSize();
+				response().setContentLength(static_cast<int>(length));
+				response().setContentType("application/octet-stream");
+				response().setChunkedTransferEncoding(false);
+				Poco::StreamCopier::copyStream(is, response().send());
+			} else {
+				throw Poco::OpenFileException(path);
+			}
+		} catch (Poco::FileException ex) {
+			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 		}
 	}
 }
