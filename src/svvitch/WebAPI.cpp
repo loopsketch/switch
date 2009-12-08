@@ -33,7 +33,7 @@ using Poco::XML::DOMWriter;
 using Poco::XML::XMLWriter;
 
 
-SwitchRequestHandlerFactory::SwitchRequestHandlerFactory(RendererPtr renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
+SwitchRequestHandlerFactory::SwitchRequestHandlerFactory(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
 }
 
 SwitchRequestHandlerFactory::~SwitchRequestHandlerFactory() {
@@ -90,7 +90,7 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 }
 
 
-SwitchRequestHandler::SwitchRequestHandler(RendererPtr renderer):
+SwitchRequestHandler::SwitchRequestHandler(Renderer& renderer):
 	_log(Poco::Logger::get("")), _renderer(renderer), _request(NULL), _response(NULL), _form(NULL) {
 	_log.information("create SwitchRequestHandler");
 }
@@ -149,7 +149,7 @@ void SwitchRequestHandler::doRequest() {
 }
 
 void SwitchRequestHandler::switchContent() {
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (scene) {
 		map<string, string> params;
 		params["switched"] = scene->switchContent()?"true":"false";
@@ -161,7 +161,7 @@ void SwitchRequestHandler::switchContent() {
 
 void SwitchRequestHandler::set(const string& name) {
 	string message;
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (scene) {
 		if (name == "playlist") {
 			string playlistID = form().get("pl", "");
@@ -191,12 +191,25 @@ void SwitchRequestHandler::set(const string& name) {
 
 void SwitchRequestHandler::get(const string& name) {
 	string message;
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer->getScene("main"));
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (scene) {
 		Workspace& workspace = scene->getWorkspace();
 		if (name == "workspace") {
 			response().sendFile("workspace.xml", "text/xml");
 			return;
+
+		} else if (name == "snapshot") {
+			LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
+			if (capture) {
+				// capture-lock
+				if SUCCEEDED(D3DXSaveTextureToFile(L"snapshot.png", D3DXIFF_PNG, capture, NULL)) {
+					response().sendFile("snapshot.png", "image/png");
+				} else {
+					_log.warning("failed snapshot");
+				}
+			}
+			return;
+
 		} else if (name == "playlist") {
 			string playlistID = form().get("pl", "");
 			vector<string> playlists;
@@ -241,13 +254,7 @@ void SwitchRequestHandler::files(const string& path) {
 }
 
 string SwitchRequestHandler::fileToJSON(const File f) {
-	string name;
-	int i = f.path().find_last_of("\\");
-	if (i == string::npos) {
-		name = f.path();
-	} else {
-		name = f.path().substr(i + 1);
-	}
+	string name = svvitch::findLastOfText(f.path(), "\\");
 	if (name.length() > 1 && name.at(0) == '.') return "";
 
 	if (f.isDirectory()) {
@@ -257,14 +264,7 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
 //			string json = fileToJSON(*it);
 //			files.push_back(json);
-			File sub = *it;
-			string subName;
-			int i = sub.path().find_last_of("\\");
-			if (i == string::npos) {
-				subName = sub.path();
-			} else {
-				subName = sub.path().substr(i + 1);
-			}
+			string subName = svvitch::findLastOfText((*it).path(), "\\");
 			if (subName.length() > 1 && subName.at(0) != '.') {
 				files.push_back(Poco::format("\"%s\"", subName));
 			}
@@ -277,6 +277,7 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 	modified.makeLocal(Poco::Timezone::tzd());
 	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
 	params["size"] = Poco::NumberFormatter::format(static_cast<int>(f.getSize()));
+	params["md5"] = svvitch::md5(f.path());
 	return svvitch::formatJSON(params);
 }
 
@@ -287,6 +288,7 @@ void SwitchRequestHandler::download(const string& path) {
 		try {
 			Poco::FileInputStream is(path);
 			if (is.good()) {
+				string ext = svvitch::findLastOfText(svvitch::findLastOfText(path, "\\"), ".");
 				File::FileSize length = f.getSize();
 				response().setContentLength(static_cast<int>(length));
 				response().setContentType("application/octet-stream");

@@ -37,4 +37,7 @@ namespace svvitch {
 
 	/** JSON”z—ñ•¶š—ñ¶¬ */
 	string formatJSONArray(const vector<string>& list);
+
+	/** src‚Ì’†‚ÌÅŒã‚ÌfindˆÈ~‚Ì•¶š—ñ‚ğæ“¾‚µ‚Ü‚· */
+	string findLastOfText(const string& src, const string& find);
 }

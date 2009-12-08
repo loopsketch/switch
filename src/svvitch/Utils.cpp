@@ -115,3 +115,15 @@ string svvitch::formatJSONArray(const vector<string>& list) {
 	}
 	return Poco::format("[%s]", svvitch::join(params, ","));
 }
+
+string svvitch::findLastOfText(const string& src, const string& find) {
+	string s;
+	int i = src.find_last_of(find);
+	if (i == string::npos) {
+		s = src;
+	} else {
+		s = src.substr(i + 1);
+	}
+	return s;
+}
+

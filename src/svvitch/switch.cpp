@@ -243,7 +243,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	params->setMaxQueued(50);
 	params->setMaxThreads(8);
 	Poco::Net::ServerSocket socket(9090);
-	Poco::Net::HTTPServer* server = new Poco::Net::HTTPServer(new SwitchRequestHandlerFactory(_renderer), socket, params);
+	Poco::Net::HTTPServer* server = new Poco::Net::HTTPServer(new SwitchRequestHandlerFactory(*_renderer), socket, params);
 	server->start();
 
 	// メッセージ処理および描画ループ

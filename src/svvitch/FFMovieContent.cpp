@@ -267,7 +267,7 @@ void FFMovieContent::close() {
 			if (avctx) {
 				if (avctx->codec) {
 					avcodec_flush_buffers(avctx);
-//						avcodec_default_free_buffers(avctx);
+//					avcodec_default_free_buffers(avctx);
 					_log.information(Poco::format("release codec: %s", string(avctx->codec->long_name)));
 					avcodec_close(avctx);
 				}
@@ -341,7 +341,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 							_vf->draw(dx, dy, cw, chh, 0, col, sx, sy, cw, chh);
 							sx += cw;
 						}
-//							_log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
+//						_log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
 						dy += ch;
 						if (dy >= 640) {
 							dx += cw;

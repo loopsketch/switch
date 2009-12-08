@@ -435,13 +435,10 @@ void MainScene::process() {
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					SAFE_RELEASE(_playlistName);
-//					LPDIRECT3DTEXTURE9 tmp = _playlistName;
 					_playlistName = _nextPlaylistName;
-//					_nextPlaylistName = tmp;
-//					tmp = _currentName;
 					_nextPlaylistName = NULL;
+					SAFE_RELEASE(_currentName);
 					_currentName = _nextName;
-//					_nextName = tmp;
 					_nextName = NULL;
 				}
 				_currentCommand = _nextCommand;
@@ -504,7 +501,7 @@ void MainScene::draw1() {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(conf->mainRect.left, conf->mainRect.top, conf->mainRect.right, conf->mainRect.bottom, NULL, 0, col, col, col, col);
 	}
-//	_renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
+	// _renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
 }
 
 void MainScene::draw2() {

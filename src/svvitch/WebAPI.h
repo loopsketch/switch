@@ -1,3 +1,4 @@
+#pragma once
 
 #include <Poco/File.h>
 #include <Poco/Logger.h>
@@ -50,7 +51,7 @@ public:
 class SwitchRequestHandler: public HTTPRequestHandler {
 private:
 	Poco::Logger& _log;
-	RendererPtr _renderer;
+	Renderer& _renderer;
 
 	HTTPServerRequest*  _request;
 	HTTPServerResponse* _response;
@@ -71,7 +72,11 @@ private:
 	/** 取得系 */
 	void get(const string& name);
 
-	/** ファイル一覧 */
+	/**
+	 * ファイル情報を返します.
+	 * ファイルのパスを指定した場合はファイル情報をmapで.
+	 * ディレクトリを指定した場合は子のファイル名&ディレクトリ名の配列で.
+	 */
 	void files(const string& name);
 
 	/** ファイルをJSON化する */
@@ -91,7 +96,7 @@ private:
 	void sendResponse(HTTPResponse::HTTPStatus status, const string& message);
 
 public:
-	SwitchRequestHandler(RendererPtr renderer);
+	SwitchRequestHandler(Renderer& renderer);
 
 	virtual ~SwitchRequestHandler();
 
@@ -99,13 +104,13 @@ public:
 };
 
 inline HTTPServerRequest& SwitchRequestHandler::request() {
-	poco_check_ptr (_request);	
+//	poco_check_ptr(_request);	
 	return *_request;
 }
 
 
 inline HTTPServerResponse& SwitchRequestHandler::response() {
-	poco_check_ptr (_response);
+//	poco_check_ptr(_response);
 	return *_response;
 }
 
@@ -116,10 +121,10 @@ inline HTTPServerResponse& SwitchRequestHandler::response() {
 class SwitchRequestHandlerFactory: public HTTPRequestHandlerFactory {	
 private:
 	Poco::Logger& _log;
-	RendererPtr _renderer;
+	Renderer& _renderer;
 
 public:
-	SwitchRequestHandlerFactory(RendererPtr renderer);
+	SwitchRequestHandlerFactory(Renderer& renderer);
 
 	virtual ~SwitchRequestHandlerFactory();
 
