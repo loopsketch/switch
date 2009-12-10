@@ -494,7 +494,7 @@ void Renderer::renderScene(const DWORD current) {
 		}
 		_device->EndScene();
 
-		if (false) {
+		if (false) { 
 			LPDIRECT3DSURFACE9 src;
 			_device->GetRenderTarget(0, &src);
 			wstring wfile;
