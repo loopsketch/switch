@@ -60,8 +60,9 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 		string disp;
 		Poco::Net::NameValueCollection params;
 		MessageHeader::splitParameters(contentDisposition, disp, params);
-		string name = params.get("name", "(unnamed)"); // formプロパティ名
-		string fileName = params.get("filename", "unnamed");
+		string name = params.get("name", "unnamed"); // formプロパティ名
+		string fileName = params.get(name, "unnamed");
+		_log.information(Poco::format("contentDisposition[%s] name[%s]", contentDisposition, name));
 		Poco::RegularExpression re(".*filename=\"((.+\\\\)*(.+))\".*");
 		if (re.match(contentDisposition)) {
 			// IEのフルパス対策
@@ -70,14 +71,14 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 			_log.information("fileName: " + fileName);
 		}
 
-		File rootDir("uploads");
-		if (!rootDir.exists()) rootDir.createDirectories();
-		File f(rootDir.path() + "/" + fileName + ".part");
+		File uploadDir("uploads");
+		if (!uploadDir.exists()) uploadDir.createDirectories();
+		File f(uploadDir.path() + "/" + fileName + ".part");
 		try {
 			Poco::FileOutputStream os(f.path());
 			int size = Poco::StreamCopier::copyStream(is, os, 512 * 1024);
 			os.close();
-			File rename(rootDir.path() + "/" + fileName);
+			File rename(uploadDir.path() + "/" + fileName);
 			if (rename.exists()) rename.remove();
 			f.renameTo(rename.path());
 			_log.information(Poco::format("file %s %s %d", fileName, type, size));
@@ -122,10 +123,15 @@ void SwitchRequestHandler::doRequest() {
 	URI uri(request().getURI());
 	vector<string> urls;
 	svvitch::split(uri.getPath().substr(1), '/', urls, 2);
+//	for (vector<string>::iterator it = urls.begin(); it != urls.end(); it++) {
+//		_log.information(Poco::format("url %s", string(*it)));
+//	}
 	int count = urls.size();
 	if (!urls.empty()) {
 		if        (urls[0] == "switch") {
 			switchContent();
+		} else if (urls[0] == "update") {
+			updateWorkspace();
 		} else if (urls[0] == "set") {
 			if (urls.size() == 2) set(urls[1]);
 		} else if (urls[0] == "get") {
@@ -153,6 +159,17 @@ void SwitchRequestHandler::switchContent() {
 	if (scene) {
 		map<string, string> params;
 		params["switched"] = scene->switchContent()?"true":"false";
+		sendJSONP(form().get("callback", ""), params);
+	} else {
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+	}
+}
+
+void SwitchRequestHandler::updateWorkspace() {
+	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+	if (scene) {
+		map<string, string> params;
+		params["update"] = scene->updateWorkspace()?"true":"false";
 		sendJSONP(form().get("callback", ""), params);
 	} else {
 		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
@@ -305,7 +322,32 @@ void SwitchRequestHandler::download(const string& path) {
 
 void SwitchRequestHandler::upload(const string& path) {
 	if (!path.empty()) {
-		_log.information(Poco::format("download: %s", path));
+		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
+		Path dst(path);
+		File parent(dst.parent());
+		if (!parent.exists()) parent.createDirectories();
+		File f(path);
+		_log.information(Poco::format("upload: %s", f.path()));
+		vector<File> list;
+		File("uploads").list(list);
+		boolean result = true;
+		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+			try {
+				File src = *it;
+				if (f.exists()) {
+					f.remove();
+					_log.information(Poco::format("deleted already file: %s", f.path()));
+				}
+				src.renameTo(f.path());
+				_log.information(Poco::format("rename: %s -> %s", src.path(), f.path()));
+			} catch (Poco::FileException ex) {
+				_log.warning(ex.displayText());
+				result = false;
+			}
+		}
+		map<string, string> params;
+		params["upload"] = result?"true":"false";
+		sendJSONP(form().get("callback", ""), params);
 	}
 }
 
@@ -314,7 +356,12 @@ void SwitchRequestHandler::sendJSONP(const string& functionName, const map<strin
 	response().setContentType("text/javascript; charset=UTF-8");
 	response().add("CacheControl", "no-cache");
 	response().add("Expires", "-1");
-	response().send() << Poco::format("%s(%s);", functionName, svvitch::formatJSON(json));
+	if (functionName.empty()) {
+		// コールバック関数名が無い場合はJSONとして送信
+		response().send() << svvitch::formatJSON(json);
+	} else {
+		response().send() << Poco::format("%s(%s);", functionName, svvitch::formatJSON(json));
+	}
 }
 
 void SwitchRequestHandler::writeResult(const int code, const string& description) {

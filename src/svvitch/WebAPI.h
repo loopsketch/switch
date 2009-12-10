@@ -14,6 +14,7 @@
 #include <Poco/Net/MessageHeader.h>
 #include <Poco/Net/ServerSocket.h>
 #include <Poco/Net/PartHandler.h>
+#include <Poco/Path.h>
 
 #include "Renderer.h"
 
@@ -23,6 +24,7 @@
 using std::map;
 using std::string;
 using Poco::File;
+using Poco::Path;
 using Poco::Net::HTMLForm;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
@@ -65,6 +67,9 @@ private:
 
 	/** Ø‘Ö */
 	void switchContent();
+
+	/** XV */
+	void updateWorkspace();
 
 	/** İ’èŒn */
 	void set(const string& name);

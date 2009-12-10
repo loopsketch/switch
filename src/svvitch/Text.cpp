@@ -126,7 +126,8 @@ void Text::stop() {
 const bool Text::finished() {
 	if (_mediaID.empty() && _texture) {
 		if (_dx != 0) {
-			return _x < (_cx -_iw);
+			return true;
+//			return _x < (_cx -_iw);
 		}
 	}
 	return _playing;
@@ -285,6 +286,9 @@ void Text::draw(const DWORD& frame) {
 				float alpha = getF("alpha");
 				DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 				_renderer.drawTexture(_x, _y, _texture, col, col, col, col);
+				_x+=_dx;
+				if (_x < -_tw) _x = conf->stageRect.right;
+				_y+=_dy;
 			}
 
 		}

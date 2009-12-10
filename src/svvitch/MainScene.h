@@ -87,12 +87,11 @@ private:
 
 	void run();
 
-	void updateContentList();
-
-	void prepareContent();
-
+	/** 次再生コンテンツを準備します */
 	bool prepareNextMedia();
 
+	/** Containerに指定されたプレイリストのコンテンツを準備します */
+	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace);
@@ -102,26 +101,36 @@ public:
 	/** 初期化 */
 	bool initialize();
 
+	/** 設定されているWorkspaceを取得します */
 	Workspace& getWorkspace();
 
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
-	/** containerの準備を行います */
+	/** 切替用コンテンツの準備 */
 	bool prepare(const string& playlistID, const int i = 0);
-
-	/** containerの準備を行います */
-	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 	/** 手動で切替を行います */
 	bool switchContent();
 
+	/** workspace更新 */
+	bool updateWorkspace();
+
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 
 
+	/** 毎フレームで行う処理 */
 	virtual void process();
 
+	/**
+	 * フレーム描画
+	 * コンテンツなどのメイン描画系
+	 */
 	virtual void draw1();
 
+	/**
+	 * フレーム描画
+	 * 主にステータス系
+	 */
 	virtual void draw2();
 };
 

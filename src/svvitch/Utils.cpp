@@ -86,7 +86,7 @@ void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
 
 	int count = 0;
 	while (j != string::npos) {
-		if (splits > 0 && count == splits) {
+		if (splits > 0 && (splits - 1) == count) {
 			v.push_back(s.substr(pos));
 			break;
 		}

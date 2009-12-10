@@ -103,16 +103,19 @@ bool MainScene::initialize() {
 	_frame = 0;
 	_log.information("*initialized MainScene");
 	_startup = false;
-	if (_workspace.getPlaylistCount() > 0) {
-		// playlistがある場合は最初のplaylistを自動スタートする
-		PlayListPtr playlist = _workspace.getPlaylist(0);
-		if (playlist) {
-			_playlistID = playlist->id();
-			_playlistItem = -1;
-			activePrepareNextMedia();
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+		if (_workspace.getPlaylistCount() > 0) {
+			// playlistがある場合は最初のplaylistを自動スタートする
+			PlayListPtr playlist = _workspace.getPlaylist(0);
+			if (playlist) {
+				_playlistID = playlist->id();
+				_playlistItem = -1;
+				activePrepareNextMedia();
+			}
+		} else {
+			_log.warning("no playlist, no auto starting");
 		}
-	} else {
-		_log.warning("no playlist, no auto starting");
 	}
 	_log.information("*created main-scene");
 	return true;
@@ -158,18 +161,21 @@ bool MainScene::prepareNextMedia() {
 			} else {
 				playlistID = s;
 			}
-			PlayListPtr playlist = _workspace.getPlaylist(playlistID);
-			if (playlist) {
-				if (playlist->itemCount() > j) {
-					_playlistID = playlist->id();
-					_playlistItem = j;
-					_log.information(Poco::format("jump playlist <%s>:%d", playlist->name(), _playlistItem));
-					_playlistItem--; // 準備時に++されるので引いておく
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+				PlayListPtr playlist = _workspace.getPlaylist(playlistID);
+				if (playlist) {
+					if (playlist->itemCount() > j) {
+						_playlistID = playlist->id();
+						_playlistItem = j;
+						_log.information(Poco::format("jump playlist <%s>:%d", playlist->name(), _playlistItem));
+						_playlistItem--; // 準備時に++されるので引いておく
+					} else {
+						_log.warning(Poco::format("failed jump index %d-<%d>", i, j));
+					}
 				} else {
-					_log.warning(Poco::format("failed jump index %d-<%d>", i, j));
+					_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
 				}
-			} else {
-				_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
 			}
 		} else if (_currentCommand == "stop") {
 			_suppressSwitch = false;
@@ -327,8 +333,8 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 }
 
 bool MainScene::switchContent() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 	if (_prepared) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 		PlayListPtr playlist = _workspace.getPlaylist(_preparedPlaylistID);
 		if (_prepared && playlist && playlist->itemCount() > _preparedItem) {
 			PlayListItemPtr item = playlist->items()[_preparedItem];
@@ -363,6 +369,24 @@ bool MainScene::switchContent() {
 		} else {
 			_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
 		}
+	}
+	return false;
+}
+
+bool MainScene::updateWorkspace() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+	_log.information("update workspace");
+	if (_workspace.checkUpdate()) {
+		if (_workspace.parse()) {
+			_playlistItem--;
+			activePrepareNextMedia();
+			_log.information("updated workspace. repreparing next contents");
+			return true;
+		} else {
+			_log.warning("failed update workspace.");
+		}
+	} else {
+		_log.information("there is no need for updates.");
 	}
 	return false;
 }
@@ -520,12 +544,12 @@ void MainScene::draw2() {
 	if (_currentContent >= 0) {
 		ContentPtr c = _contents[_currentContent]->get(0);
 		if (c && !c->opened().empty()) {
-			MediaItemPtr media = _workspace.getMedia(c->opened());
+//			MediaItemPtr media = _workspace.getMedia(c->opened());
 			int current = c->current();
 			int duration = c->duration();
 			string time;
-			if (media->type() == MediaTypeMovie) {
-				FFMovieContentPtr movie = dynamic_cast<FFMovieContentPtr>(c);
+			FFMovieContentPtr movie = dynamic_cast<FFMovieContentPtr>(c);
+			if (movie != NULL) {
 				DWORD currentTime = movie->currentTime();
 				DWORD timeLeft = movie->timeLeft();
 				Uint32 fps = movie->getFPS();
