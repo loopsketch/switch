@@ -427,14 +427,20 @@ void MainScene::process() {
 		if (currentContent) {
 			if (_currentCommand == "stop") {
 
+			} else if (_currentCommand == "wait-prepared") {
+				if (!_status["next-content"].empty()) {
+					_log.information("wait prepared next content, prepared now.");
+					_doSwitch = true;
+				}
 			} else {
+				// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ
 				if (_contents[_currentContent]->finished()) {
 					_log.information(Poco::format("content[%d] finished: ", _currentContent));
 					_doSwitch = true;
 				}
 			}
 		} else {
-			if (_autoStart && _frame > 200 && _contents[0]->get(0)) {
+			if (_autoStart && !_status["next-content"].empty()) {
 				_log.information("auto start content");
 				_doSwitch = true;
 				_autoStart = false;
