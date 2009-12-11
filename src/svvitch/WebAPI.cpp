@@ -251,7 +251,12 @@ void SwitchRequestHandler::get(const string& name) {
 			return;
 
 		} else if (name == "status") {
-			sendJSONP(form().get("callback", ""), scene->getStatus());
+			map<string, string> status = scene->getStatus();
+			map<string, string> params;
+			for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
+				params[it->first] = Poco::format("\"%s\"", it->second);
+			}
+			sendJSONP(form().get("callback", ""), params);
 			return;
 
 		} else {

@@ -134,9 +134,14 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 
 	// レンダリングターゲットの取得
 	//	D3DSURFACE_DESC desc;
-	//	HRESULT hr = _renderTarget->GetDesc(&desc);		
+	//	HRESULT hr = _renderTarget->GetDesc(&desc);
 	//	if (SUCCEEDED(hr)) _log.information(Poco::format("render target: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
 	_captureTexture = createRenderTarget(_conf->stageRect.right, _conf->stageRect.bottom);
+	if (_captureTexture) {
+		D3DSURFACE_DESC desc;
+		_captureTexture->GetLevelDesc(0, &desc);
+		_log.information(Poco::format("capture: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
+	}
 
 	// サウンドデバイスの生成
 	hr = DirectSoundCreate(NULL, &_sound, NULL);
@@ -578,7 +583,7 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, NULL, dst, NULL, D3DTEXF_NONE);
+					_device->StretchRect(backBuffer, &(_conf->stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");

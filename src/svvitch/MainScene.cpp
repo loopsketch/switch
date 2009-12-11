@@ -387,7 +387,7 @@ bool MainScene::updateWorkspace() {
 	if (_workspace.checkUpdate()) {
 		if (_workspace.parse()) {
 			_playlistItem--;
-			activePrepareNextMedia();
+//			activePrepareNextMedia();
 			_log.information("updated workspace. repreparing next contents");
 			return true;
 		} else {

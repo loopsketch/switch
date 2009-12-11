@@ -325,7 +325,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 					int sx = 0, sy = 0, dx = 0, dy = 0;
 					int cww = 0;
 					int chh = ch;
-					while (dx < 1024) {
+					while (dx < conf->stageRect.right) {
 						if ((sx + cw) >= _vf->width()) {
 							// ‚Í‚Ýo‚é
 							cww = _vf->width() - sx;
@@ -343,7 +343,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 						}
 //						_log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
 						dy += ch;
-						if (dy >= 640) {
+						if (dy >= conf->stageRect.bottom) {
 							dx += cw;
 							dy = 0;
 						}
