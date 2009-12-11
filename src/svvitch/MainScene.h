@@ -42,6 +42,7 @@ private:
 	DWORD _frame;
 	int _luminance;
 	bool _startup;
+	bool _autoStart;
 	string _currentCommand;
 
 	string _playlistID;

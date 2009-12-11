@@ -103,20 +103,7 @@ bool MainScene::initialize() {
 	_frame = 0;
 	_log.information("*initialized MainScene");
 	_startup = false;
-	{
-		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
-		if (_workspace.getPlaylistCount() > 0) {
-			// playlistがある場合は最初のplaylistを自動スタートする
-			PlayListPtr playlist = _workspace.getPlaylist(0);
-			if (playlist) {
-				_playlistID = playlist->id();
-				_playlistItem = -1;
-				activePrepareNextMedia();
-			}
-		} else {
-			_log.warning("no playlist, no auto starting");
-		}
-	}
+	_autoStart = false;
 	_log.information("*created main-scene");
 	return true;
 }
@@ -387,7 +374,7 @@ bool MainScene::updateWorkspace() {
 	if (_workspace.checkUpdate()) {
 		if (_workspace.parse()) {
 			_playlistItem--;
-//			activePrepareNextMedia();
+			activePrepareNextMedia();
 			_log.information("updated workspace. repreparing next contents");
 			return true;
 		} else {
@@ -410,33 +397,23 @@ void MainScene::process() {
 			break;
 	}
 
-	if (!_startup && _frame > 200) {
+	if (!_startup && _frame > 100) {
 		_startup = true;
-		_log.information("startup auto prepare");
-		int next = (_currentContent + 1) % _contents.size();
-		ContentPtr nextContent = _contents[next]->get(0);
-		if (nextContent && !nextContent->opened().empty()) {
-			_contents[next]->play();
-			{
-				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				SAFE_RELEASE(_playlistName);
-				_playlistName = _nextPlaylistName;
-				_nextPlaylistName = NULL;
-				SAFE_RELEASE(_currentName);
-				_currentName = _nextName;
-				_nextName = NULL;
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+			if (_workspace.getPlaylistCount() > 0) {
+				// playlistがある場合は最初のplaylistを自動スタートする
+				PlayListPtr playlist = _workspace.getPlaylist(0);
+				if (playlist) {
+					_playlistID = playlist->id();
+					_playlistItem = -1;
+					activePrepareNextMedia();
+					_autoStart = true;
+					_frame = 0;
+				}
+			} else {
+				_log.warning("no playlist, no auto starting");
 			}
-			_status["current-playlist"] = _status["next-playlist"];
-			_status["current-content"] = _status["next-content"];
-			_currentCommand = _nextCommand;
-			_playCount++;
-			_log.information("startup auto prepare");
-//			SAFE_DELETE(_prepareNextMediaResult);
-			_currentContent = next;
-			activePrepareNextMedia();
-			_suppressSwitch = true;
-		} else {
-			_log.warning("failed startup content");
 		}
 	}
 	if (_startup) {
@@ -455,6 +432,12 @@ void MainScene::process() {
 					_log.information(Poco::format("content[%d] finished: ", _currentContent));
 					_doSwitch = true;
 				}
+			}
+		} else {
+			if (_autoStart && _frame > 200 && _contents[0]->get(0)) {
+				_log.information("auto start content");
+				_doSwitch = true;
+				_autoStart = false;
 			}
 		}
 
