@@ -10,6 +10,7 @@
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>
 #include <Poco/Runnable.h>
+#include <map>
 #include <string>
 #include <vector>
 #include <queue>
@@ -26,7 +27,7 @@
 using std::string;
 using std::vector;
 using std::queue;
-
+using std::map;
 
 
 class MainScene: public Scene
@@ -82,6 +83,7 @@ private:
 	bool _doSwitch;
 	/** 切替を抑制するフラグ.true時には切替を受付けない.例>次コンテンツ準備中など */
 	bool _suppressSwitch;
+	/** トランジション */
 	TransitionPtr _transition;
 
 
@@ -116,7 +118,6 @@ public:
 	bool updateWorkspace();
 
 	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
-
 
 	/** 毎フレームで行う処理 */
 	virtual void process();

@@ -203,6 +203,8 @@ bool MainScene::prepareNextMedia() {
 					SAFE_RELEASE(_nextName);
 					_nextName = t2;
 				}
+				_status["next-playlist"] = playlist->name();
+				_status["next-content"] = item->media()->name();
 			}
 			_suppressSwitch = false;
 		} else {
@@ -236,6 +238,8 @@ bool MainScene::prepare(const string& playlistID, const int i) {
 					SAFE_RELEASE(_preparedName);
 					_preparedName = t2;
 				}
+				_status["prepared-playlist"] = playlist->name();
+				_status["prepared-content"] = item->media()->name();
 				return true;
 			}
 			SAFE_DELETE(c);
@@ -357,6 +361,8 @@ bool MainScene::switchContent() {
 				_playlistItem = _preparedItem;
 				_nextCommand = item->next();
 				_nextTransition = item->transition();
+				_status["next-playlist"] = _status["prepared-playlist"];
+				_status["next-content"] = _status["prepared-content"];
 				_doSwitch = true;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -364,6 +370,8 @@ bool MainScene::switchContent() {
 					SAFE_RELEASE(_preparedName);
 				}
 				SAFE_DELETE(_prepared);
+				_status.erase(_status.find("prepared-playlist"));
+				_status.erase(_status.find("prepared-content"));
 				return true;
 			}
 		} else {
@@ -418,6 +426,8 @@ void MainScene::process() {
 				_currentName = _nextName;
 				_nextName = NULL;
 			}
+			_status["current-playlist"] = _status["next-playlist"];
+			_status["current-content"] = _status["next-content"];
 			_currentCommand = _nextCommand;
 			_playCount++;
 			_log.information("startup auto prepare");
@@ -465,6 +475,10 @@ void MainScene::process() {
 					_currentName = _nextName;
 					_nextName = NULL;
 				}
+				_status["current-playlist"] = _status["next-playlist"];
+				_status["current-content"] = _status["next-content"];
+				_status.erase(_status.find("next-playlist"));
+				_status.erase(_status.find("next-content"));
 				_currentCommand = _nextCommand;
 				_playCount++;
 

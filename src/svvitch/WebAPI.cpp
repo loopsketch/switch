@@ -34,6 +34,7 @@ using Poco::XML::XMLWriter;
 
 
 SwitchRequestHandlerFactory::SwitchRequestHandlerFactory(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
+	_log.information("create SwitchRequestHandlerFactory");
 }
 
 SwitchRequestHandlerFactory::~SwitchRequestHandlerFactory() {
@@ -46,11 +47,11 @@ HTTPRequestHandler* SwitchRequestHandlerFactory::createRequestHandler(const HTTP
 
 
 SwitchPartHandler::SwitchPartHandler(): _log(Poco::Logger::get("")) {
-	_log.information("create SwitchPartHandler");
+	_log.debug("create SwitchPartHandler");
 }
 
 SwitchPartHandler::~SwitchPartHandler() {
-	_log.information("release SwitchPartHandler");
+	_log.debug("release SwitchPartHandler");
 }
 
 void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is) {
@@ -93,12 +94,12 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 
 SwitchRequestHandler::SwitchRequestHandler(Renderer& renderer):
 	_log(Poco::Logger::get("")), _renderer(renderer), _request(NULL), _response(NULL), _form(NULL) {
-	_log.information("create SwitchRequestHandler");
+	_log.debug("create SwitchRequestHandler");
 }
 
 SwitchRequestHandler::~SwitchRequestHandler() {
 	SAFE_DELETE(_form);
-	_log.information("release SwitchRequestHandler");
+	_log.debug("release SwitchRequestHandler");
 }
 
 HTMLForm& SwitchRequestHandler::form() {
@@ -113,13 +114,13 @@ void SwitchRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerR
 	_request  = &request;
 	_response = &response;
 
-	_log.information(Poco::format("contenttype %s", request.getContentType()));
-	_log.information(Poco::format("encoding %s", request.getTransferEncoding()));
+	_log.debug(Poco::format("contenttype %s", request.getContentType()));
+	_log.debug(Poco::format("encoding %s", request.getTransferEncoding()));
 	doRequest();
 }
 
 void SwitchRequestHandler::doRequest() {
-	_log.information(Poco::format("request from %s", request().clientAddress().toString()));
+	_log.debug(Poco::format("request from %s", request().clientAddress().toString()));
 	URI uri(request().getURI());
 	vector<string> urls;
 	svvitch::split(uri.getPath().substr(1), '/', urls, 2);
@@ -248,6 +249,11 @@ void SwitchRequestHandler::get(const string& name) {
 			result["playlists"] = svvitch::formatJSONArray(playlists);
 			sendJSONP(form().get("callback", ""), result);
 			return;
+
+		} else if (name == "status") {
+			sendJSONP(form().get("callback", ""), scene->getStatus());
+			return;
+
 		} else {
 			message = "property not found";
 		}
