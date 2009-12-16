@@ -138,15 +138,11 @@ void SwitchRequestHandler::doRequest() {
 		} else if (urls[0] == "get") {
 			if (urls.size() == 2) get(urls[1]);
 		} else if (urls[0] == "files") {
-			if (urls.size() == 2) {
-				files(urls[1]);
-			} else {
-				files(".");
-			}
+			files();
 		} else if (urls[0] == "upload") {
-			if (urls.size() == 2) upload(urls[1]);
+			upload();
 		} else if (urls[0] == "download") {
-			if (urls.size() == 2) download(urls[1]);
+			download();
 		}
 	}
 
@@ -268,7 +264,8 @@ void SwitchRequestHandler::get(const string& name) {
 	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
 }
 
-void SwitchRequestHandler::files(const string& path) {
+void SwitchRequestHandler::files() {
+	string path = form().get("path", "");
 	File f(".");
 	try {
 		if (!path.empty()) f = File(path);
@@ -286,8 +283,9 @@ void SwitchRequestHandler::files(const string& path) {
 }
 
 string SwitchRequestHandler::fileToJSON(const File f) {
-	string name = svvitch::findLastOfText(f.path(), "\\");
-	if (name.length() > 1 && name.at(0) == '.') return "";
+	Path path(f.path());
+	string name = path.getFileName();
+	if (name.length() > 1 && (name.at(0) == '.' || name.at(0) == '$')) return "";
 
 	if (f.isDirectory()) {
 		vector<string> files;
@@ -296,8 +294,8 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
 //			string json = fileToJSON(*it);
 //			files.push_back(json);
-			string subName = svvitch::findLastOfText((*it).path(), "\\");
-			if (subName.length() > 1 && subName.at(0) != '.') {
+			string subName = Path((*it).path()).getFileName();
+			if (subName.length() > 1 && subName.at(0) != '.' && subName.at(0) != '$') {
 				files.push_back(Poco::format("\"%s\"", subName));
 			}
 		}
@@ -313,29 +311,55 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 	return svvitch::formatJSON(params);
 }
 
-void SwitchRequestHandler::download(const string& path) {
-	if (!path.empty()) {
+void SwitchRequestHandler::download() {
+	Path path(form().get("path", ""));
+	try {
 		File f(path);
 		_log.information(Poco::format("download: %s", f.path()));
-		try {
-			Poco::FileInputStream is(path);
-			if (is.good()) {
-				string ext = svvitch::findLastOfText(svvitch::findLastOfText(path, "\\"), ".");
-				File::FileSize length = f.getSize();
-				response().setContentLength(static_cast<int>(length));
-				response().setContentType("application/octet-stream");
-				response().setChunkedTransferEncoding(false);
-				Poco::StreamCopier::copyStream(is, response().send());
+		Poco::FileInputStream is(path.toString());
+		if (is.good()) {
+			string ext = path.getExtension();
+			File::FileSize length = f.getSize();
+			response().setContentLength(static_cast<int>(length));
+			if (ext == "png") {
+				response().setContentType("image/png");
+			} else if (ext == "jpg" || ext == "jpeg") {
+				response().setContentType("image/jpeg");
+			} else if (ext == "bmp") {
+				response().setContentType("image/bmp");
+			} else if (ext == "mpg" || ext == "mpeg") {
+				response().setContentType("video/mpeg");
+			} else if (ext == "mp4" || ext == "f4v" || ext == "264") {
+				response().setContentType("video/mp4");
+			} else if (ext == "mov") {
+				response().setContentType("video/quicktime");
+			} else if (ext == "flv") {
+				response().setContentType("video/x-flv");
+			} else if (ext == "swf") {
+				response().setContentType("application/x-shockwave-flash");
+			} else if (ext == "txt") {
+				response().setContentType("text/plain");
+			} else if (ext == "xml") {
+				response().setContentType("text/xml");
 			} else {
-				throw Poco::OpenFileException(path);
+				response().setContentType("application/octet-stream");
 			}
-		} catch (Poco::FileException ex) {
-			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+			response().setChunkedTransferEncoding(false);
+			Poco::StreamCopier::copyStream(is, response().send());
+		} else {
+			throw Poco::OpenFileException(path.toString());
 		}
+	} catch (Poco::FileException ex) {
+		_log.warning(ex.displayText());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	} catch (Poco::PathSyntaxException ex) {
+		_log.warning(ex.displayText());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 	}
 }
 
-void SwitchRequestHandler::upload(const string& path) {
+void SwitchRequestHandler::upload() {
+	string path = form().get("path", "");
 	if (!path.empty()) {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
 		Path dst(path);

@@ -82,16 +82,16 @@ private:
 	 * ファイルのパスを指定した場合はファイル情報をmapで.
 	 * ディレクトリを指定した場合は子のファイル名&ディレクトリ名の配列で.
 	 */
-	void files(const string& name);
+	void files();
 
 	/** ファイルをJSON化する */
 	string fileToJSON(const File f);
 
 	/** ダウンロード */
-	void download(const string& name);
+	void download();
 
 	/** アップロード */
-	void upload(const string& name);
+	void upload();
 
 	/** mapをJSONP形式で送信します */
 	void sendJSONP(const string& functionName, const map<string, string>& json);
