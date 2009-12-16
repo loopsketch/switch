@@ -270,13 +270,17 @@ void SwitchRequestHandler::get(const string& name) {
 
 void SwitchRequestHandler::files(const string& path) {
 	File f(".");
-	if (!path.empty()) f = File(path);
-	_log.information(Poco::format("files: %s", f.path()));
 	try {
+		if (!path.empty()) f = File(path);
+		_log.information(Poco::format("files: %s", f.path()));
 		map<string, string> result;
 		result["files"] = fileToJSON(f);
 		sendJSONP(form().get("callback", ""), result);
 	} catch (Poco::FileException ex) {
+		_log.warning(ex.displayText());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	} catch (Poco::PathSyntaxException ex) {
+		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 	}
 }
