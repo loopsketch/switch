@@ -542,12 +542,8 @@ bool guiConfiguration()
 //		_conf.monitorFile = xml->getString("monitor", "");
 		_conf.dataRoot = Path(xml->getString("data-root", "")).absolute();
 		_log.information(Poco::format("data root: %s", _conf.dataRoot.toString()));
-		Path workspace(xml->getString("workspace", "workspace.xml"));
-		if (workspace.isAbsolute()) {
-			_conf.workspaceFile = workspace;
-		} else {
-			_conf.workspaceFile = Path(_conf.dataRoot, Path(xml->getString("workspace", "workspace.xml"))).absolute();
-		}
+		_conf.workspaceFile = _conf.dataRoot.append(xml->getString("workspace", "workspace.xml"));
+		_log.information(Poco::format("workspace: %s", _conf.workspaceFile.toString()));
 		_conf.newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
 		xml->release();
 		return true;

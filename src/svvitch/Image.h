@@ -60,8 +60,7 @@ public:
 		for (vector<MediaItemFilePtr>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
 			MediaItemFilePtr mif = *it;
 			if (mif->type() == MediaTypeImage) {
-				string file = Path(mif->file()).absolute(config().dataRoot).toString();
-				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(file);
+				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif->file());
 				if (texture) {
 					D3DSURFACE_DESC desc;
 					HRESULT hr = texture->GetLevelDesc(0, &desc);
