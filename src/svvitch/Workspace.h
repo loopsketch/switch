@@ -21,7 +21,7 @@ private:
 
 	Poco::FastMutex _lock;
 
-	string _file;
+	Path _file;
 	string _signature;
 
 	vector<MediaItemPtr> _media;
@@ -33,7 +33,7 @@ private:
 	void release();
 
 public:
-	Workspace(string file);
+	Workspace(Path file);
 
 	~Workspace();
 

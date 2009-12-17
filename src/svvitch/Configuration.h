@@ -43,7 +43,7 @@ public:
 //	string vpCommandFile;
 //	string monitorFile;
 	Path dataRoot;
-	string workspaceFile;
+	Path workspaceFile;
 	string newsURL;
 };
 

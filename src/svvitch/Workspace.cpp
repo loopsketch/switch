@@ -18,7 +18,7 @@ using Poco::XML::Element;
 using Poco::XML::NodeList;
 
 
-Workspace::Workspace(string file): _log(Poco::Logger::get("")), _file(file) {
+Workspace::Workspace(Path file): _log(Poco::Logger::get("")), _file(file) {
 }
 
 Workspace::~Workspace() {
@@ -48,7 +48,7 @@ void Workspace::release() {
 
 bool Workspace::checkUpdate() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	string signature = svvitch::md5(_file);
+	string signature = svvitch::md5(_file.toString());
 	if (_signature != signature) {
 		_log.information(Poco::format("detect update workspace: %s", _signature));
 		return true;
@@ -61,9 +61,9 @@ bool Workspace::parse() {
 	try {
 		string signature = svvitch::md5(_file);
 		Poco::XML::DOMParser parser;
-		Document* doc = parser.parse(_file);
+		Document* doc = parser.parse(_file.toString());
 		if (doc) {
-			_log.information(Poco::format("update/parse workspace file: %s", _file));
+			_log.information(Poco::format("update/parse workspace file: %s", _file.toString()));
 			release();
 			NodeList* nodes = doc->documentElement()->getElementsByTagName("medialist");
 			if (nodes) {

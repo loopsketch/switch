@@ -3,11 +3,13 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <Poco/Path.h>
 
 using std::map;
 using std::string;
 using std::wstring;
 using std::vector;
+using Poco::Path;
 
 
 namespace svvitch {
@@ -24,7 +26,7 @@ namespace svvitch {
 	void utf8_sjis(const string& str, string& out);
 
 	/** ファイルのMD5シグネイチャを取得 */
-	string md5(const string& file);
+	string md5(const Path& path);
 
 	/** 文字列結合 */
 	string join(const vector<string>& v, const string& c);

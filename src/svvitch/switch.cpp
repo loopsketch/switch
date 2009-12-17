@@ -56,6 +56,7 @@ extern "C" {
 #endif
 
 using Poco::AutoPtr;
+using Poco::File;
 using Poco::Util::XMLConfiguration;
 using Poco::XML::Document;
 using Poco::XML::Element;
@@ -539,8 +540,14 @@ bool guiConfiguration()
 		_conf.multiByteFont = xml->getString("ui.multiByteFont", "A-OTF-ShinGoPro-Regular.ttf");
 //		_conf.vpCommandFile = xml->getString("vpCommand", "");
 //		_conf.monitorFile = xml->getString("monitor", "");
-		_conf.dataRoot = xml->getString("data-root", "");
-		_conf.workspaceFile = xml->getString("workspace", "");
+		_conf.dataRoot = Path(xml->getString("data-root", "")).absolute();
+		_log.information(Poco::format("data root: %s", _conf.dataRoot.toString()));
+		Path workspace(xml->getString("workspace", "workspace.xml"));
+		if (workspace.isAbsolute()) {
+			_conf.workspaceFile = workspace;
+		} else {
+			_conf.workspaceFile = Path(_conf.dataRoot, Path(xml->getString("workspace", "workspace.xml"))).absolute();
+		}
 		_conf.newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
 		xml->release();
 		return true;

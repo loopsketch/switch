@@ -59,12 +59,12 @@ void svvitch::utf8_sjis(const string& str, string& out) {
 }
 
 
-string svvitch::md5(const string& file) {
-	std::ifstream istr(file.c_str(), std::ios::binary);
-	if (istr) {
+string svvitch::md5(const Path& path) {
+	std::ifstream is(path.toString().c_str(), std::ios::binary);
+	if (is.good()) {
 		MD5Engine md5;
 		DigestOutputStream dos(md5);
-		StreamCopier::copyStream(istr, dos);
+		StreamCopier::copyStream(is, dos);
 		dos.close();
 		return DigestEngine::digestToHex(md5.digest());
 	}
