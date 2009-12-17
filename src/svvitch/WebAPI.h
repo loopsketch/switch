@@ -85,7 +85,7 @@ private:
 	void files();
 
 	/** ファイルをJSON化する */
-	string fileToJSON(const File f);
+	string fileToJSON(const Path path);
 
 	/** ダウンロード */
 	void download();

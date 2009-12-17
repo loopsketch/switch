@@ -266,12 +266,12 @@ void SwitchRequestHandler::get(const string& name) {
 
 void SwitchRequestHandler::files() {
 	string path = form().get("path", "");
-	File f(".");
+	Path dir = config().dataRoot;
 	try {
-		if (!path.empty()) f = File(path);
-		_log.information(Poco::format("files: %s", f.path()));
+		if (!path.empty()) dir = dir.append(path);
+		_log.information(Poco::format("files: %s", dir.toString()));
 		map<string, string> result;
-		result["files"] = fileToJSON(f);
+		result["files"] = fileToJSON(dir);
 		sendJSONP(form().get("callback", ""), result);
 	} catch (Poco::FileException ex) {
 		_log.warning(ex.displayText());
@@ -282,15 +282,14 @@ void SwitchRequestHandler::files() {
 	}
 }
 
-string SwitchRequestHandler::fileToJSON(const File f) {
-	Path path(f.path());
+string SwitchRequestHandler::fileToJSON(const Path path) {
 	string name = path.getFileName();
 	if (name.length() > 1 && (name.at(0) == '.' || name.at(0) == '$')) return "";
 
-	if (f.isDirectory()) {
+	if (path.isDirectory()) {
 		vector<string> files;
 		vector<File> list;
-		f.list(list);
+		File(path).list(list);
 		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
 //			string json = fileToJSON(*it);
 //			files.push_back(json);
@@ -303,19 +302,20 @@ string SwitchRequestHandler::fileToJSON(const File f) {
 	}
 	map<string, string> params;
 	params["name"] = Poco::format("\"%s\"", name);
+	File f(path);
 	Poco::DateTime modified(f.getLastModified());
 	modified.makeLocal(Poco::Timezone::tzd());
 	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
 	params["size"] = Poco::NumberFormatter::format(static_cast<int>(f.getSize()));
-	params["md5"] = svvitch::md5(f.path());
+	params["md5"] = svvitch::md5(path);
 	return svvitch::formatJSON(params);
 }
 
 void SwitchRequestHandler::download() {
-	Path path(form().get("path", ""));
 	try {
+		Path path(config().dataRoot, form().get("path", ""));
 		File f(path);
-		_log.information(Poco::format("download: %s", f.path()));
+		_log.information(Poco::format("download: (%s) %s", config().dataRoot.toString(), f.path()));
 		Poco::FileInputStream is(path.toString());
 		if (is.good()) {
 			string ext = path.getExtension();
@@ -362,31 +362,36 @@ void SwitchRequestHandler::upload() {
 	string path = form().get("path", "");
 	if (!path.empty()) {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
-		Path dst(path);
-		File parent(dst.parent());
-		if (!parent.exists()) parent.createDirectories();
-		File f(path);
-		_log.information(Poco::format("upload: %s", f.path()));
-		vector<File> list;
-		File("uploads").list(list);
-		boolean result = true;
-		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
-			try {
-				File src = *it;
-				if (f.exists()) {
-					f.remove();
-					_log.information(Poco::format("deleted already file: %s", f.path()));
+		try {
+			Path dst(config().dataRoot, path);
+			File parent(dst.parent());
+			if (!parent.exists()) parent.createDirectories();
+			File f(dst);
+			_log.information(Poco::format("upload: %s", f.path()));
+			vector<File> list;
+			File("uploads").list(list);
+			boolean result = true;
+			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+				try {
+					File src = *it;
+					if (f.exists()) {
+						f.remove();
+						_log.information(Poco::format("deleted already file: %s", f.path()));
+					}
+					src.renameTo(f.path());
+					_log.information(Poco::format("rename: %s -> %s", src.path(), f.path()));
+				} catch (Poco::FileException ex) {
+					_log.warning(ex.displayText());
+					result = false;
 				}
-				src.renameTo(f.path());
-				_log.information(Poco::format("rename: %s -> %s", src.path(), f.path()));
-			} catch (Poco::FileException ex) {
-				_log.warning(ex.displayText());
-				result = false;
 			}
+			map<string, string> params;
+			params["upload"] = result?"true":"false";
+			sendJSONP(form().get("callback", ""), params);
+		} catch (Poco::PathSyntaxException ex) {
+			_log.warning(ex.displayText());
+			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 		}
-		map<string, string> params;
-		params["upload"] = result?"true":"false";
-		sendJSONP(form().get("callback", ""), params);
 	}
 }
 

@@ -88,7 +88,7 @@ bool Workspace::parse() {
 							e = (Element*)movies->item(k);
 							string file = e->innerText();
 							if (file.find("switch-data:/") == 0) {
-								file = Path(config().dataRoot, Path(file.substr(13))).toString();
+								file = Path(config().dataRoot, file.substr(13)).toString();
 							}
 							string params;
 							if (file.find("?") != string::npos) {
