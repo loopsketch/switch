@@ -413,6 +413,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 
+		case WM_DEVICECHANGE:
+			// SetupDiEnumDeviceInfo, SetupDiGetDeviceRegistryProperty, CM_Request_Device_Eject
+			break;
+
 		default:
 			return DefWindowProc(hWnd, msg, wParam, lParam);
     }
