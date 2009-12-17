@@ -50,7 +50,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			try {
 				Poco::RegularExpression::Match m;
 				bool isSJIS = re.match(mif->getProperty("encoding"), m);
-				Poco::FileInputStream fis(mif->file(), std::ios::in);
+				Poco::FileInputStream fis(Path(mif->file()).absolute(config().dataRoot).toString(), std::ios::in);
 				try {
 					Poco::InputLineEndingConverter ilec(fis);
 					char line[1024];

@@ -60,14 +60,15 @@ public:
 		for (vector<MediaItemFilePtr>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
 			MediaItemFilePtr mif = *it;
 			if (mif->type() == MediaTypeImage) {
-				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif->file());
+				string file = Path(mif->file()).absolute(config().dataRoot).toString();
+				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(file);
 				if (texture) {
 					D3DSURFACE_DESC desc;
 					HRESULT hr = texture->GetLevelDesc(0, &desc);
 					_iw += desc.Width;
 					if (_ih < desc.Height) _ih = desc.Height;
 					textures.push_back(texture);
-	//				_log.information(Poco::format("opened texture: %s", mif->file()));
+					_log.information(Poco::format("opened texture: %s", mif->file()));
 				} else {
 					_log.warning(Poco::format("failed open: %s", mif->file()));
 					valid = false;

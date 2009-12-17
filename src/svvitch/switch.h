@@ -14,6 +14,6 @@ bool guiConfiguration();
 /**
  * 設定オブジェクトを取得します
  */
-const Configuration& config();
+Configuration& config();
 
 void swapout();

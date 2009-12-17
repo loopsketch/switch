@@ -49,8 +49,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	_maxTextureW = caps.MaxTextureWidth;
 	_maxTextureH = caps.MaxTextureHeight;
 	if (config().imageSplitWidth <= 0) {
-		Configuration& conf = (Configuration)config();
-		conf.imageSplitWidth = _maxTextureW;
+		config().imageSplitWidth = _maxTextureW;
 	}
 	_log.information(Poco::format("display adapters: %u texture-max: %ux%u", _displayAdpters, _maxTextureW, _maxTextureH));
 	string usePsize = (caps.FVFCaps & D3DFVFCAPS_PSIZE)?"true":"false";
@@ -68,15 +67,16 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	ZeroMemory(&_presentParams[0], sizeof(D3DPRESENT_PARAMETERS));
 	if (config().fullsceen) {
 		_presentParams[0].Windowed = FALSE;
-//			_presentParams[0].FullScreen_RefreshRateInHz = _conf->rate;
+//		_presentParams[0].FullScreen_RefreshRateInHz = _conf->rate;
 		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+		_presentParams[0].BackBufferFormat = d3ddm.Format;
 	} else {
 		_presentParams[0].Windowed = TRUE;
 		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+		_presentParams[0].BackBufferFormat = D3DFMT_UNKNOWN;
 	}
 	_presentParams[0].BackBufferWidth = config().mainRect.right;
 	_presentParams[0].BackBufferHeight = config().mainRect.bottom;
-	_presentParams[0].BackBufferFormat = d3ddm.Format;
 	_presentParams[0].BackBufferCount = 1;
 	_presentParams[0].SwapEffect = D3DSWAPEFFECT_DISCARD;
 //	_presentParams[0].SwapEffect = D3DSWAPEFFECT_FLIP;
@@ -509,7 +509,7 @@ void Renderer::renderScene(const DWORD current) {
 
 		if (_captureTexture) {
 			LPDIRECT3DSURFACE9 backBuffer = NULL;
-			HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+			hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 			if (SUCCEEDED(hr)) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
@@ -521,26 +521,29 @@ void Renderer::renderScene(const DWORD current) {
 				}
 				SAFE_RELEASE(backBuffer);
 			} else {
-				_log.warning("failed get back buffer");
+				_log.warning("failed get back buffer 1");
 			}
 		}
 
 		hr = _device->GetSwapChain(1, &swapChain2);
-		if (SUCCEEDED(hr)) {
+		if SUCCEEDED(hr) {
 			LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
 			hr = swapChain2->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 			hr = _device->SetRenderTarget(0, backBuffer);
 			SAFE_RELEASE(backBuffer);
 
-			if (FAILED(_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f),  1.0f, 0))) {
-				//
+			if FAILED(_device->Clear(0, NULL, D3DCLEAR_TARGET, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f),  1.0f, 0)) {
+				_log.warning("failed device clear");
 			}
 		}
 	}
 
 	// 描画2
-	_device->GetRenderTarget(0, &_backBuffer);
-	if (SUCCEEDED(_device->BeginScene())) {
+	hr = _device->GetRenderTarget(0, &_backBuffer);
+	if FAILED(hr) {
+		_log.warning("failed get back buffer 2");
+	}
+	if SUCCEEDED(_device->BeginScene()) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			(*it)->draw2();
@@ -567,25 +570,27 @@ void Renderer::renderScene(const DWORD current) {
 		swapChain2->Present(NULL, NULL, NULL, NULL, 0);
 
 	} else {
-		if (FAILED(_device->Present(0, 0, 0, 0))) {
-			_device->Reset(&_presentParams[0]);
-		}
-
-		if (_captureTexture) {
-			LPDIRECT3DSURFACE9 backBuffer = NULL;
-			HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
-			if (SUCCEEDED(hr)) {
-				LPDIRECT3DSURFACE9 dst = NULL;
-				hr = _captureTexture->GetSurfaceLevel(0, &dst);
-				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
-					SAFE_RELEASE(dst);
+		if (_device->Present(0, 0, 0, 0) == D3DERR_DEVICELOST) {
+			_log.warning("failed device lost");
+//			hr = _device->Reset(&_presentParams[0]);
+//			if FAILED(hr) _log.warning("failed reset device");
+		} else {
+			if (_captureTexture) {
+				LPDIRECT3DSURFACE9 backBuffer = NULL;
+				HRESULT hr = _device->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+				if SUCCEEDED(hr) {
+					LPDIRECT3DSURFACE9 dst = NULL;
+					hr = _captureTexture->GetSurfaceLevel(0, &dst);
+					if SUCCEEDED(hr) {
+						_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+						SAFE_RELEASE(dst);
+					} else {
+						_log.warning("failed get capture surface");
+					}
+					SAFE_RELEASE(backBuffer);
 				} else {
-					_log.warning("failed get capture surface");
+					_log.warning("failed get back buffer 3");
 				}
-				SAFE_RELEASE(backBuffer);
-			} else {
-				_log.warning("failed get back buffer");
 			}
 		}
 	}

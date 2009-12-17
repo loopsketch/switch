@@ -2,6 +2,7 @@
 
 #include <Poco/Logger.h>
 #include <vector>
+#include <Poco/File.h>
 #include <Poco/format.h>
 #include <Poco/NumberParser.h>
 #include <Poco/HashMap.h>
@@ -10,6 +11,7 @@
 
 #include "Common.h"
 
+using Poco::File;
 using std::string;
 using std::vector;
 
@@ -33,8 +35,7 @@ private:
 	Poco::HashMap<string, string> _properties;
 
 public:
-	MediaItemFile(const MediaType type, const string file, const string params): _log(Poco::Logger::get("")), _type(type), _file(file)
-	{
+	MediaItemFile(const MediaType type, const string file, const string params): _log(Poco::Logger::get("")), _type(type), _file(file) {
 		if (!params.empty()) {
 //			_log.information(Poco::format("properties: %s", file));
 //			_file = file.substr(0, file.find("?"));

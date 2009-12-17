@@ -562,7 +562,7 @@ bool guiConfiguration()
 	return false;
 }
 
-const Configuration& config() {
+Configuration& config() {
 	return _conf;
 }
 
