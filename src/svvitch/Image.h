@@ -77,7 +77,7 @@ public:
 		_log.information(Poco::format("tiled texture size: %dx%d", _iw, _ih));
 		if (!valid) return false;
 //		_tw = 1024;
-		_tw = _iw > _renderer.config()->imageSplitWidth?_renderer.config()->imageSplitWidth:_iw;
+		_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
 		int i = (_iw + _tw - 1) / _tw;
 		_th = _ih * i;
 		_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_X8R8G8B8);
@@ -184,12 +184,11 @@ public:
 			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 //			_dy -= 0.5f;
 //			if (_dy <= -32) _dy = 32;
-			const ConfigurationPtr conf = _renderer.config();
 			float alpha = getF("alpha");
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			int cw = conf->splitSize.cx;
-			int ch = conf->splitSize.cy;
-			switch (conf->splitType) {
+			int cw = config().splitSize.cx;
+			int ch = config().splitSize.cy;
+			switch (config().splitType) {
 			case 1:
 				{
 					device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
@@ -201,12 +200,12 @@ public:
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 					float x = _x;
 					float y = _y;
-					int mh = conf->stageRect.bottom;
+					int mh = config().stageRect.bottom;
 					int dh = (mh / ch * cw);
 					int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % mh;
 					int cww = 0;
 					int chh = ch;
-					while (dx < conf->stageRect.right) {
+					while (dx < config().stageRect.right) {
 						int cx = dx /cw * dh + dy / ch * cw;
 //						if (cx + dxx >= conf->stageRect.right) break;
 						if (cx + dxx >= _iw) break;
@@ -286,8 +285,8 @@ public:
 						chh = _th;
 					}
 					for (int sy = 0; sy < sh; sy++) {
-						int ox = (sy % 2) * cw * 8 + conf->stageRect.left;
-						int oy = (sy / 2) * ch * 4 + conf->stageRect.top;
+						int ox = (sy % 2) * cw * 8 + config().stageRect.left;
+						int oy = (sy / 2) * ch * 4 + config().stageRect.top;
 						for (int sx = 0; sx < sw; sx++) {
 							int dx = (sx / 4) * cw;
 							int dy = ch * 3 - (sx % 4) * ch;

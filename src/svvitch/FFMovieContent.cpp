@@ -107,7 +107,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				} else {
 					// codec‚ªopen‚Å‚«‚½
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
-					_intervals = _renderer.config()->mainRate / _rate;
+					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
 
 					_log.information(Poco::format("open decoder: %s %.3hf %.3hf", string(avcodec->long_name), _rate, _intervals));
@@ -315,17 +315,16 @@ void FFMovieContent::draw(const DWORD& frame) {
 		if (_vf && _playing) {
 			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 			float alpha = getF("alpha");
-			const ConfigurationPtr conf = _renderer.config();
-			int cw = conf->splitSize.cx;
-			int ch = conf->splitSize.cy;
+			int cw = config().splitSize.cx;
+			int ch = config().splitSize.cy;
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			switch (conf->splitType) {
+			switch (config().splitType) {
 			case 1:
 				{
 					int sx = 0, sy = 0, dx = 0, dy = 0;
 					int cww = 0;
 					int chh = ch;
-					while (dx < conf->stageRect.right) {
+					while (dx < config().stageRect.right) {
 						if ((sx + cw) >= _vf->width()) {
 							// ‚Í‚Ýo‚é
 							cww = _vf->width() - sx;
@@ -343,7 +342,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 						}
 //						_log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
 						dy += ch;
-						if (dy >= conf->stageRect.bottom) {
+						if (dy >= config().stageRect.bottom) {
 							dx += cw;
 							dy = 0;
 						}
@@ -365,8 +364,8 @@ void FFMovieContent::draw(const DWORD& frame) {
 					int sh = L(_h / ch);
 					if (sh <= 0) sh = 1;
 					for (int sy = 0; sy < sh; sy++) {
-						int ox = (sy % 2) * cw * 8 + conf->stageRect.left;
-						int oy = (sy / 2) * ch * 4 + conf->stageRect.top;
+						int ox = (sy % 2) * cw * 8 + config().stageRect.left;
+						int oy = (sy / 2) * ch * 4 + config().stageRect.top;
 //							int ox = (sy % 2) * cw * 8;
 //							int oy = (sy / 2) * ch * 4;
 						for (int sx = 0; sx < sw; sx++) {
@@ -390,8 +389,8 @@ void FFMovieContent::draw(const DWORD& frame) {
 						_vf->draw(0, 120, 960, 120, 0, col,  960, 0, 960, 120);
 						_vf->draw(0,   0, 960, 120, 0, col,    0, 0, 960, 120);
 					} else {
-						int w = _renderer.config()->mainRect.right;
-						int h = _renderer.config()->mainRect.bottom;
+						int w = config().mainRect.right;
+						int h = config().mainRect.bottom;
 						if (_vf->width() > w || _vf->height() > h) {
 							device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 							device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);

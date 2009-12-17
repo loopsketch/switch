@@ -194,11 +194,10 @@ void CaptureContent::process(const DWORD& frame) {
 void CaptureContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		ConfigurationPtr conf = _renderer.config();
-		int x = conf->stageRect.left;
-		int y = conf->stageRect.top;
-		int w = conf->stageRect.right;
-		int h = conf->stageRect.bottom;
+		int x = config().stageRect.left;
+		int y = config().stageRect.top;
+		int w = config().stageRect.right;
+		int h = config().stageRect.bottom;
 
 		LPDIRECT3DTEXTURE9 cameraImage = _scene->getCameraImage();
 		if (!cameraImage) return;
@@ -307,7 +306,7 @@ void CaptureContent::draw(const DWORD& frame) {
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		if (_statusFrame > 0 && (frame - _statusFrame) < 200) {
-			_renderer.drawFontTextureText(640, conf->mainRect.bottom - 32, 24, 32, 0xccff3333, _status);
+			_renderer.drawFontTextureText(640, config().mainRect.bottom - 32, 24, 32, 0xccff3333, _status);
 		}
 	}
 }

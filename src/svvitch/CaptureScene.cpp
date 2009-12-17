@@ -344,7 +344,6 @@ void CaptureScene::draw2() {
 		_renderer.drawTexture(0, 242, 256, 192, _cameraImage, 0, col, col, col, col);
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		ConfigurationPtr conf = _renderer.config();
 		string s = Poco::format("LIVE! read %03lums", _vr->readTime());
 		_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, s);
 	} else {

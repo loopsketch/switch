@@ -69,7 +69,6 @@ private:
 
 	HWND _hwnd;
 
-	Configuration* _conf;
 	UINT _displayAdpters;
 	UINT _maxTextureW;
 	UINT _maxTextureH;
@@ -121,7 +120,7 @@ private:
 
 
 public:
-	Renderer(Configuration* conf);
+	Renderer();
 
 	~Renderer();
 
@@ -138,11 +137,6 @@ public:
 	 * UI用のメッセージを伝達します
 	 */
 	bool deliveryMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-	/**
-	 * 設定オブジェクトを取得します
-	 */
-	Configuration* config() const;
 
 	/**
 	 * 3Dデバイスを取得します

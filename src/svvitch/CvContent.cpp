@@ -83,22 +83,21 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(ex.displayText());
 	}
 
-	ConfigurationPtr conf = _renderer.config();
 	vector<MediaItemFilePtr> file1;
 	file1.push_back(new MediaItemFile(MediaTypeMovie, _normalFile, ""));
 	_normalItem = new MediaItem(MediaTypeMovie, "normal", "normal", 0, file1);
 	_normalMovie = new FFMovieContent(_renderer);
 	if (_normalMovie->open(_normalItem)) {
-		_normalMovie->setPosition(conf->stageRect.left, conf->stageRect.top);
-		_normalMovie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
+		_normalMovie->setPosition(config().stageRect.left, config().stageRect.top);
+		_normalMovie->setBounds(config().stageRect.right, config().stageRect.bottom);
 		_normalMovie->play();
 	} else {
 		SAFE_DELETE(_normalMovie);
 	}
 
 	_detectedMovie = new FFMovieContent(_renderer);
-	_detectedMovie->setPosition(conf->stageRect.left, conf->stageRect.top);
-	_detectedMovie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
+	_detectedMovie->setPosition(config().stageRect.left, config().stageRect.top);
+	_detectedMovie->setBounds(config().stageRect.right, config().stageRect.bottom);
 	activeOpenDetectMovie();
 
 	std::wstring wfile;
@@ -402,11 +401,10 @@ void CvContent::draw(const DWORD& frame) {
 			if (_normalMovie) _normalMovie->draw(frame);
 		}
 
-		ConfigurationPtr conf = _renderer.config();
-		int x = conf->stageRect.left;
-		int y = conf->stageRect.top;
-		int w = conf->stageRect.right;
-		int h = conf->stageRect.bottom;
+		int x = config().stageRect.left;
+		int y = config().stageRect.top;
+		int w = config().stageRect.right;
+		int h = config().stageRect.bottom;
 		if (_viewPhoto > 0 && (frame - _viewPhoto) > 100 && (frame - _viewPhoto) < 500) {
 			float alpha = 1.0f;
 			if ((frame - _viewPhoto) > 400) {
@@ -438,7 +436,7 @@ void CvContent::draw(const DWORD& frame) {
 		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		if (_statusFrame > 0 && (frame - _statusFrame) < 200) {
-			_renderer.drawFontTextureText(640, conf->mainRect.bottom - 32, 24, 32, 0xccff3333, _status);
+			_renderer.drawFontTextureText(640, config().mainRect.bottom - 32, 24, 32, 0xccff3333, _status);
 		}
 	}
 }

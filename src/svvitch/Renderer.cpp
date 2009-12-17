@@ -15,7 +15,7 @@
 #include <errors.h>
 
 
-Renderer::Renderer(Configuration* conf): _log(Poco::Logger::get("")), _conf(conf), _d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL) 
+Renderer::Renderer(): _log(Poco::Logger::get("")), _d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL) 
 {
 }
 
@@ -48,8 +48,9 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	_displayAdpters = caps.NumberOfAdaptersInGroup;
 	_maxTextureW = caps.MaxTextureWidth;
 	_maxTextureH = caps.MaxTextureHeight;
-	if (_conf->imageSplitWidth <= 0) {
-		_conf->imageSplitWidth = _maxTextureW;
+	if (config().imageSplitWidth <= 0) {
+		Configuration& conf = (Configuration)config();
+		conf.imageSplitWidth = _maxTextureW;
 	}
 	_log.information(Poco::format("display adapters: %u texture-max: %ux%u", _displayAdpters, _maxTextureW, _maxTextureH));
 	string usePsize = (caps.FVFCaps & D3DFVFCAPS_PSIZE)?"true":"false";
@@ -65,7 +66,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	// デバイスのプレゼンテーションパラメータを初期化
 	_presentParams = new D3DPRESENT_PARAMETERS[_displayAdpters];
 	ZeroMemory(&_presentParams[0], sizeof(D3DPRESENT_PARAMETERS));
-	if (_conf->fullsceen) {
+	if (config().fullsceen) {
 		_presentParams[0].Windowed = FALSE;
 //			_presentParams[0].FullScreen_RefreshRateInHz = _conf->rate;
 		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
@@ -73,8 +74,8 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 		_presentParams[0].Windowed = TRUE;
 		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 	}
-	_presentParams[0].BackBufferWidth = _conf->mainRect.right;
-	_presentParams[0].BackBufferHeight = _conf->mainRect.bottom;
+	_presentParams[0].BackBufferWidth = config().mainRect.right;
+	_presentParams[0].BackBufferHeight = config().mainRect.bottom;
 	_presentParams[0].BackBufferFormat = d3ddm.Format;
 	_presentParams[0].BackBufferCount = 1;
 	_presentParams[0].SwapEffect = D3DSWAPEFFECT_DISCARD;
@@ -95,16 +96,17 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 		WNDCLASSEX wc = {sizeof(WNDCLASSEX), CS_CLASSDC, WindowProc, 0, 0, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"multihead", NULL};
 		RegisterClassEx(&wc);
 		std::wstring wtitle;
-		Poco::UnicodeConverter::toUTF16(_conf->title, wtitle);
+		Poco::UnicodeConverter::toUTF16(config().title, wtitle);
 		if (SUCCEEDED(_d3d->GetAdapterDisplayMode(i, &d3ddm))) {
 			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, d3ddm.Width, d3ddm.Height, NULL, NULL, wc.hInstance, NULL);
 			_presentParams[i].BackBufferWidth = d3ddm.Width;
 			_presentParams[i].BackBufferHeight = d3ddm.Height;
 			_presentParams[i].FullScreen_RefreshRateInHz = d3ddm.RefreshRate;
-			_conf->subRect.right = d3ddm.Width;
-			_conf->subRect.bottom = d3ddm.Height;
+			Configuration& conf = (Configuration)config();
+			conf.subRect.right = d3ddm.Width;
+			conf.subRect.bottom = d3ddm.Height;
 		} else {
-			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, _conf->subRect.right, _conf->subRect.bottom, NULL, NULL, wc.hInstance, NULL);
+			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, config().subRect.right, config().subRect.bottom, NULL, NULL, wc.hInstance, NULL);
 			_presentParams[i].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 		}
 		_presentParams[i].hDeviceWindow = hWnd2;
@@ -136,7 +138,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	//	D3DSURFACE_DESC desc;
 	//	HRESULT hr = _renderTarget->GetDesc(&desc);
 	//	if (SUCCEEDED(hr)) _log.information(Poco::format("render target: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
-	_captureTexture = createRenderTarget(_conf->stageRect.right, _conf->stageRect.bottom);
+	_captureTexture = createRenderTarget(config().stageRect.right, config().stageRect.bottom);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
 		_captureTexture->GetLevelDesc(0, &desc);
@@ -184,7 +186,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 		string ffName;
 		Poco::UnicodeConverter::toUTF8(s, ffName);
 		_log.information(Poco::format("private font family: %s", ffName));
-		if (ffName == _conf->asciiFont) createFontTexture(&ff[i], 32);
+		if (ffName == config().asciiFont) createFontTexture(&ff[i], 32);
 //		if (ffName == _conf->multiByteFont) _multiByteFont = ff[i].Clone();
 	}
 
@@ -369,13 +371,6 @@ bool Renderer::deliveryMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 }
 
 /**
- * 設定オブジェクトを取得します
- */
-Configuration* Renderer::config() const {
-	return _conf;
-}
-
-/**
  * 3Dデバイスを取得します
  */
 const LPDIRECT3DDEVICE9 Renderer::get3DDevice() const {
@@ -519,7 +514,7 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, &(_conf->stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+					_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");
@@ -564,7 +559,7 @@ void Renderer::renderScene(const DWORD current) {
 		Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
 		string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
 //		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-		drawFontTextureText(0, _conf->subRect.bottom - 20, 12, 16, 0xffcccccc, Poco::format("FPS:%03lu %s %s", _fpsCounter.getFPS(), time, memory));
+		drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0xffcccccc, Poco::format("FPS:%03lu %s %s", _fpsCounter.getFPS(), time, memory));
 
 		_device->EndScene();
 	}
@@ -583,7 +578,7 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, &(_conf->stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+					_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");
@@ -861,13 +856,13 @@ const LPDIRECT3DTEXTURE9 Renderer::createTexturedText(const wstring& fontFamily,
 			temp[i].GetFamilyName(s);
 			string name;
 			Poco::UnicodeConverter::toUTF8(s, name);
-			if (_conf->multiByteFont == name) ff = temp[i].Clone();
+			if (config().multiByteFont == name) ff = temp[i].Clone();
 		}
 	}
 
 	if (!ff) {
 		wstring fontName = fontFamily;
-		if (fontName.empty()) fontName = _conf->defaultFont;
+		if (fontName.empty()) fontName = config().defaultFont;
 		Gdiplus::Font f(fontName.c_str(), fontSize);
 		Gdiplus::FontFamily temp;
 		f.GetFamily(&temp);

@@ -24,8 +24,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspac
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL)
 {
-	ConfigurationPtr conf = _renderer.config();
-	_luminance = conf->luminance;
+	_luminance = config().luminance;
 	initialize();
 }
 
@@ -243,7 +242,6 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 		PlayListItemPtr item = playlist->items()[i % playlist->itemCount()];
 		MediaItemPtr media = item->media();
 		if (media) {
-			ConfigurationPtr conf = _renderer.config();
 			switch (media->type()) {
 				case MediaTypeImage:
 					{
@@ -261,8 +259,8 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 						FFMovieContentPtr movie = new FFMovieContent(_renderer);
 //						DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
-							movie->setPosition(conf->stageRect.left, conf->stageRect.top);
-							movie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
+							movie->setPosition(config().stageRect.left, config().stageRect.top);
+							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
 							container->add(movie);
 						} else {
 							SAFE_DELETE(movie);
@@ -474,9 +472,8 @@ void MainScene::process() {
 //				if (_transition) SAFE_DELETE(_transition);
 				if (currentContent) {
 					if (_nextTransition == "slide") {
-						const ConfigurationPtr conf = _renderer.config();
-						int cw = conf->splitSize.cx;
-						int ch = conf->splitSize.cy;
+						int cw = config().splitSize.cx;
+						int ch = config().splitSize.cy;
 						_transition = new SlideTransition(currentContent, nextContent, 0, ch);
 					} else if (_nextTransition == "dissolve") {
 						_transition = new DissolveTransition(currentContent, nextContent);
@@ -523,12 +520,11 @@ void MainScene::draw1() {
 		_contents[_currentContent]->draw(_frame);
 	}
 
-	ConfigurationPtr conf = _renderer.config();
 	if (_luminance < 100) {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
-		_renderer.drawTexture(conf->mainRect.left, conf->mainRect.top, conf->mainRect.right, conf->mainRect.bottom, NULL, 0, col, col, col, col);
+		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
-	// _renderer.drawFontTextureText(0, conf->mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
+	// _renderer.drawFontTextureText(0, config().mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
 }
 
 void MainScene::draw2() {

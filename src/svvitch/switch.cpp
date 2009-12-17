@@ -28,7 +28,6 @@
 #include <Poco/Net/ServerSocket.h>
 
 #include "switch.h"
-#include "Configuration.h"
 #include "Renderer.h"
 #include "CaptureScene.h"
 #include "MainScene.h"
@@ -212,7 +211,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 
 	// レンダラーの初期化
-	_renderer = new Renderer(&_conf);	
+	_renderer = new Renderer();	
 	HRESULT hr = _renderer->initialize(hInstance, hWnd);
 	if (FAILED(hr)) {
 		MessageBox(0, L"レンダラーの初期化に失敗しました", NULL, MB_OK);
@@ -421,7 +420,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 
 // GUIの設定
-bool guiConfiguration(void)
+bool guiConfiguration()
 {
 	// ffmpegの初期化
 	avcodec_register_all();
@@ -538,8 +537,9 @@ bool guiConfiguration(void)
 		_conf.defaultFont = ws;
 		_conf.asciiFont = xml->getString("ui.asciiFont", "Defactica");
 		_conf.multiByteFont = xml->getString("ui.multiByteFont", "A-OTF-ShinGoPro-Regular.ttf");
-		_conf.vpCommandFile = xml->getString("vpCommand", "");
-		_conf.monitorFile = xml->getString("monitor", "");
+//		_conf.vpCommandFile = xml->getString("vpCommand", "");
+//		_conf.monitorFile = xml->getString("monitor", "");
+		_conf.dataRoot = xml->getString("data-root", "");
 		_conf.workspaceFile = xml->getString("workspace", "");
 		_conf.newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
 		xml->release();
@@ -555,8 +555,12 @@ bool guiConfiguration(void)
 	return false;
 }
 
+const Configuration& config() {
+	return _conf;
+}
+
 // スワップアウト
-void swapout(void) {
+void swapout() {
 	_log.information("*** exec memory swapout");
 	EmptyWorkingSet(GetCurrentProcess());
 	return;

@@ -2,9 +2,11 @@
 
 #include <string>
 #include <vector>
+#include <Poco/Path.h>
 
 using std::string;
 using std::wstring;
+using Poco::Path;
 
 
 class Configuration
@@ -38,8 +40,9 @@ public:
 	wstring defaultFont;
 	string asciiFont;
 	string multiByteFont;
-	string vpCommandFile;
-	string monitorFile;
+//	string vpCommandFile;
+//	string monitorFile;
+	Path dataRoot;
 	string workspaceFile;
 	string newsURL;
 };

@@ -75,11 +75,10 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 					_log.information(Poco::format("lines: %d", linenum));
 
 					drawTexture(text);
-					const ConfigurationPtr conf = _renderer.config();
 					_x = mif->getNumProperty("x", 0);
 					_y = mif->getNumProperty("y", 0);
-					_w = mif->getNumProperty("w", conf->stageRect.right);
-					_h = mif->getNumProperty("h", conf->stageRect.bottom);
+					_w = mif->getNumProperty("w", config().stageRect.right);
+					_h = mif->getNumProperty("h", config().stageRect.bottom);
 					_cx = mif->getNumProperty("cx", _x);
 					_cy = mif->getNumProperty("cy", _y);
 					_cw = mif->getNumProperty("cw", _w);
@@ -150,7 +149,7 @@ void Text::process(const DWORD& frame) {
 		if (_playing) {
 			if (_dx != 0) {
 				_x += _dx;
-				if (_x < (_cx - _iw - _renderer.config()->stageRect.right)) _playing = false;
+				if (_x < (_cx - _iw - config().stageRect.right)) _playing = false;
 			}
 		}
 	}
@@ -160,12 +159,11 @@ void Text::process(const DWORD& frame) {
 void Text::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _texture && _playing) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		const ConfigurationPtr conf = _renderer.config();
 		float alpha = getF("alpha");
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-		int cw = conf->splitSize.cx;
-		int ch = conf->splitSize.cy;
-		switch (conf->splitType) {
+		int cw = config().splitSize.cx;
+		int ch = config().splitSize.cy;
+		switch (config().splitType) {
 		case 1:
 			{
 				device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
@@ -181,7 +179,7 @@ void Text::draw(const DWORD& frame) {
 				while (dx < 1024) {
 					RECT rect = {dx, dy, dx + cw, dy + chh};
 					int cx = dx /cw * dh + dy / ch * cw;
-					if (cx > conf->stageRect.right) break;
+					if (cx > config().stageRect.right) break;
 					int cxx = _cx - cx;
 					if (cxx > cw) {
 						SetRect(&rect, 0, 0, 0, 0);
@@ -257,11 +255,11 @@ void Text::draw(const DWORD& frame) {
 				device->GetScissorRect(&scissorRect);
 				int cww = cw;
 				int chh = ch;
-				int sw = conf->stageRect.right / cw;
-				int sh = conf->stageRect.bottom / ch;
+				int sw = config().stageRect.right / cw;
+				int sh = config().stageRect.bottom / ch;
 				for (int sy = 0; sy < sh; sy++) {
-					int ox = (sy % 2) * cw * 8 + (L(_y / ch) % 2) * cw * 8 + conf->stageRect.left;
-					int oy = (sy / 2) * ch * 4 + (L(_y / ch) / 2) * ch * 4 + conf->stageRect.top;
+					int ox = (sy % 2) * cw * 8 + (L(_y / ch) % 2) * cw * 8 + config().stageRect.left;
+					int oy = (sy / 2) * ch * 4 + (L(_y / ch) / 2) * ch * 4 + config().stageRect.top;
 					for (int sx = 0; sx < sw; sx++) {
 //						if (_x >= sx * cw + cw || _x + _tw < sx * cw) continue;
 						int dx = (sx / 4) * cw;
@@ -287,7 +285,7 @@ void Text::draw(const DWORD& frame) {
 				DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 				_renderer.drawTexture(_x, _y, _texture, col, col, col, col);
 				_x+=_dx;
-				if (_x < -_tw) _x = conf->stageRect.right;
+				if (_x < -_tw) _x = config().stageRect.right;
 				_y+=_dy;
 			}
 
@@ -314,7 +312,7 @@ void Text::drawTexture(string text) {
 		rect.Width = w - x;		// rectの領域をx/y=0で作り直す
 		rect.Height = h - y;	// ただしx/yはクリアせずそのまま引き渡すことで、biasとして使用する
 		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
-		int sh = _renderer.config()->stageRect.bottom;
+		int sh = config().stageRect.bottom;
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, sh, D3DFMT_A8R8G8B8);
 //		LTEXTURE tex = LunaTexture::Create(w, 32, FORMAT_TEXTURE32);
 		int tw = 0;
@@ -404,17 +402,16 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	g.SetSmoothingMode(SmoothingModeHighQuality);
 	g.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
-	ConfigurationPtr conf = _renderer.config();
 	std::wstring wfontFamily;
-	Poco::UnicodeConverter::toUTF16(conf->textFont, wfontFamily);
-	int fontHeight = conf->textHeight;
+	Poco::UnicodeConverter::toUTF16(config().textFont, wfontFamily);
+	int fontHeight = config().textHeight;
 	Font f(wfontFamily.c_str(), fontHeight);
 	Gdiplus::FontFamily ff;
 	f.GetFamily(&ff);
 //	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &_ff[0], FontStyleRegular, 30, Point(x, y), StringFormat::GenericDefault());
 	GraphicsPath path;
 
-	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, conf->textStyle, fontHeight, Point(x, y), StringFormat::GenericDefault());
+	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, config().textStyle, fontHeight, Point(x, y), StringFormat::GenericDefault());
 	LinearGradientBrush foreBrush(Rect(0, 0, 1, fontHeight + 10), Color(255, 255, 255), Color(128, 128, 128), LinearGradientModeVertical);
 	SolidBrush borderBrush1(Color(0, 224, 224, 224));
 	SolidBrush borderBrush2(Color::Black);
