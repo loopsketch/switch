@@ -194,6 +194,15 @@ void SwitchRequestHandler::set(const string& name) {
 			}
 			sendJSONP(form().get("callback", ""), params);
 			return;
+		} else if (name == "text") {
+			string playlistID = form().get("pl", "");
+			Workspace& workspace = scene->getWorkspace();
+			PlayListPtr playlist = workspace.getPlaylist(playlistID);
+			playlist->text(form().get("t", ""));
+			map<string, string> params;
+			params["text"] = playlist->text();
+			sendJSONP(form().get("callback", ""), params);
+			return;
 		} else {
 			message = "property not found";
 		}

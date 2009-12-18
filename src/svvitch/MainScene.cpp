@@ -300,6 +300,9 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 				for (int j = 0; j < media->fileCount(); j++) {
 					TextPtr text = new Text(_renderer);
 					if (text->open(media, j)) {
+						if (media->files().at(j)->file().empty()) {
+							text->drawTexture(playlist->text());
+						}
 						container->add(text);
 					} else {
 						SAFE_DELETE(text);
@@ -361,6 +364,14 @@ bool MainScene::switchContent() {
 			}
 		} else {
 			_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
+		}
+	} else {
+		int next = (_currentContent + 1) % _contents.size();
+		ContainerPtr tmp = _contents[next];
+		if (tmp && tmp->size() > 0) {
+			_log.information("switch next contents");
+			_doSwitch = true;
+			return true;
 		}
 	}
 	return false;

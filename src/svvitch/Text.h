@@ -23,7 +23,6 @@ private:
 	float _dy;
 	Gdiplus::FontFamily _ff[16];
 
-	void drawTexture(string text);
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);
 
 public:
@@ -43,6 +42,8 @@ public:
 
 	/** ファイルをクローズします */
 	void close();
+
+	void drawTexture(string text);
 
 	/** 1フレームに1度だけ処理される */
 	void process(const DWORD& frame);

@@ -46,62 +46,66 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 		if (mif->type() == MediaTypeText) {
 			i++;
 			if (offset != i) continue;
-			string text;
-			try {
-				Poco::RegularExpression::Match m;
-				bool isSJIS = re.match(mif->getProperty("encoding"), m);
-				Poco::FileInputStream fis(Path(mif->file()).absolute(config().dataRoot).toString(), std::ios::in);
+			if (!mif->file().empty()) {
+				string text;
 				try {
-					Poco::InputLineEndingConverter ilec(fis);
-					char line[1024];
-					int linenum = 1;
-					while (!ilec.eof()) {
-						line[0] = '\0';
-						ilec.getline(line, sizeof(line));
-						if (!text.empty()) text += "     ";
-						if (isSJIS) {
-							// sjis
-							wstring wline;
-							svvitch::sjis_utf16(string(line), wline);
-							string utf8;
-							Poco::UnicodeConverter::toUTF8(wline, utf8);
-							text = Poco::cat(text, utf8);
-						} else {
-							// UTF-8
-							text = Poco::cat(text, string(line));
+					Poco::RegularExpression::Match m;
+					bool isSJIS = re.match(mif->getProperty("encoding"), m);
+					Poco::FileInputStream fis(Path(mif->file()).absolute(config().dataRoot).toString(), std::ios::in);
+					try {
+						Poco::InputLineEndingConverter ilec(fis);
+						char line[1024];
+						int linenum = 1;
+						while (!ilec.eof()) {
+							line[0] = '\0';
+							ilec.getline(line, sizeof(line));
+							if (!text.empty()) text += "     ";
+							if (isSJIS) {
+								// sjis
+								wstring wline;
+								svvitch::sjis_utf16(string(line), wline);
+								string utf8;
+								Poco::UnicodeConverter::toUTF8(wline, utf8);
+								text = Poco::cat(text, utf8);
+							} else {
+								// UTF-8
+								text = Poco::cat(text, string(line));
+							}
+							linenum++;
 						}
-						linenum++;
-					}
-					_log.information(Poco::format("lines: %d", linenum));
+						_log.information(Poco::format("lines: %d", linenum));
 
-					drawTexture(text);
-					_x = mif->getNumProperty("x", 0);
-					_y = mif->getNumProperty("y", 0);
-					_w = mif->getNumProperty("w", config().stageRect.right);
-					_h = mif->getNumProperty("h", config().stageRect.bottom);
-					_cx = mif->getNumProperty("cx", _x);
-					_cy = mif->getNumProperty("cy", _y);
-					_cw = mif->getNumProperty("cw", _w);
-					_ch = mif->getNumProperty("ch", _h);
-					_dx = mif->getFloatProperty("dx", F(0));
-					_dy = mif->getFloatProperty("dy", F(0));
-					string align = mif->getProperty("align");
-					if (align == "center") {
-						_x += (_w - _tw) / 2;
-					} else if (align == "left") {
-						// スルー
-					} else if (align == "right") {
-						_x = _x + _w - _tw;
+						drawTexture(text);
+						_x = mif->getNumProperty("x", 0);
+						_y = mif->getNumProperty("y", 0);
+						_w = mif->getNumProperty("w", config().stageRect.right);
+						_h = mif->getNumProperty("h", config().stageRect.bottom);
+						_cx = mif->getNumProperty("cx", _x);
+						_cy = mif->getNumProperty("cy", _y);
+						_cw = mif->getNumProperty("cw", _w);
+						_ch = mif->getNumProperty("ch", _h);
+						_dx = mif->getFloatProperty("dx", F(0));
+						_dy = mif->getFloatProperty("dy", F(0));
+						string align = mif->getProperty("align");
+						if (align == "center") {
+							_x += (_w - _tw) / 2;
+						} else if (align == "left") {
+							// スルー
+						} else if (align == "right") {
+							_x = _x + _w - _tw;
+						}
+						_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
+					} catch (Poco::Exception& ex) {
+						_log.warning(Poco::format("I/O error: %s", ex.displayText()));
 					}
-					_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
+					fis.close();
+				} catch (Poco::PathNotFoundException& ex) {
+					_log.warning(Poco::format("file not found: %s", mif->file()));
 				} catch (Poco::Exception& ex) {
-					_log.warning(Poco::format("I/O error: %s", ex.displayText()));
+					_log.warning(Poco::format("failed read text: %s", ex.displayText()));
 				}
-				fis.close();
-			} catch (Poco::PathNotFoundException& ex) {
-				_log.warning(Poco::format("file not found: %s", mif->file()));
-			} catch (Poco::Exception& ex) {
-				_log.warning(Poco::format("failed read text: %s", ex.displayText()));
+			} else {
+				// ファイル指定無し
 			}
 		}
 	}

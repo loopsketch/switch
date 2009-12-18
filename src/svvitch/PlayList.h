@@ -16,6 +16,7 @@ private:
 
 	string _id;
 	string _name;
+	string _text;
 	vector<PlayListItemPtr> _items;
 
 	void add(const PlayListItemPtr media) {
@@ -23,7 +24,7 @@ private:
 	}
 
 public:
-	PlayList(const string id, const string name): _log(Poco::Logger::get("")), _id(id), _name(name) {
+	PlayList(const string id, const string name, const string text = ""): _log(Poco::Logger::get("")), _id(id), _name(name), _text(text) {
 	}
 
 	~PlayList() {
@@ -38,6 +39,14 @@ public:
 
 	const string& name() const {
 		return _name;
+	}
+
+	const string& text() const {
+		return _text;
+	}
+
+	void text(const string text) {
+		_text = text;
 	}
 
 	const int itemCount() const {

@@ -155,7 +155,8 @@ bool Workspace::parse() {
 							id = Poco::format("g%04d", j);
 //							_log.information(Poco::format("auto group id: %s", id));
 						}
-						PlayListPtr playlist = new PlayList(id, name);
+						string text = e->getAttribute("text");
+						PlayListPtr playlist = new PlayList(id, name, text);
 //						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, name);
 //						_renderer.addCachedTexture(name, texture);
 						NodeList* items = e->getElementsByTagName("item");
