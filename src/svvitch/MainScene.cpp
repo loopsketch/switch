@@ -242,6 +242,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 		PlayListItemPtr item = playlist->items()[i % playlist->itemCount()];
 		MediaItemPtr media = item->media();
 		if (media) {
+			_log.information(Poco::format("file: %d", media->fileCount()));
 			switch (media->type()) {
 				case MediaTypeImage:
 					{
@@ -297,15 +298,20 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 					_log.warning("media type: unknown");
 			}
 			if (media->containsFileType(MediaTypeText)) {
+				_log.information("contains text");
 				for (int j = 0; j < media->fileCount(); j++) {
-					TextPtr text = new Text(_renderer);
-					if (text->open(media, j)) {
-						if (media->files().at(j)->file().empty()) {
-							text->drawTexture(playlist->text());
+					MediaItemFilePtr itemFile = media->files().at(j);
+					if (itemFile->type() == MediaTypeText) {
+						TextPtr text = new Text(_renderer);
+						if (text->open(media, j)) {
+							if (itemFile->file().empty()) {
+								_log.information(Poco::format("tempate text: %s", playlist->text()));
+								text->drawTexture(playlist->text());
+							}
+							container->add(text);
+						} else {
+							SAFE_DELETE(text);
 						}
-						container->add(text);
-					} else {
-						SAFE_DELETE(text);
 					}
 				}
 			}

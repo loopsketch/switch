@@ -11,6 +11,8 @@ private:
 	Poco::FastMutex _initializeLock;
 
 	LPDIRECT3DTEXTURE9 _texture;
+	string _font;
+	int _fontH;
 	int _tw;
 	int _th;
 	int _iw;

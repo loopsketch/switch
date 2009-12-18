@@ -40,12 +40,10 @@ void Text::initialize() {
 bool Text::open(const MediaItemPtr media, const int offset) {
 	initialize();
 	Poco::RegularExpression re("^(sjis|shift_jis|shiftjis|ms932)$", Poco::RegularExpression::RE_CASELESS + Poco::RegularExpression::RE_EXTENDED);
-	int i = -1;
-	for (vector<MediaItemFilePtr>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
-		MediaItemFilePtr mif = *it;
+
+	if (offset != -1 && offset < media->fileCount()) {
+		MediaItemFilePtr mif =  media->files().at(offset);
 		if (mif->type() == MediaTypeText) {
-			i++;
-			if (offset != i) continue;
 			if (!mif->file().empty()) {
 				string text;
 				try {
@@ -87,8 +85,12 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 				}
 			} else {
 				// ファイル指定無し
+				_log.information("text template mode");
 				drawTexture("");
 			}
+			_font = mif->getProperty("font");
+			if (_font.empty()) _font = config().textFont;
+			_fontH = mif->getNumProperty("fh", config().textHeight);
 			_x = mif->getNumProperty("x", 0);
 			_y = mif->getNumProperty("y", 0);
 			_w = mif->getNumProperty("w", config().stageRect.right);
@@ -108,6 +110,8 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 				_x = _x + _w - _tw;
 			}
 			_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
+		} else {
+			_log.warning("failed type error");
 		}
 	}
 
@@ -317,8 +321,8 @@ void Text::drawTexture(string text) {
 		rect.Width = w - x;		// rectの領域をx/y=0で作り直す
 		rect.Height = h - y;	// ただしx/yはクリアせずそのまま引き渡すことで、biasとして使用する
 		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
-		int sh = config().stageRect.bottom;
-		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, sh, D3DFMT_A8R8G8B8);
+//		int sh = config().stageRect.bottom;
+		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h, D3DFMT_A8R8G8B8);
 //		LTEXTURE tex = LunaTexture::Create(w, 32, FORMAT_TEXTURE32);
 		int tw = 0;
 		int th = 0;
@@ -332,7 +336,7 @@ void Text::drawTexture(string text) {
 		} else {
 			// 指定サイズのテクスチャが作れない
 			tw = 1024;
-			th = sh;
+			th = h;
 		}
 		if (w > tw || !texture) {
 			// テクスチャの幅の方が小さい場合、テクスチャを折返しで作る
@@ -343,7 +347,7 @@ void Text::drawTexture(string text) {
 			if (!texture) return;
 			D3DSURFACE_DESC desc;
 			HRESULT hr = texture->GetLevelDesc(0, &desc);
-			_log.information(Poco::format("text texture(with turns): %ux%u", desc.Width, desc.Height));
+			_log.information(Poco::format("text texture(with turns %dx%d): %ux%u", tw, th, desc.Width, desc.Height));
 			_renderer.colorFill(texture, 0x00000000);
 			D3DLOCKED_RECT lockRect;
 			hr = texture->LockRect(0, &lockRect, NULL, 0);
@@ -352,10 +356,10 @@ void Text::drawTexture(string text) {
 				Graphics g(&dst);
 				int y = 0;
 				for (int x = 0; x < w; x+=tw) {
-					Rect rect(0, y, tw, sh);
+					Rect rect(0, y, tw, th);
 					g.SetClip(rect);
 					g.DrawImage(&bitmap, -x, y);
-					y += sh;
+					y += th;
 				}
 				g.Flush();
 				hr = texture->UnlockRect(0);
@@ -381,6 +385,7 @@ void Text::drawTexture(string text) {
 				_iw = tw;
 				_ih = th;
 			}
+			D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
 		}
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -408,16 +413,15 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	g.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
 	std::wstring wfontFamily;
-	Poco::UnicodeConverter::toUTF16(config().textFont, wfontFamily);
-	int fontHeight = config().textHeight;
-	Font f(wfontFamily.c_str(), fontHeight);
+	Poco::UnicodeConverter::toUTF16(_font, wfontFamily);
+	Font f(wfontFamily.c_str(), _fontH);
 	Gdiplus::FontFamily ff;
 	f.GetFamily(&ff);
 //	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &_ff[0], FontStyleRegular, 30, Point(x, y), StringFormat::GenericDefault());
 	GraphicsPath path;
 
-	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, config().textStyle, fontHeight, Point(x, y), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, fontHeight + 10), Color(255, 255, 255), Color(128, 128, 128), LinearGradientModeVertical);
+	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, config().textStyle, _fontH, Point(x, y), StringFormat::GenericDefault());
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, _fontH), Color(255, 255, 255), Color(128, 128, 128), LinearGradientModeVertical);
 	SolidBrush borderBrush1(Color(0, 224, 224, 224));
 	SolidBrush borderBrush2(Color::Black);
 	Pen pen1(&borderBrush1, 8);
