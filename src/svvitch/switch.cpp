@@ -235,8 +235,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		mainScene = new MainScene(*_renderer, *_uim, *workspace);
 		_renderer->addScene("main", mainScene);
 	}
-	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
-	_renderer->addScene("ui", uiScene);
+//	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
+//	_renderer->addScene("ui", uiScene);
 
 	Poco::ThreadPool::defaultPool().addCapacity(8);
 	Poco::Net::HTTPServerParams* params = new Poco::Net::HTTPServerParams;
