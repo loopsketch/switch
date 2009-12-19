@@ -18,24 +18,26 @@ using std::queue;
 class BaseDecoder
 {
 private:
-	Poco::FastMutex _lock;
 	queue<AVPacketList*> _packets;
 
 protected:
+	Poco::FastMutex _lock;
 	Poco::Logger& _log;
+
+	Poco::Thread _thread;
+	Poco::Runnable* _worker;
 
 	DWORD _readTime;
 	int _readCount;
 	float _avgTime;
 
 public:
-	BaseDecoder(): _log(Poco::Logger::get("")), _avgTime(0) {
+	BaseDecoder(): _log(Poco::Logger::get("")), _worker(NULL), _avgTime(0) {
 	}
 
 	virtual ~BaseDecoder() {
 		clearAllPackets();
 	}
-
 
 	/**
 	 * パケットをクリアします

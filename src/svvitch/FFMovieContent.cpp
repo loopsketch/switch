@@ -144,10 +144,11 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 void FFMovieContent::run() {
 	_log.information("movie thread start");
+	bool otokita = false;
 	int count = 0;
 	AVPacket packet;
 	while (_worker) {
-		if (_videoDecoder && _videoDecoder->bufferedPackets() > 20) {
+		if (_videoDecoder && _videoDecoder->bufferedPackets() > 30) {
 			Poco::Thread::sleep(10);
 			continue;
 		}
@@ -174,6 +175,8 @@ void FFMovieContent::run() {
 		} else if (packet.stream_index == _audio && _audioDecoder) {
 			// 音声
 			_audioDecoder->pushPacket(&packet);
+			if (!otokita) _log.information("!!!otokita!!!");
+			otokita = true;
 
 		} else {
 			av_free_packet(&packet);
@@ -286,6 +289,10 @@ void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_playing) {
+//			if (_audioDecoder && _videoDecoder->bufferedFrames() == 0) {
+				// ビデオのフレームが無くなった時点でオーディオ停止(リングバッファのオーバーラン再生防止)
+//				_audioDecoder->stop();
+//			}
 			if (0 == (frame % 2)) {
 				VideoFrame* vf = _videoDecoder->popFrame();
 				if (vf) {
@@ -296,9 +303,7 @@ void FFMovieContent::process(const DWORD& frame) {
 				}
 			}
 			_avgTime = _videoDecoder->getAvgTime();
-			if (_audioDecoder && _videoDecoder->bufferedFrames() == 0) {
-				_audioDecoder->stop();
-			}
+
 		} else {
 			if (get("prepare") == "true") {
 				VideoFrame* vf = _videoDecoder->viewFrame();

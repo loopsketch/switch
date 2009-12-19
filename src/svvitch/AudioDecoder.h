@@ -19,11 +19,6 @@ class AudioDecoder: public BaseDecoder, Poco::Runnable
 {
 friend class FFMovieContent;
 private:
-	Poco::FastMutex _lock;
-
-	Poco::Thread _thread;
-	Poco::Runnable* _worker;
-
 	Renderer& _renderer;
 	AVFormatContext* _ic;
 	int _audio;
@@ -31,6 +26,7 @@ private:
 	LPDIRECTSOUNDBUFFER	_buffer;
 	DWORD _bufferOffset;
 	DWORD _bufferSize;
+	bool _bufferReady;
 
 	bool _running;
 
@@ -39,7 +35,7 @@ private:
 
 
 	AudioDecoder(Renderer& renderer, AVFormatContext* ic, const int audio): BaseDecoder(),
-		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _bufferOffset(0), _bufferSize(0), _running(false)
+		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _bufferOffset(0), _bufferSize(0), _bufferReady(false), _running(false)
 	{
 	}
 
@@ -185,8 +181,10 @@ private:
 						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
 						if (FAILED(hr)) {
 							_log.warning("failed unlocked sound buffer");
+						} else {
+							_bufferOffset = (_bufferOffset + len) % _bufferSize;
+							_bufferReady = true;
 						}
-						_bufferOffset = (_bufferOffset + len) % _bufferSize;
 					} else {
 						_log.warning(Poco::format("SoundBuffer not locked: %d", len));
 					}
@@ -198,9 +196,11 @@ private:
 						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
 						if (FAILED(hr)) {
 							_log.warning("failed unlocked sound buffer");
+						} else {
+							_bufferOffset = 0;
+							len -= lenRound;
+							_bufferReady = true;
 						}
-						_bufferOffset = 0;
-						len -= lenRound;
 					} else {
 						_log.warning(Poco::format("SoundBuffer not locked: %d", lenRound));
 					}
@@ -213,8 +213,10 @@ private:
 						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
 						if (FAILED(hr)) {
 							_log.warning("failed unlocked sound buffer");
+						} else {
+							_bufferOffset = (_bufferOffset + len) % _bufferSize;
+							_bufferReady = true;
 						}
-						_bufferOffset = (_bufferOffset + len) % _bufferSize;
 					} else {
 						_log.warning(Poco::format("SoundBuffer not locked: %d", len));
 					}
@@ -225,26 +227,35 @@ private:
 			Poco::Thread::sleep(2);
 //			timeEndPeriod(1);
 		}
-		
+
 		delete data;
 		_worker = NULL;
 		_log.information("audio decoder thread end");
 	}
 
+	bool playing() {
+		return _running;
+	}
+
 	void play() {
 		if (_buffer && !_running) {
-			_running = true;
-			HRESULT hr = _buffer->Play(0, 0, DSBPLAY_LOOPING);
-			if (FAILED(hr)) {
-				_log.warning("failed play sound buffer");
+			if (_bufferReady) {
+				HRESULT hr = _buffer->Play(0, 0, DSBPLAY_LOOPING);
+				if (SUCCEEDED(hr)) {
+					_running = true;
+				} else {
+					_log.warning("failed play sound buffer");
+				}
+			} else {
+				_log.warning("buffer not ready!");
 			}
 		}
 	}
 
 	void stop() {
 		if (_buffer && _running) {
-			_running = false;
 			_buffer->Stop();
+			_running = false;
 		}
 	}
 };

@@ -220,11 +220,7 @@ class VideoDecoder: public BaseDecoder, Poco::Runnable
 {
 friend class FFMovieContent;
 private:
-	Poco::FastMutex _lock;
 	Poco::FastMutex _startLock;
-
-	Poco::Thread _thread;
-	Poco::Runnable* _worker;
 
 	Renderer& _renderer;
 	AVFormatContext* _ic;
