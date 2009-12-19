@@ -483,31 +483,28 @@ bool guiConfiguration()
 		string useClip(_conf.useClip?"use":"not use");
 		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
-		int cw = xml->getInt("display.split.width", 0);
-		int ch = xml->getInt("display.split.height", 0);
+		int cw = xml->getInt("display.split.width", w);
+		int ch = xml->getInt("display.split.height", h);
+		int cycles = xml->getInt("display.split.cycles", h / ch);
 		_conf.splitSize.cx = cw;
 		_conf.splitSize.cy = ch;
-		string splitType = xml->getString("display.split.type", "");
+		_conf.stageRect.left = xml->getInt("stage.x", 0);
+		_conf.stageRect.top = xml->getInt("stage.y", 0);
+		_conf.stageRect.right = xml->getInt("stage.width", w * cycles);
+		_conf.stageRect.bottom = xml->getInt("stage.height", ch);
+		_conf.splitCycles = cycles;
+		string splitType = xml->getString("display.split.type", "none");
 		if (splitType == "vertical" || splitType == "vertical-down") {
 			_conf.splitType = 1;
-			_conf.stageRect.right = xml->getInt("stage.width", w / cw * (640 / ch * cw));
-			_conf.stageRect.bottom = xml->getInt("stage.height", ch);
-			_log.information(Poco::format("split <vertical-down> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else if (splitType == "vertical-up") {
 			_conf.splitType = 2;
-			_conf.stageRect.left = xml->getInt("stage.x", 0);
-			_conf.stageRect.top = xml->getInt("stage.y", 0);
-			_conf.stageRect.right = xml->getInt("stage.width", w / cw * (640 / ch * cw));
-			_conf.stageRect.bottom = xml->getInt("stage.height", ch);
-			_log.information(Poco::format("split <vertical-up> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else if (splitType == "horizontal") {
 			_conf.splitType = 11;
-			_log.information(Poco::format("split <horizontal> %ldx%ld (%dx%d)", _conf.stageRect.right, _conf.stageRect.bottom, cw, ch));
 		} else {
 			_conf.splitType = 0;
-			_conf.stageRect.right = xml->getInt("stage.width", w);
-			_conf.stageRect.bottom = xml->getInt("stage.height", h);
 		}
+		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", _conf.stageRect.left, _conf.stageRect.top, _conf.stageRect.right, _conf.stageRect.bottom));
+		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
 
 		_conf.useScenes = xml->getString("scenes", "main,operation");
 		_conf.luminance = xml->getInt("stage.luminance", 100);

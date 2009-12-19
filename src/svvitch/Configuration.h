@@ -26,6 +26,7 @@ public:
 	RECT stageRect;
 	int splitType;
 	SIZE splitSize;
+	int splitCycles;
 
 	string useScenes;
 
