@@ -22,7 +22,7 @@ PC上で作成できる動画ファイル、静止画ファイルの送出の他、テキストファイルをテロッ
 ■ 開発環境
 OS: Windows XP SP3
 IDE: Microsoft Visual C++ 2008 Express Edition
-
+     FlashDevelop3.0.6RTM
 
 ■ 依存する外部ライブラリ
 <ffmpeg>※MinGWやlibmp3lameなど含む
@@ -34,17 +34,24 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
 ※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
 
+<AdobeAIR1.5.2>
+
 ■ ビルド方法
 のちほど。
 
 ■ リリースファイル一覧
-[samples]           サンプルのコンテンツファイル
+[datas]             サンプルのワークスペース、コンテンツファイル
 basic.fx            fxファイル
 cursor.png          カーソルのイメージ
 defactica.ttf       フォントファイル
 switch.exe          実行ファイル
 switch-config.dtd   基本設定ファイルのDTD
 switch-config.xml   基本設定ファイル
-workspace.xml       コンテンツ定義ファイル
+airSvvitch.air      操作用Airアプリのパッケージ
 
-■ リリースファイル一覧
+■ 更新履歴
+0.2
+・AdobeAIR版オペレーション機能の追加
+・送出画面側はUI機能の削除
+0.1
+・最初のリリース
