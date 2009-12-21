@@ -202,7 +202,7 @@ public:
 					float y = _y;
 					int ix = 0, sx = 0, sy = 0, dx = (int)x / (cw * config().splitCycles) * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % (config().splitCycles * ch);
 					int cww = 0;
-					int chh = ch;
+					int chh = (ch > _ih)?_ih:ch;
 					while (dx < config().mainRect.right) {
 						int cx = dx * config().splitCycles + dy / ch * cw; // cx=ŽÀÛ‚Ì‰f‘œ‚Ì‰¡ˆÊ’u
 						if (cx + dxx >= config().stageRect.right) break;

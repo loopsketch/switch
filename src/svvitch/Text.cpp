@@ -183,7 +183,7 @@ void Text::draw(const DWORD& frame) {
 				int dh = (640 / ch * cw);
 				int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % 640;
 				int cww = 0;
-				int chh = ch;
+				int chh = (ch > _ih)?_ih:ch;
 				int clipX = _cx;
 				while (dx < 1024) {
 					RECT rect = {dx, dy, dx + cw, dy + chh};
