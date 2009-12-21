@@ -200,7 +200,7 @@ void SwitchRequestHandler::set(const string& name) {
 			PlayListPtr playlist = workspace.getPlaylist(playlistID);
 			playlist->text(form().get("t", ""));
 			map<string, string> params;
-			params["text"] = playlist->text();
+			params["text"] = Poco::format("\"%s\"", playlist->text());
 			sendJSONP(form().get("callback", ""), params);
 			return;
 		} else {
