@@ -144,7 +144,6 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 void FFMovieContent::run() {
 	_log.information("movie thread start");
-	bool otokita = false;
 	int count = 0;
 	AVPacket packet;
 	while (_worker) {
@@ -175,8 +174,6 @@ void FFMovieContent::run() {
 		} else if (packet.stream_index == _audio && _audioDecoder) {
 			// ‰¹º
 			_audioDecoder->pushPacket(&packet);
-			if (!otokita) _log.information("!!!otokita!!!");
-			otokita = true;
 
 		} else {
 			av_free_packet(&packet);
