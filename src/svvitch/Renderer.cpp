@@ -138,7 +138,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	//	D3DSURFACE_DESC desc;
 	//	HRESULT hr = _renderTarget->GetDesc(&desc);
 	//	if (SUCCEEDED(hr)) _log.information(Poco::format("render target: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
-	_captureTexture = createRenderTarget(config().stageRect.right, config().stageRect.bottom);
+	_captureTexture = createRenderTarget(config().mainRect.right, config().mainRect.bottom);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
 		_captureTexture->GetLevelDesc(0, &desc);
@@ -514,7 +514,7 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+					_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");
@@ -582,7 +582,7 @@ void Renderer::renderScene(const DWORD current) {
 					LPDIRECT3DSURFACE9 dst = NULL;
 					hr = _captureTexture->GetSurfaceLevel(0, &dst);
 					if SUCCEEDED(hr) {
-						_device->StretchRect(backBuffer, &(config().stageRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+						_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 						SAFE_RELEASE(dst);
 					} else {
 						_log.warning("failed get capture surface");

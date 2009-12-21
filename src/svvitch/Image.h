@@ -200,15 +200,12 @@ public:
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 					float x = _x;
 					float y = _y;
-					int mh = config().stageRect.bottom;
-					int dh = (mh / ch * cw);
-					int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % mh;
+					int ix = 0, sx = 0, sy = 0, dx = (int)x / (cw * config().splitCycles) * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % (config().splitCycles * ch);
 					int cww = 0;
 					int chh = ch;
-					while (dx < config().stageRect.right) {
-						int cx = dx /cw * dh + dy / ch * cw;
-//						if (cx + dxx >= conf->stageRect.right) break;
-						if (cx + dxx >= _iw) break;
+					while (dx < config().mainRect.right) {
+						int cx = dx * config().splitCycles + dy / ch * cw; // cx=ŽÀÛ‚Ì‰f‘œ‚Ì‰¡ˆÊ’u
+						if (cx + dxx >= config().stageRect.right) break;
 						RECT rect = {dx, dy, dx + cw, dy + ch};
 						device->SetScissorRect(&rect);
 						if ((sx + cw - dxx) >= _tw) {
@@ -251,7 +248,7 @@ public:
 						}
 						dxx = 0;
 						dy += ch;
-						if (dy >= mh) {
+						if (dy >= config().splitCycles * ch) {
 							dx += cw;
 							dy = 0;
 						}
