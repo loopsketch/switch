@@ -322,12 +322,14 @@ string SwitchRequestHandler::fileToJSON(const Path path) {
 
 void SwitchRequestHandler::download() {
 	try {
-		Path path(config().dataRoot, form().get("path", ""));
-		File f(path);
-		_log.information(Poco::format("download: (%s) %s", config().dataRoot.toString(), f.path()));
-		Poco::FileInputStream is(path.toString());
+		string path = form().get("path", "");
+		if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
+		Path src(config().dataRoot, Path(path));
+		File f(src);
+		_log.information(Poco::format("download: %s", f.path()));
+		Poco::FileInputStream is(src.toString());
 		if (is.good()) {
-			string ext = path.getExtension();
+			string ext = src.getExtension();
 			File::FileSize length = f.getSize();
 			response().setContentLength(static_cast<int>(length));
 			if (ext == "png") {
@@ -356,7 +358,7 @@ void SwitchRequestHandler::download() {
 			response().setChunkedTransferEncoding(false);
 			Poco::StreamCopier::copyStream(is, response().send());
 		} else {
-			throw Poco::OpenFileException(path.toString());
+			throw Poco::OpenFileException(src.toString());
 		}
 	} catch (Poco::FileException ex) {
 		_log.warning(ex.displayText());
@@ -372,7 +374,8 @@ void SwitchRequestHandler::upload() {
 	if (!path.empty()) {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
 		try {
-			Path dst(config().dataRoot, path);
+			if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
+			Path dst(config().dataRoot, Path(path));
 			File parent(dst.parent());
 			if (!parent.exists()) parent.createDirectories();
 			File f(dst);
