@@ -101,14 +101,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			_ch = mif->getNumProperty("ch", _h);
 			_dx = mif->getFloatProperty("dx", F(0));
 			_dy = mif->getFloatProperty("dy", F(0));
-			string align = mif->getProperty("align");
-			if (align == "center") {
-				_x += (_w - _tw) / 2;
-			} else if (align == "left") {
-				// ƒXƒ‹[
-			} else if (align == "right") {
-				_x = _x + _w - _tw;
-			}
+			_align = mif->getProperty("align");
 			_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
 		} else {
 			_log.warning("failed type error");
@@ -172,13 +165,14 @@ void Text::draw(const DWORD& frame) {
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		int cw = config().splitSize.cx;
 		int ch = config().splitSize.cy;
+
 		switch (config().splitType) {
 		case 1:
 			{
 				device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
 				RECT scissorRect;
 				device->GetScissorRect(&scissorRect);
-				float x = _x;
+				float x = _x + _ax;
 				float y = _y;
 				int dh = (640 / ch * cw);
 				int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % 640;
@@ -323,9 +317,10 @@ void Text::drawTexture(string text) {
 		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
 //		int sh = config().stageRect.bottom;
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h, D3DFMT_A8R8G8B8);
-//		LTEXTURE tex = LunaTexture::Create(w, 32, FORMAT_TEXTURE32);
 		int tw = 0;
 		int th = 0;
+		int iw = 0;
+		int ih = 0;
 		if (texture) {
 			D3DSURFACE_DESC desc;
 			HRESULT hr = texture->GetLevelDesc(0, &desc);
@@ -364,11 +359,11 @@ void Text::drawTexture(string text) {
 				g.Flush();
 				hr = texture->UnlockRect(0);
 //				_w = 1024;
-				_iw = w;
-				_ih = h;
+				iw = w;
+				ih = h;
 				tw = desc.Width;
 				th = desc.Height;
-				D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
+				// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
 			}
 
 		} else {
@@ -382,20 +377,30 @@ void Text::drawTexture(string text) {
 				hr = texture->UnlockRect(0);
 				_log.information(Poco::format("draw text texture: %dx%d", tw, th));
 //				_w = (float)rect.Width;
-				_iw = tw;
-				_ih = th;
+				iw = tw;
+				ih = th;
 			}
-			D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
+			// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
 		}
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_texture) SAFE_RELEASE(_texture);
 			_texture = texture;
+			_iw = iw;
+			_ih = ih;
 			_tw = tw;
 			_th = th;
 		}
-		_log.information(Poco::format("texture updated: %dx%d %dx%d", _iw, _ih, _tw, _th));
 	}
+
+	if (_align == "center") {
+		_ax = (_w - _iw) / 2;
+	} else if (_align == "right") {
+		_ax = _w - _iw;
+	} else {
+		_ax = 0;
+	}
+	_log.information(Poco::format("texture updated: %dx%d %dx%d align: %d", _iw, _ih, _tw, _th, _ax));
 }
 
 void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {

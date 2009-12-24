@@ -13,6 +13,7 @@ private:
 	LPDIRECT3DTEXTURE9 _texture;
 	string _font;
 	int _fontH;
+	int _ax;
 	int _tw;
 	int _th;
 	int _iw;
@@ -23,6 +24,7 @@ private:
 	int _ch;
 	float _dx;
 	float _dy;
+	string _align;
 	Gdiplus::FontFamily _ff[16];
 
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);

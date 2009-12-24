@@ -183,7 +183,7 @@ void SwitchRequestHandler::set(const string& name) {
 			if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
 			_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
 			_log.information(Poco::format("playlist: %s", playlistID));
-			bool result = scene->prepare(playlistID, playlistIndex);
+			bool result = scene->stackPrepare(playlistID, playlistIndex);
 			map<string, string> params;
 			if (result) {
 				Workspace& workspace = scene->getWorkspace();

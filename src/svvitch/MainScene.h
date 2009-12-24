@@ -29,6 +29,15 @@ using std::vector;
 using std::queue;
 using std::map;
 
+using Poco::ActiveMethod;
+using Poco::ActiveResult;
+
+
+struct PrepareArgs
+{
+	string playlistID;
+	int i;
+};
 
 class MainScene: public Scene
 {
@@ -53,6 +62,9 @@ private:
 	vector<ContainerPtr> _contents;
 	int _currentContent;
 	bool _preparing;
+
+	vector<PrepareArgs> _prepareStack;
+	int _prepareStackTime;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
@@ -82,13 +94,14 @@ private:
 	int _playCount;
 	/** 切替フラグ */
 	bool _doSwitch;
-	/** 切替を抑制するフラグ.true時には切替を受付けない.例>次コンテンツ準備中など */
-	bool _suppressSwitch;
 	/** トランジション */
 	TransitionPtr _transition;
 
 
 	void run();
+
+	/** 切替用コンテンツの準備 */
+	bool prepare(const PrepareArgs& args);
 
 	/** 次再生コンテンツを準備します */
 	bool prepareNextMedia();
@@ -109,8 +122,11 @@ public:
 
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
-	/** 切替用コンテンツの準備 */
-	bool prepare(const string& playlistID, const int i = 0);
+	/** 切替用コンテンツをスタックします */
+	bool stackPrepare(string& playlistID, int i = 0);
+
+	/** 切替用コンテンツの準備(アクティブ版) */
+	ActiveMethod<bool, PrepareArgs, MainScene> activePrepare;
 
 	/** 手動で切替を行います */
 	bool switchContent();
@@ -118,7 +134,8 @@ public:
 	/** workspace更新 */
 	bool updateWorkspace();
 
-	Poco::ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
+	/** 次再生コンテンツを準備(アクティブ版) */
+	ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
 
 	/** 毎フレームで行う処理 */
 	virtual void process();
