@@ -67,8 +67,8 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	ZeroMemory(&_presentParams[0], sizeof(D3DPRESENT_PARAMETERS));
 	if (config().fullsceen) {
 		_presentParams[0].Windowed = FALSE;
-//		_presentParams[0].FullScreen_RefreshRateInHz = _conf->rate;
-		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+		_presentParams[0].FullScreen_RefreshRateInHz = config().mainRate;
+//		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 		_presentParams[0].BackBufferFormat = d3ddm.Format;
 	} else {
 		_presentParams[0].Windowed = TRUE;
@@ -138,7 +138,20 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	//	D3DSURFACE_DESC desc;
 	//	HRESULT hr = _renderTarget->GetDesc(&desc);
 	//	if (SUCCEEDED(hr)) _log.information(Poco::format("render target: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
-	_captureTexture = createRenderTarget(config().mainRect.right, config().mainRect.bottom);
+	int w = config().mainRect.right;
+	int h = config().mainRect.bottom;
+	switch(config().splitType) {
+	case 1:
+		{
+			int dw = config().splitSize.cx * config().splitCycles;
+			w = (config().stageRect.right + dw) / dw * config().splitSize.cx;
+			h = config().stageRect.bottom * config().splitCycles;
+		}
+		break;
+	case 2:
+		;
+	}
+	_captureTexture = createRenderTarget(w, h);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
 		_captureTexture->GetLevelDesc(0, &desc);
@@ -582,7 +595,22 @@ void Renderer::renderScene(const DWORD current) {
 					LPDIRECT3DSURFACE9 dst = NULL;
 					hr = _captureTexture->GetSurfaceLevel(0, &dst);
 					if SUCCEEDED(hr) {
-						_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+						int w = config().mainRect.right;
+						int h = config().mainRect.bottom;
+						switch(config().splitType) {
+						case 1:
+							{
+								int dw = config().splitSize.cx * config().splitCycles;
+								w = (config().stageRect.right + dw) / dw * config().splitSize.cx;
+								h = config().stageRect.bottom * config().splitCycles;
+							}
+							break;
+						case 2:
+							;
+						}
+						RECT rect;
+						::SetRect(&rect, config().stageRect.left, config().stageRect.top, w, h);
+						_device->StretchRect(backBuffer, &rect, dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 						SAFE_RELEASE(dst);
 					} else {
 						_log.warning("failed get capture surface");
