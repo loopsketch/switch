@@ -462,7 +462,7 @@ bool guiConfiguration()
 		int h = xml->getInt("display.height", 768);
 		_conf.mainRect.right = w;
 		_conf.mainRect.bottom = h;
-		_conf.mainRate = xml->getInt("display.rate", 60);
+		_conf.mainRate = xml->getInt("display.rate", D3DPRESENT_RATE_DEFAULT);
 		_conf.subRect.left = xml->getInt("display[1].x", _conf.mainRect.left);
 		_conf.subRect.top = xml->getInt("display[1].y", _conf.mainRect.top);
 		_conf.subRect.right = xml->getInt("display[1].width", _conf.mainRect.right);
