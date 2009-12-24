@@ -57,6 +57,7 @@ public:
 		_dy = 0;
 		vector<LPDIRECT3DTEXTURE9> textures;
 		bool valid = true;
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		for (vector<MediaItemFilePtr>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
 			MediaItemFilePtr mif = *it;
 			if (mif->type() == MediaTypeImage) {
@@ -64,9 +65,32 @@ public:
 				if (texture) {
 					D3DSURFACE_DESC desc;
 					HRESULT hr = texture->GetLevelDesc(0, &desc);
-					_iw += desc.Width;
-					if (_ih < desc.Height) _ih = desc.Height;
-					textures.push_back(texture);
+					if (config().splitType != 0 && config().splitSize.cy < desc.Height) {
+						// テクスチャ分割
+						_ih = config().splitSize.cy;
+						LPDIRECT3DSURFACE9 src = NULL;
+						hr = texture->GetSurfaceLevel(0, &src);
+						for (int y = 0; y < desc.Height; y += _ih) {
+							LPDIRECT3DTEXTURE9 t = _renderer.createRenderTarget(desc.Width, _ih, D3DFMT_A8R8G8B8);
+							LPDIRECT3DSURFACE9 dst = NULL;
+							hr = t->GetSurfaceLevel(0, &dst);
+							RECT srcRect = {0, y, desc.Width, y + _ih};
+							hr = device->StretchRect(src, &srcRect, dst, NULL, D3DTEXF_NONE);
+							if SUCCEEDED(hr) {
+								_iw += desc.Width;
+								textures.push_back(t);
+								_log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
+							}
+							SAFE_RELEASE(dst);
+						}
+						SAFE_RELEASE(src);
+						SAFE_RELEASE(texture);
+
+					} else {
+						_iw += desc.Width;
+						if (_ih < desc.Height) _ih = desc.Height;
+						textures.push_back(texture);
+					}
 					_log.information(Poco::format("opened texture: %s", mif->file()));
 				} else {
 					_log.warning(Poco::format("failed open: %s", mif->file()));
@@ -86,7 +110,6 @@ public:
 			LPDIRECT3DSURFACE9 dst = NULL;
 			HRESULT hr = _target->GetSurfaceLevel(0, &dst);
 			if (SUCCEEDED(hr)) {
-				LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 				int dx = 0, dy = 0;
 				for (vector<LPDIRECT3DTEXTURE9>::iterator it = textures.begin(); it != textures.end(); it++) {
 					LPDIRECT3DTEXTURE9 texture = *it;
