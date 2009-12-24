@@ -324,7 +324,7 @@ void SwitchRequestHandler::download() {
 	try {
 		string path = form().get("path", "");
 		if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
-		Path src(config().dataRoot, Path(path));
+		Path src(config().dataRoot, Path(path).toString());
 		File f(src);
 		_log.information(Poco::format("download: %s", f.path()));
 		Poco::FileInputStream is(src.toString());
@@ -375,7 +375,7 @@ void SwitchRequestHandler::upload() {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
 		try {
 			if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
-			Path dst(config().dataRoot, Path(path));
+			Path dst(config().dataRoot, Path(path).toString());
 			File parent(dst.parent());
 			if (!parent.exists()) parent.createDirectories();
 			File f(dst);
