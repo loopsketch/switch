@@ -22,7 +22,7 @@
 
 
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace):
-	Scene(renderer), _uim(uim), _workspace(workspace),
+	Scene(renderer), _uim(uim), _workspace(workspace), _updatingWorkspace(false),
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
@@ -398,6 +398,7 @@ bool MainScene::switchContent() {
 }
 
 bool MainScene::updateWorkspace() {
+	_updatingWorkspace = true;
 	Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 	_log.information("update workspace");
 	if (_workspace.checkUpdate()) {
@@ -405,14 +406,17 @@ bool MainScene::updateWorkspace() {
 			_playlistItem--;
 			activePrepareNextMedia();
 			_log.information("updated workspace. repreparing next contents");
+			_updatingWorkspace = false;
 			return true;
 		} else {
 			_log.warning("failed update workspace.");
 		}
 	} else {
 		_log.information("there is no need for updates.");
+		_updatingWorkspace = false;
 		return true;
 	}
+	_updatingWorkspace = false;
 	return false;
 }
 
@@ -552,28 +556,30 @@ void MainScene::process() {
 
 	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
-		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
+//		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 		_timeSecond = now.second();
-		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d %H:%M:%S");
-		Poco::Timespan span(0, 0, 0, 10, 0);
-		for (int i = 0; i < _workspace.getScheduleCount(); i++) {
-			SchedulePtr schedule = _workspace.getSchedule(i);
-			if (schedule->check(now + span)) {
-				// 5秒前チェック
-				string command = schedule->command();
-				if (command.find_first_of("playlist ") == 0) {
-					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-					stackPrepare(command.substr(9));
-				}
-			} else if (schedule->check(now)) {
-				// 実時間チェック
-				string command = schedule->command();
-				if (command.find_first_of("playlist ") == 0) {
-					if (_prepared) {
+		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
+		if (!_updatingWorkspace) {
+			Poco::Timespan span(0, 0, 0, 10, 0);
+			for (int i = 0; i < _workspace.getScheduleCount(); i++) {
+				SchedulePtr schedule = _workspace.getSchedule(i);
+				if (schedule->check(now + span)) {
+					// 5秒前チェック
+					string command = schedule->command();
+					if (command.find_first_of("playlist ") == 0) {
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						switchContent();
-					} else {
-						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
+						stackPrepare(command.substr(9));
+					}
+				} else if (schedule->check(now)) {
+					// 実時間チェック
+					string command = schedule->command();
+					if (command.find_first_of("playlist ") == 0) {
+						if (_prepared) {
+							_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+							switchContent();
+						} else {
+							_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
+						}
 					}
 				}
 			}
@@ -654,6 +660,6 @@ void MainScene::draw2() {
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, 720, 12, 16, 0xccffffff, Poco::format("now %s play contents:%04d playing no<%d> next:%s", _nowTime, _playCount, _currentContent, wait));
+		_renderer.drawFontTextureText(0, 730, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d playing no<%d> next:%s", _nowTime, _playCount, _currentContent, wait));
 	}
 }

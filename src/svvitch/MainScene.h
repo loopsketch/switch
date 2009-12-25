@@ -47,6 +47,7 @@ private:
 
 	ui::UserInterfaceManager& _uim;
 	Workspace& _workspace;
+	bool _updatingWorkspace;
 
 	DWORD _frame;
 	int _luminance;
