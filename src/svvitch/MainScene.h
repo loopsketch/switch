@@ -97,6 +97,11 @@ private:
 	/** ƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“ */
 	TransitionPtr _transition;
 
+	/** Œ»İ */
+	string _nowTime;
+	/** Œ»İ‚Ì•b */
+	int _timeSecond;
+
 
 	void run();
 

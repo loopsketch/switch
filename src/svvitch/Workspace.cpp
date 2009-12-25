@@ -8,6 +8,7 @@
 #include <Poco/format.h>
 #include <Poco/hash.h>
 #include <Poco/string.h>
+#include <Poco/RegularExpression.h>
 #include <Poco/UnicodeConverter.h>
 
 #include "Workspace.h"
@@ -28,6 +29,9 @@ Workspace::~Workspace() {
 
 
 void Workspace::release() {
+	for (vector<SchedulePtr>::iterator it = _schedule.begin(); it != _schedule.end(); it++) {
+		SAFE_DELETE(*it);
+	}
 	for (vector<PlayListPtr>::iterator it = _playlist.begin(); it != _playlist.end(); it++) {
 		PlayListPtr playlist = *it;
 //		_renderer.removeCachedTexture(playlist->name());
@@ -182,6 +186,44 @@ bool Workspace::parse() {
 				nodes->release();
 			}
 			_log.information(Poco::format("playlist: %?u", _playlist.size()));
+
+			nodes = doc->documentElement()->getElementsByTagName("schedule");
+			if (nodes) {
+				Poco::RegularExpression re("[\\s:/]+");
+				for (int i = 0; i < nodes->length(); i++) {
+					Element* e = (Element*)nodes->item(i);
+					NodeList* nodesPlaylist = e->getElementsByTagName("item");
+					for (int j = 0; j < nodesPlaylist->length(); j++) {
+						e = (Element*)nodesPlaylist->item(j);
+						string id = e->getAttribute("id");
+						string t = e->getAttribute("time");
+						string command = e->innerText();
+						int pos = 0;
+						Poco::RegularExpression::Match match;
+						vector<int> time;
+						while (re.match(t, pos, match) > 0) {
+							string s = t.substr(pos, match.offset - pos);
+							if (s == "*") {
+								time.push_back(-1);
+							} else {
+								time.push_back(Poco::NumberParser::parse(s));
+							}
+							pos = (match.offset + match.length);
+						}
+						string s = t.substr(pos);
+						if (s == "*") {
+							time.push_back(-1);
+						} else {
+							time.push_back(Poco::NumberParser::parse(s));
+						}
+						if (time.size() == 6) {
+							SchedulePtr schedule = new Schedule(id, time[0], time[1], time[2], time[3], time[4], 0, time[5], command);
+							_schedule.push_back(schedule);
+						}
+					}
+				}
+				nodes->release();
+			}
 			doc->release();
 			_signature = signature;
 			return true;
@@ -238,3 +280,17 @@ const PlayListPtr Workspace::getPlaylist(string id) {
 	}
 	return NULL;
 }
+
+const int Workspace::getScheduleCount() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	return _schedule.size();
+}
+
+const SchedulePtr Workspace::getSchedule(int i) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (i >= 0 && i < _schedule.size()) {
+		return _schedule[i];
+	}
+	return NULL;
+}
+

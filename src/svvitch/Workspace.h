@@ -8,6 +8,7 @@
 #include "Container.h"
 #include "MediaItem.h"
 #include "PlayList.h"
+#include "Schedule.h"
 #include "Renderer.h"
 
 using std::string;
@@ -29,6 +30,8 @@ private:
 
 	vector<PlayListPtr> _playlist;
 	Poco::HashMap<string, PlayListPtr> _playlistMap;
+
+	vector<SchedulePtr> _schedule;
 
 	void release();
 
@@ -52,6 +55,10 @@ public:
 	const PlayListPtr getPlaylist(int i);
 
 	const PlayListPtr getPlaylist(string id);
+
+	const int getScheduleCount();
+
+	const SchedulePtr getSchedule(int i);
 };
 
 

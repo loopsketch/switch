@@ -6,6 +6,9 @@
 #include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
 #include <Poco/Util/XMLConfiguration.h>
+#include <Poco/LocalDateTime.h>
+#include <Poco/DateTimeFormatter.h>
+#include <Poco/Timespan.h>
 
 #include "Image.h"
 #include "FFMovieContent.h"
@@ -15,6 +18,7 @@
 #include "DSContent.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
+#include "Schedule.h"
 
 
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace):
@@ -96,6 +100,7 @@ bool MainScene::initialize() {
 		device->SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_ONE);
 		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
 	}
+	_timeSecond = -1;
 	_frame = 0;
 	_log.information("*initialized MainScene");
 	_startup = false;
@@ -544,6 +549,35 @@ void MainScene::process() {
 		}
 	}
 
+	Poco::LocalDateTime now;
+	if (now.second() != _timeSecond) {
+		_timeSecond = now.second();
+		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d %H:%M:%S");
+		Poco::Timespan span(0, 0, 0, 10, 0);
+		for (int i = 0; i < _workspace.getScheduleCount(); i++) {
+			SchedulePtr schedule = _workspace.getSchedule(i);
+			if (schedule->check(now + span)) {
+				// 5秒前チェック
+				string command = schedule->command();
+				if (command.find_first_of("playlist ") == 0) {
+					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+					stackPrepare(command.substr(9));
+				}
+			} else if (schedule->check(now)) {
+				// 実時間チェック
+				string command = schedule->command();
+				if (command.find_first_of("playlist ") == 0) {
+					if (_prepared) {
+						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+						switchContent();
+					} else {
+						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
+					}
+				}
+			}
+		}
+	}
+
 	_frame++;
 }
 
@@ -618,6 +652,6 @@ void MainScene::draw2() {
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, 720, 12, 16, 0xccffffff, Poco::format("play contents:%04d playing no<%d> next:%s", _playCount, _currentContent, wait));
+		_renderer.drawFontTextureText(0, 720, 12, 16, 0xccffffff, Poco::format("now %s play contents:%04d playing no<%d> next:%s", _nowTime, _playCount, _currentContent, wait));
 	}
 }

@@ -237,6 +237,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\Schedule.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\SlideTransition.cpp"
 				>
 			</File>
@@ -364,6 +368,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\Scene.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\Schedule.h"
 				>
 			</File>
 			<File
