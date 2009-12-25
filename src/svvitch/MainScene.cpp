@@ -411,6 +411,7 @@ bool MainScene::updateWorkspace() {
 		}
 	} else {
 		_log.information("there is no need for updates.");
+		return true;
 	}
 	return false;
 }
@@ -551,6 +552,7 @@ void MainScene::process() {
 
 	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_switchLock);
 		_timeSecond = now.second();
 		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d %H:%M:%S");
 		Poco::Timespan span(0, 0, 0, 10, 0);
