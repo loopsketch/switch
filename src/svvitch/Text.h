@@ -30,8 +30,6 @@ private:
 
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);
 
-	LPDIRECT3DTEXTURE9 getTexture();
-
 public:
 	Text(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
 

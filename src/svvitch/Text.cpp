@@ -118,11 +118,6 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 	return false;
 }
 
-LPDIRECT3DTEXTURE9 Text::getTexture() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	return _texture;
-}
-
 void Text::setReference(TextPtr text) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_referencedText = text;
@@ -169,7 +164,7 @@ void Text::process(const DWORD& frame) {
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_referencedText) {
-			_texture = _referencedText->getTexture();
+			_texture = _referencedText->_texture;
 			_ax = _referencedText->_ax;
 			_iw = _referencedText->_iw;
 			_ih = _referencedText->_ih;
