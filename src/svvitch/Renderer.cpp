@@ -688,7 +688,7 @@ const LPDIRECT3DTEXTURE9 Renderer::createRenderTarget(const int w, const int h, 
 	if (SUCCEEDED(hr)) {
 		D3DSURFACE_DESC desc;
 		hr = texture->GetLevelDesc(0, &desc);
-		if (SUCCEEDED(hr)) _log.information(Poco::format("create render target texture: %ux%u", desc.Width, desc.Height));
+//		if (SUCCEEDED(hr)) _log.information(Poco::format("create render target texture: %ux%u", desc.Width, desc.Height));
 	} else if (D3DERR_INVALIDCALL == hr) {
 		_log.warning(Poco::format("failed create texture: %dx%d", w, h));
 	} else if (D3DERR_OUTOFVIDEOMEMORY == hr) {

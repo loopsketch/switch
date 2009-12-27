@@ -79,7 +79,7 @@ public:
 							if SUCCEEDED(hr) {
 								_iw += desc.Width;
 								textures.push_back(t);
-								_log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
+//								_log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
 							}
 							SAFE_RELEASE(dst);
 						}
@@ -91,7 +91,7 @@ public:
 						if (_ih < desc.Height) _ih = desc.Height;
 						textures.push_back(texture);
 					}
-					_log.information(Poco::format("opened texture: %s", mif->file()));
+//					_log.information(Poco::format("opened texture: %s", mif->file()));
 				} else {
 					_log.warning(Poco::format("failed open: %s", mif->file()));
 					valid = false;
