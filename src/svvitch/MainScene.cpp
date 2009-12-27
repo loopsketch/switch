@@ -306,14 +306,20 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 			}
 			if (media->containsFileType(MediaTypeText)) {
 				_log.information("contains text");
+				TextPtr ref = NULL;
 				for (int j = 0; j < media->fileCount(); j++) {
 					MediaItemFilePtr itemFile = media->files().at(j);
 					if (itemFile->type() == MediaTypeText) {
 						TextPtr text = new Text(_renderer);
 						if (text->open(media, j)) {
-							if (itemFile->file().empty()) {
-								_log.information(Poco::format("tempate text: %s", playlist->text()));
-								text->drawTexture(playlist->text());
+							if (ref) {
+								text->setReference(ref);
+							} else {
+								if (itemFile->file().empty()) {
+									_log.information(Poco::format("tempate text: %s", playlist->text()));
+									text->drawTexture(playlist->text());
+									if (!ref) ref = text;
+								}
 							}
 							container->add(text);
 						} else {
@@ -463,13 +469,13 @@ void MainScene::process() {
 
 			} else if (_currentCommand == "wait-prepared") {
 				if (!_status["next-content"].empty()) {
-					_log.information("wait prepared next content, prepared now.");
+					// _log.information("wait prepared next content, prepared now.");
 					_doSwitch = true;
 				}
 			} else {
 				// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ
 				if (_contents[_currentContent]->finished()) {
-					_log.information(Poco::format("content[%d] finished: ", _currentContent));
+					// _log.information(Poco::format("content[%d] finished: ", _currentContent));
 					_doSwitch = true;
 				}
 			}

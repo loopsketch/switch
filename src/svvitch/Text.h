@@ -11,6 +11,7 @@ private:
 	Poco::FastMutex _initializeLock;
 
 	LPDIRECT3DTEXTURE9 _texture;
+	Text* _referencedText;
 	string _font;
 	int _fontH;
 	int _ax;
@@ -29,6 +30,8 @@ private:
 
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);
 
+	LPDIRECT3DTEXTURE9 getTexture();
+
 public:
 	Text(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
 
@@ -37,6 +40,8 @@ public:
 	void initialize();
 
 	bool open(const MediaItemPtr media, const int offset = 0);
+
+	void setReference(Text* text);
 
 	void play();
 

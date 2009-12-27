@@ -13,7 +13,7 @@
 using namespace Gdiplus;
 
 
-Text::Text(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL)
+Text::Text(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL), _referencedText(NULL)
 {
 //	PrivateFontCollection fc;
 //	fc.AddFontFile(L"dfhsg9.ttc");
@@ -41,6 +41,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 	initialize();
 	Poco::RegularExpression re("^(sjis|shift_jis|shiftjis|ms932)$", Poco::RegularExpression::RE_CASELESS + Poco::RegularExpression::RE_EXTENDED);
 
+	bool valid = false;
 	if (offset != -1 && offset < media->fileCount()) {
 		MediaItemFilePtr mif =  media->files().at(offset);
 		if (mif->type() == MediaTypeText) {
@@ -74,6 +75,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 						_log.information(Poco::format("lines: %d", linenum));
 
 						drawTexture(text);
+						valid = true;
 					} catch (Poco::Exception& ex) {
 						_log.warning(Poco::format("I/O error: %s", ex.displayText()));
 					}
@@ -86,7 +88,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			} else {
 				// ファイル指定無し
 				_log.information("text template mode");
-				drawTexture("");
+				valid = true;
 			}
 			_font = mif->getProperty("font");
 			if (_font.empty()) _font = config().textFont;
@@ -108,12 +110,22 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 		}
 	}
 
-	if (_texture) {
+	if (valid) {
 		_mediaID = media->id();
 		set("alpha", 1.0f);
 		return true;
 	}
 	return false;
+}
+
+LPDIRECT3DTEXTURE9 Text::getTexture() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	return _texture;
+}
+
+void Text::setReference(TextPtr text) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	_referencedText = text;
 }
 
 void Text::play() {
@@ -125,6 +137,7 @@ void Text::stop() {
 }
 
 const bool Text::finished() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (_mediaID.empty() && _texture) {
 		if (_dx != 0) {
 			return true;
@@ -138,7 +151,12 @@ const bool Text::finished() {
 void Text::close() {
 	_mediaID.clear();
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	SAFE_RELEASE(_texture);
+	if (_referencedText) {
+		_referencedText = NULL;
+		_texture = NULL;
+	} else {
+		SAFE_RELEASE(_texture);
+	}
 	_iw = 0;
 	_ih = 0;
 	_tw = 0;
@@ -147,6 +165,12 @@ void Text::close() {
 
 /** 1フレームに1度だけ処理される */
 void Text::process(const DWORD& frame) {
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_referencedText) {
+			_texture = _referencedText->getTexture();
+		}
+	}
 	if (!_mediaID.empty() && _texture) {
 		if (_playing) {
 			if (_dx != 0) {
@@ -159,6 +183,7 @@ void Text::process(const DWORD& frame) {
 
 /** 描画 */
 void Text::draw(const DWORD& frame) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_mediaID.empty() && _texture && _playing) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		float alpha = getF("alpha");
@@ -202,7 +227,7 @@ void Text::draw(const DWORD& frame) {
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, col, col, col, col);
 //						_renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffffff, Poco::format(">%d,%d", sx, sy));
 						sx = 0;
-						sy += ch;
+						sy += _ih;
 						if (sy < _th) {
 							// srcを折り返してdstの残りに描画
 							if (_th - sy < ch) chh = _th - sy;
