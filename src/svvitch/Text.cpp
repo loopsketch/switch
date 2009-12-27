@@ -126,6 +126,7 @@ LPDIRECT3DTEXTURE9 Text::getTexture() {
 void Text::setReference(TextPtr text) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_referencedText = text;
+	_log.information("set reference text content");
 }
 
 void Text::play() {
@@ -169,6 +170,11 @@ void Text::process(const DWORD& frame) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_referencedText) {
 			_texture = _referencedText->getTexture();
+			_ax = _referencedText->_ax;
+			_iw = _referencedText->_iw;
+			_ih = _referencedText->_ih;
+			_tw = _referencedText->_tw;
+			_th = _referencedText->_th;
 		}
 	}
 	if (!_mediaID.empty() && _texture) {
