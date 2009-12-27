@@ -28,6 +28,7 @@ private:
 	Poco::Logger& _log;
 
 	Renderer& _renderer;
+	int _frameNumber;
 	int _ow;
 	int _oh;
 	int _w[3];
@@ -77,6 +78,10 @@ public:
 		SAFE_RELEASE(texture[0]);
 		SAFE_RELEASE(texture[1]);
 		SAFE_RELEASE(texture[2]);
+	}
+
+	const int frameNumber() const {
+		return _frameNumber;
 	}
 
 	const int width() const {
@@ -131,6 +136,7 @@ public:
 				_log.warning("failed lock texture");
 			}
 		}
+		_frameNumber = frame->coded_picture_number;
 	}
 
 	void draw(const int x, const int y, int w = -1, int h = -1, int aspectMode = 0, DWORD col = 0xffffffff, int tx = 0, int ty = 0, int tw = -1, int th = -1) {

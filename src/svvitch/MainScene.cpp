@@ -649,8 +649,8 @@ void MainScene::draw2() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
 		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
-		if (!_currentCommand.empty()) _renderer.drawFont(0, 680, 0xffffff, 0x000000, Poco::format("next>%s", _currentCommand));
-		if (!_nextTransition.empty()) _renderer.drawFont(0, 700, 0xffffff, 0x000000, Poco::format("transition>%s", _nextTransition));
+		if (!_currentCommand.empty()) _renderer.drawFontTextureText(0, 680, 12, 16, 0xccffffff, Poco::format("next>%s", _currentCommand));
+		if (!_nextTransition.empty()) _renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("transition>%s", _nextTransition));
 
 		_renderer.drawTexture(500, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		_renderer.drawTexture(500, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
