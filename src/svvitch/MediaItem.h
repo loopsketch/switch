@@ -28,7 +28,7 @@ enum MediaType {
 class MediaItemFile
 {
 private:
-	string NULL_STRING;
+	const string NULL_STRING;
 	Poco::Logger& _log;
 	MediaType _type;
 	string _file;
@@ -61,6 +61,7 @@ public:
 	}
 
 	MediaItemFile& operator=(const MediaItemFile& mif) {
+		if (this == &mif) return *this;
 		_type = mif._type;
 		_file = mif._file;
 		_properties = mif._properties;
