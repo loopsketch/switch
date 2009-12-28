@@ -58,10 +58,10 @@ public:
 		vector<LPDIRECT3DTEXTURE9> textures;
 		bool valid = true;
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		for (vector<MediaItemFilePtr>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
-			MediaItemFilePtr mif = *it;
-			if (mif->type() == MediaTypeImage) {
-				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif->file());
+		for (vector<MediaItemFile>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
+			MediaItemFile mif = *it;
+			if (mif.type() == MediaTypeImage) {
+				LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif.file());
 				if (texture) {
 					D3DSURFACE_DESC desc;
 					HRESULT hr = texture->GetLevelDesc(0, &desc);
@@ -91,9 +91,9 @@ public:
 						if (_ih < desc.Height) _ih = desc.Height;
 						textures.push_back(texture);
 					}
-//					_log.information(Poco::format("opened texture: %s", mif->file()));
+//					_log.information(Poco::format("opened texture: %s", mif.file()));
 				} else {
-					_log.warning(Poco::format("failed open: %s", mif->file()));
+					_log.warning(Poco::format("failed open: %s", mif.file()));
 					valid = false;
 				}
 			}

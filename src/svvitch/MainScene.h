@@ -43,11 +43,11 @@ class MainScene: public Scene
 {
 private:
 	Poco::FastMutex _lock;
-	Poco::FastMutex _switchLock;
+	Poco::FastMutex _workspaceLock;
 
 	ui::UserInterfaceManager& _uim;
-	Workspace& _workspace;
-	bool _updatingWorkspace;
+	Path& _workspaceFile;
+	WorkspacePtr _workspace;
 
 	DWORD _frame;
 	int _luminance;
@@ -116,7 +116,7 @@ private:
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
 
 public:
-	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Workspace& workspace);
+	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
 
 	virtual ~MainScene();
 

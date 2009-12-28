@@ -40,6 +40,8 @@ public:
 
 	~Workspace();
 
+	const Path& file() const;
+
 	bool parse();
 
 	bool checkUpdate();

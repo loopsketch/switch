@@ -50,6 +50,10 @@ void Workspace::release() {
 	_log.information("release workspace");
 }
 
+const Path& Workspace::file() const {
+	return _file;
+}
+
 bool Workspace::checkUpdate() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	string signature = svvitch::md5(_file.toString());
@@ -86,7 +90,7 @@ bool Workspace::parse() {
 							duration = Poco::NumberParser::parse(d);
 						}
 						string parameters = e->getAttribute("params");
-						vector<MediaItemFilePtr> files;
+						vector<MediaItemFile> files;
 						NodeList* movies = e->getElementsByTagName("*");
 						for (int k = 0; k < movies->length(); k++) {
 							e = (Element*)movies->item(k);
@@ -100,11 +104,11 @@ bool Workspace::parse() {
 								file = file.substr(0, file.find("?"));
 							}
 							if (e->tagName() == "movie") {
-								files.push_back(new MediaItemFile(MediaTypeMovie, file, params));
+								files.push_back(MediaItemFile(MediaTypeMovie, file, params));
 							} else if (e->tagName() == "image") {
-								files.push_back(new MediaItemFile(MediaTypeImage, file, params));
+								files.push_back(MediaItemFile(MediaTypeImage, file, params));
 							} else if (e->tagName() == "text") {
-								files.push_back(new MediaItemFile(MediaTypeText, file, params));
+								files.push_back(MediaItemFile(MediaTypeText, file, params));
 							}
 						}
 						movies->release();

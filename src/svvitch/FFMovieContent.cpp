@@ -29,10 +29,10 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_openLock);
 	initialize();
 
-	MediaItemFilePtr mif = media->files()[0];
+	MediaItemFile mif = media->files()[0];
 	AVInputFormat* format = NULL;
-	if (mif->file().find(string("vfwcap")) == 0) {
-		_log.information(Poco::format("capture device: %s", mif->file()));
+	if (mif.file().find(string("vfwcap")) == 0) {
+		_log.information(Poco::format("capture device: %s", mif.file()));
 		format = av_find_input_format("vfwcap");
 		if (format) _log.information(Poco::format("input format: %s", string(format->long_name)));
 //		AVOutputFormat* outf = guess_format("vfwcap", mbfile.c_str(), NULL);
@@ -63,12 +63,12 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 //ap->video_codec_id = find_codec_or_die(video_codec_name, CODEC_TYPE_VIDEO, 0);
 //ap->audio_codec_id = find_codec_or_die(audio_codec_name, CODEC_TYPE_AUDIO, 0);
 
-		if (av_open_input_file(&_ic, mif->file().substr(6).c_str(), format, 0, &ap) != 0) {
-			_log.warning(Poco::format("failed open capture device: [%s]", mif->file()));
+		if (av_open_input_file(&_ic, mif.file().substr(6).c_str(), format, 0, &ap) != 0) {
+			_log.warning(Poco::format("failed open capture device: [%s]", mif.file()));
 			return false;
 		}
 	} else {
-		string file = Path(config().dataRoot, Path(mif->file())).absolute().toString();
+		string file = Path(config().dataRoot, Path(mif.file())).absolute().toString();
 		string mbfile;
 		svvitch::utf8_sjis(file, mbfile);
 		if (av_open_input_file(&_ic, mbfile.c_str(), NULL, 0, NULL) != 0) {
@@ -79,7 +79,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 //	_log.information(Poco::format("opened: %s", file));
 
 	if (av_find_stream_info(_ic) < 0 || !_ic) {
-		_log.warning(Poco::format("failed find stream info: %s", mif->file()));
+		_log.warning(Poco::format("failed find stream info: %s", mif.file()));
 		close();
 		return false;
 	}
@@ -88,12 +88,12 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		AVStream* stream = _ic->streams[i];
 		AVCodecContext* avctx = stream->codec;
 		if (!avctx) {
-			_log.warning(Poco::format("failed stream codec[%d]: %s", i, mif->file()));
+			_log.warning(Poco::format("failed stream codec[%d]: %s", i, mif.file()));
 			continue;
 		}
 		AVCodec* avcodec = avcodec_find_decoder(avctx->codec_id);
 		if (!avcodec) {
-			_log.warning(Poco::format("not found decoder[%d]: %s", i, mif->file()));
+			_log.warning(Poco::format("not found decoder[%d]: %s", i, mif.file()));
 			continue;
 		}
 
@@ -102,7 +102,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 			case CODEC_TYPE_VIDEO:
 				_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
 				if (_video < 0 && avcodec_open(avctx, avcodec) < 0) {
-					_log.warning(Poco::format("failed open codec: %s", mif->file()));
+					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
@@ -120,7 +120,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 			case CODEC_TYPE_AUDIO:
 				if (_audio < 0 && avcodec_open(avctx, avcodec) < 0) {
-					_log.warning(Poco::format("failed open codec: %s", mif->file()));
+					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
 					_log.information(Poco::format("open decoder: %s", string(avcodec->long_name)));
@@ -134,7 +134,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	_worker = this;
 	_thread.start(*_worker);
 
-	_log.information(Poco::format("opened: %s", mif->file()));
+	_log.information(Poco::format("opened: %s", mif.file()));
 	_mediaID = media->id();
 	if (media->duration() > 0) _duration = media->duration() / 30;
 	set("alpha", 1.0f);

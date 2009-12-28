@@ -43,14 +43,14 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 
 	bool valid = false;
 	if (offset != -1 && offset < media->fileCount()) {
-		MediaItemFilePtr mif =  media->files().at(offset);
-		if (mif->type() == MediaTypeText) {
-			if (!mif->file().empty()) {
+		MediaItemFile mif =  media->files().at(offset);
+		if (mif.type() == MediaTypeText) {
+			if (!mif.file().empty()) {
 				string text;
 				try {
 					Poco::RegularExpression::Match m;
-					bool isSJIS = re.match(mif->getProperty("encoding"), m);
-					Poco::FileInputStream fis(Path(mif->file()).absolute(config().dataRoot).toString(), std::ios::in);
+					bool isSJIS = re.match(mif.getProperty("encoding"), m);
+					Poco::FileInputStream fis(Path(mif.file()).absolute(config().dataRoot).toString(), std::ios::in);
 					try {
 						Poco::InputLineEndingConverter ilec(fis);
 						char line[1024];
@@ -81,7 +81,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 					}
 					fis.close();
 				} catch (Poco::PathNotFoundException& ex) {
-					_log.warning(Poco::format("file not found: %s", mif->file()));
+					_log.warning(Poco::format("file not found: %s", mif.file()));
 				} catch (Poco::Exception& ex) {
 					_log.warning(Poco::format("failed read text: %s", ex.displayText()));
 				}
@@ -90,20 +90,20 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 				_log.information("text template mode");
 				valid = true;
 			}
-			_font = mif->getProperty("font");
+			_font = mif.getProperty("font");
 			if (_font.empty()) _font = config().textFont;
-			_fontH = mif->getNumProperty("fh", config().textHeight);
-			_x = mif->getNumProperty("x", 0);
-			_y = mif->getNumProperty("y", 0);
-			_w = mif->getNumProperty("w", config().stageRect.right);
-			_h = mif->getNumProperty("h", config().stageRect.bottom);
-			_cx = mif->getNumProperty("cx", _x);
-			_cy = mif->getNumProperty("cy", _y);
-			_cw = mif->getNumProperty("cw", _w);
-			_ch = mif->getNumProperty("ch", _h);
-			_dx = mif->getFloatProperty("dx", F(0));
-			_dy = mif->getFloatProperty("dy", F(0));
-			_align = mif->getProperty("align");
+			_fontH = mif.getNumProperty("fh", config().textHeight);
+			_x = mif.getNumProperty("x", 0);
+			_y = mif.getNumProperty("y", 0);
+			_w = mif.getNumProperty("w", config().stageRect.right);
+			_h = mif.getNumProperty("h", config().stageRect.bottom);
+			_cx = mif.getNumProperty("cx", _x);
+			_cy = mif.getNumProperty("cy", _y);
+			_cw = mif.getNumProperty("cw", _w);
+			_ch = mif.getNumProperty("ch", _h);
+			_dx = mif.getFloatProperty("dx", F(0));
+			_dy = mif.getFloatProperty("dy", F(0));
+			_align = mif.getProperty("align");
 			_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
 		} else {
 			_log.warning("failed type error");

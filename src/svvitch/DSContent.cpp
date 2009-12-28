@@ -34,9 +34,9 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(Poco::format("failed add filter: hr=0x%lx", hr));
 		return false;
 	}
-	MediaItemFilePtr mif = media->files()[0];
+	MediaItemFile mif = media->files()[0];
 	wstring wfile;
-	Poco::UnicodeConverter::toUTF16(Path(mif->file()).absolute(config().dataRoot).toString(), wfile);
+	Poco::UnicodeConverter::toUTF16(Path(mif.file()).absolute(config().dataRoot).toString(), wfile);
 	IBaseFilter* src = NULL;
 	if (true) {
 		hr = _gb->AddSourceFilter(wfile.c_str(), L"File Source", &src);
@@ -60,9 +60,9 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 				}
 			}
 		} else if (hr == VFW_E_NOT_FOUND) {
-			_log.warning(Poco::format("source not found: %s", mif->file()));
+			_log.warning(Poco::format("source not found: %s", mif.file()));
 		} else {
-			_log.warning(Poco::format("failed add source filter: %s", mif->file()));
+			_log.warning(Poco::format("failed add source filter: %s", mif.file()));
 		}
 	} else {
 	}

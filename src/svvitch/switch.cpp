@@ -228,11 +228,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
-	WorkspacePtr workspace = new Workspace(_conf.workspaceFile);
-	workspace->parse();
+//	WorkspacePtr workspace = new Workspace(_conf.workspaceFile);
+//	workspace->parse();
 	MainScenePtr mainScene = NULL;
 	if (true) {
-		mainScene = new MainScene(*_renderer, *_uim, *workspace);
+		mainScene = new MainScene(*_renderer, *_uim, _conf.workspaceFile);
 		_renderer->addScene("main", mainScene);
 	}
 //	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
@@ -305,7 +305,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	_log.information("shutdown system");
 	SAFE_DELETE(_renderer);
-	SAFE_DELETE(workspace);
+//	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
 	_logFile->release();
 //	_log.shutdown();

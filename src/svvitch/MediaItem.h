@@ -54,8 +54,21 @@ public:
 		}
 	}
 
+	MediaItemFile(const MediaItemFile& mif): _log(Poco::Logger::get("")) {
+		_type = mif._type;
+		_file = mif._file;
+		_properties = mif._properties;
+	}
+
+	MediaItemFile& operator=(const MediaItemFile& mif) {
+		_type = mif._type;
+		_file = mif._file;
+		_properties = mif._properties;
+		return *this;
+    }
+
 	virtual ~MediaItemFile() {
-		_properties.clear();
+		// _properties.clear();
 	}
 
 	const MediaType type() const {
@@ -70,11 +83,6 @@ public:
 		if (_properties.find(key) != _properties.end()) {
 			return _properties[key];
 		}
-//		try {
-//			return _properties[key];
-//		} catch (Poco::NotFoundException ex) {
-//			_log.warning(Poco::format("property not found: %s", key));
-//		}
 		return NULL_STRING;
 	}
 
@@ -91,8 +99,6 @@ public:
 	}
 };
 
-typedef MediaItemFile* MediaItemFilePtr;
-
 
 class MediaItem
 {
@@ -103,16 +109,24 @@ private:
 	string _id;
 	string _name;
 	int _duration;
-	vector<MediaItemFilePtr> _files;
+	vector<MediaItemFile> _files;
 
 public:
-	MediaItem(const MediaType type, const string id, const string name, const int duration, const vector<MediaItemFilePtr> files):
+	MediaItem(const MediaType type, const string id, const string name, const int duration, const vector<MediaItemFile> files):
 		_log(Poco::Logger::get("")), _type(type), _id(id), _name(name), _duration(duration), _files(files) {
 
 	}
 
+	MediaItem(const MediaItem& item): _log(Poco::Logger::get("")) {
+		_type = item._type;
+		_id = item._id;
+		_name = item._name;
+		_duration = item._duration;
+		_files = item._files;
+	}
+
 	virtual ~MediaItem(void) {
-		for (vector<MediaItemFilePtr>::iterator it = _files.begin(); it != _files.end(); it++) SAFE_DELETE(*it);
+//		for (vector<MediaItemFile>::iterator it = _files.begin(); it != _files.end(); it++) SAFE_DELETE(*it);
 		_files.clear();
 	}
 
@@ -121,8 +135,8 @@ public:
 	}
 
 	const bool containsFileType(const MediaType type) {
-		for (vector<MediaItemFilePtr>::iterator it = _files.begin(); it != _files.end(); it++) {
-			if ((*it)->type() == type) return true;
+		for (vector<MediaItemFile>::iterator it = _files.begin(); it != _files.end(); it++) {
+			if ((*it).type() == type) return true;
 		}
 		return false;
 	}
@@ -143,7 +157,7 @@ public:
 		return _files.size();
 	}
 
-	const vector<MediaItemFilePtr>& files() {
+	const vector<MediaItemFile>& files() {
 		return _files;
 	}
 };
