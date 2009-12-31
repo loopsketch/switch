@@ -225,6 +225,7 @@ bool Workspace::parse() {
 							_schedule.push_back(schedule);
 						}
 					}
+					nodesPlaylist->release();
 				}
 				nodes->release();
 			}
