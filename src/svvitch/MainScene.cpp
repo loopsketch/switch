@@ -585,20 +585,22 @@ void MainScene::process() {
 			if (schedule->check(now + span)) {
 				// 10秒前チェック
 				string command = schedule->command();
-				if (command.find_first_of("playlist ") == 0) {
+				if (command.find("playlist ") == 0) {
 					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
 					stackPrepare(command.substr(9));
+					break;
 				}
 			} else if (schedule->check(now)) {
 				// 実時間チェック
 				string command = schedule->command();
-				if (command.find_first_of("playlist ") == 0) {
+				if (command.find("playlist ") == 0) {
 					if (_prepared) {
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
 						switchContent();
 					} else {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
 					}
+					break;
 				}
 			}
 		}

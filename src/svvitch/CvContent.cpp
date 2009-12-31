@@ -174,10 +174,13 @@ const bool CvContent::playing() const {
 }
 
 const bool CvContent::finished() {
-	if (_detectedMovie && _detectedMovie->playing() && !_detectedMovie->finished()) {
-		return false;
+	if (_duration > 0) {
+		if (_detectedMovie && _detectedMovie->playing() && !_detectedMovie->finished()) {
+			return false;
+		}
+		return _current >= _duration;
 	}
-	return _current >= _duration;
+	return false;
 }
 
 /** ファイルをクローズします */
