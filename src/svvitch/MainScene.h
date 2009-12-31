@@ -48,6 +48,7 @@ private:
 	ui::UserInterfaceManager& _uim;
 	Path& _workspaceFile;
 	WorkspacePtr _workspace;
+	WorkspacePtr _updatedWorkspace;
 
 	DWORD _frame;
 	int _luminance;

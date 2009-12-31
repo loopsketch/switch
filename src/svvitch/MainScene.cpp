@@ -22,7 +22,7 @@
 
 
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile):
-	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL),
+	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	_frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
@@ -428,19 +428,13 @@ bool MainScene::updateWorkspace() {
 	_log.information("update workspace");
 	if (_workspace->checkUpdate()) {
 		WorkspacePtr workspace = new Workspace(_workspace->file());
-		if (!workspace->parse()) {
-			_log.warning("failed parse workspace");
-		}
 		if (workspace->parse()) {
-			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			_log.information("updated workspace. repreparing next contents");
-			SAFE_DELETE(_workspace);
-			_workspace = workspace;
-			_playlistItem--;
-			activePrepareNextMedia();
+			_updatedWorkspace = workspace;
 			return true;
 		} else {
 			_log.warning("failed update workspace.");
+			SAFE_DELETE(workspace);
 		}
 	} else {
 		_log.information("there is no need for updates.");
@@ -583,6 +577,21 @@ void MainScene::process() {
 		}
 	}
 
+	// ワークスペースの更新チェック
+	if (_updatedWorkspace) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+		SAFE_DELETE(_workspace);
+		_workspace = _updatedWorkspace;
+		_updatedWorkspace = NULL;
+		if (_currentCommand != "stop") {
+			_playlistItem--;
+			activePrepareNextMedia();
+		}
+		if (_prepared) {
+		}
+	}
+
+	// スケジュール処理
 	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
