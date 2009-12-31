@@ -257,10 +257,13 @@ bool MainScene::prepare(const PrepareArgs& args) {
 }
 
 bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
-	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 	_log.information(Poco::format("prepare: %s-%d", playlistID, i));
+	PlayListPtr playlist = NULL;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+		playlist = _workspace->getPlaylist(playlistID);
+	}
 	container->initialize();
-	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 	if (playlist && playlist->itemCount() > 0) {
 		PlayListItemPtr item = playlist->items()[i % playlist->itemCount()];
 		MediaItemPtr media = item->media();
@@ -422,13 +425,19 @@ bool MainScene::switchContent() {
 }
 
 bool MainScene::updateWorkspace() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 	_log.information("update workspace");
 	if (_workspace->checkUpdate()) {
-		if (_workspace->parse()) {
+		WorkspacePtr workspace = new Workspace(_workspace->file());
+		if (!workspace->parse()) {
+			_log.warning("failed parse workspace");
+		}
+		if (workspace->parse()) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			_log.information("updated workspace. repreparing next contents");
-//			_playlistItem--;
-//			activePrepareNextMedia();
+			SAFE_DELETE(_workspace);
+			_workspace = workspace;
+			_playlistItem--;
+			activePrepareNextMedia();
 			return true;
 		} else {
 			_log.warning("failed update workspace.");
@@ -576,11 +585,11 @@ void MainScene::process() {
 
 	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		_timeSecond = now.second();
 		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
 		Poco::Timespan span(0, 0, 0, 10, 0);
 		for (int i = 0; i < _workspace->getScheduleCount(); i++) {
-//			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			SchedulePtr schedule = _workspace->getSchedule(i);
 			if (schedule->check(now + span)) {
 				// 10秒前チェック
