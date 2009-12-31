@@ -416,6 +416,19 @@ void FFMovieContent::draw(const DWORD& frame) {
 					} else {
 						_vf->draw(L(_x), L(_y), L(_h * dar), L(_h), 0, col);
 					}
+					if (0 != (frame % 2)) {
+						VideoFrame* vf = _videoDecoder->frontFrame();
+						if (vf) {
+							col = ((DWORD)(0x80 * alpha) << 24) | 0xffffff;
+							if (_h * dar > _w) {
+								// 画角よりディスプレイサイズは横長
+								vf->draw(L(_x), L(_y), L(_w), L(_w / dar), 0, col);
+							} else {
+								vf->draw(L(_x), L(_y), L(_h * dar), L(_h), 0, col);
+							}
+						}
+					}
+
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				}

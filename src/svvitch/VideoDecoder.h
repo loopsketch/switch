@@ -619,6 +619,15 @@ private:
 		_usedFrames.push(vf);
 	}
 
+	VideoFrame* frontFrame() {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_frames.size() > 0) {
+			VideoFrame* vf = _frames.front();
+			return vf;
+		}
+		return NULL;
+	}
+
 	VideoFrame* viewFrame() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_frames.size() > 0) {
