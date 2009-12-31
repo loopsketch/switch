@@ -88,7 +88,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-//	_CrtSetBreakAlloc(7047);
+//	_CrtSetBreakAlloc(4141);
+//	_CrtSetBreakAlloc(3627);
 //	_CrtSetBreakAlloc(7048);
 #endif
 #if defined(DEBUG) | defined(_DEBUG)
