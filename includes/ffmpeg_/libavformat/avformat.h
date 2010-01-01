@@ -22,7 +22,7 @@
 #define AVFORMAT_AVFORMAT_H
 
 #define LIBAVFORMAT_VERSION_MAJOR 52
-#define LIBAVFORMAT_VERSION_MINOR 44
+#define LIBAVFORMAT_VERSION_MINOR 45
 #define LIBAVFORMAT_VERSION_MICRO  0
 
 #define LIBAVFORMAT_VERSION_INT AV_VERSION_INT(LIBAVFORMAT_VERSION_MAJOR, \
@@ -712,12 +712,34 @@ enum CodecID av_guess_image2_codec(const char *filename);
 /* utils.c */
 void av_register_input_format(AVInputFormat *format);
 void av_register_output_format(AVOutputFormat *format);
-AVOutputFormat *guess_stream_format(const char *short_name,
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+attribute_deprecated AVOutputFormat *guess_stream_format(const char *short_name,
                                     const char *filename,
                                     const char *mime_type);
-AVOutputFormat *guess_format(const char *short_name,
-                             const char *filename,
-                             const char *mime_type);
+
+/**
+ * @deprecated Use av_guess_format() instead.
+ */
+attribute_deprecated AVOutputFormat *guess_format(const char *short_name,
+                                                  const char *filename,
+                                                  const char *mime_type);
+#endif
+
+/**
+ * Returns the output format in the list of registered output formats
+ * which best matches the provided parameters, or returns NULL if
+ * there is no match.
+ *
+ * @param short_name if non-NULL checks if short_name matches with the
+ * names of the registered formats
+ * @param filename if non-NULL checks if filename terminates with the
+ * extensions of the registered formats
+ * @param mime_type if non-NULL checks if mime_type matches with the
+ * MIME type of the registered formats
+ */
+AVOutputFormat *av_guess_format(const char *short_name,
+                                const char *filename,
+                                const char *mime_type);
 
 /**
  * Guesses the codec ID based upon muxer and filename.
