@@ -7,7 +7,7 @@ Schedule::Schedule(const string id, const int year, const int month, const int d
 	_log(Poco::Logger::get("")),
 	_id(id), _year(year), _month(month), _day(day), _hour(hour), _minute(minute), _second(second), _week(week), _command(command)
 {
-	string time = Poco::format("%d/%d/%d %d:%d:%d", _year, _month, _day, _hour, _minute, _second);
+	string time = Poco::format("%02d/%02d/%02d %02d:%02d:%02d", _year, _month, _day, _hour, _minute, _second);
 	_log.information(Poco::format("schedule %s(%d)->%s", time, _week, _command));
 }
 
