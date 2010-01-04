@@ -34,7 +34,7 @@ void Workspace::release() {
 	}
 	for (vector<PlayListPtr>::iterator it = _playlist.begin(); it != _playlist.end(); it++) {
 		PlayListPtr playlist = *it;
-//		_renderer.removeCachedTexture(playlist->name());
+		// _renderer.removeCachedTexture(playlist->name());
 		SAFE_DELETE(playlist);
 	}
 	_playlistMap.clear();
