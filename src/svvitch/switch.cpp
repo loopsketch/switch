@@ -317,95 +317,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 }
 
 
-HANDLE openVolume(string driveLetter) {
-	UINT driveType = GetDriveTypeA(Poco::format("%s:\\", driveLetter).c_str());
-	DWORD accessFlags;
-	switch (driveType) {
-	case DRIVE_REMOVABLE:
-	case DRIVE_FIXED: // USB-HDDはこれになる？
-		accessFlags = GENERIC_READ | GENERIC_WRITE;
-		break;
-	case DRIVE_CDROM:
-		accessFlags = GENERIC_READ;
-		break;
-	default:
-		_log.warning(Poco::format("cannot eject.  Drive type is incorrect: %s=%?d", driveLetter, driveType));
-		return INVALID_HANDLE_VALUE;
-	}
-
-	HANDLE volume = CreateFileA(Poco::format("\\\\.\\%s:", driveLetter).c_str(), accessFlags, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-	if (volume == INVALID_HANDLE_VALUE) {
-		_log.warning(Poco::format("failed open handle: %s", driveLetter));
-	}
-	return volume;
-}
-
-BOOL closeVolume(HANDLE volume) {
-	return CloseHandle(volume);
-}
-
-#define LOCK_TIMEOUT        10000       // 10 Seconds
-#define LOCK_RETRIES        20
-
-BOOL lockVolume(HANDLE volume) {
-	DWORD retBytes;
-	DWORD sleepAmount = LOCK_TIMEOUT / LOCK_RETRIES;
-	// Do this in a loop until a timeout period has expired
-	for (int nTryCount = 0; nTryCount < LOCK_RETRIES; nTryCount++) {
-		if (DeviceIoControl(volume, FSCTL_LOCK_VOLUME, NULL, 0,  NULL, 0, &retBytes, NULL)) {
-			return TRUE;
-		}
-		Sleep(sleepAmount);
-	}
-
-	return FALSE;
-}
-
-// マウント解除
-BOOL dismountVolume(HANDLE volume) {
-	DWORD retBytes;
-	return DeviceIoControl(volume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &retBytes, NULL);
-}
-
-// メディアの強制排出設定
-BOOL preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval) {
-	DWORD retBytes;
-	PREVENT_MEDIA_REMOVAL pmr;
-	pmr.PreventMediaRemoval = preventRemoval;
-	return DeviceIoControl(volume, IOCTL_STORAGE_MEDIA_REMOVAL, &pmr, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &retBytes,  NULL);
-}
-
-// メディアの排出
-BOOL autoEjectVolume(HANDLE volume) {
-	DWORD retBytes;
-	return DeviceIoControl(volume, IOCTL_STORAGE_EJECT_MEDIA, NULL, 0, NULL, 0, &retBytes, NULL);
-}
-
-BOOL ejectVolume(string driveLetter) {
-	// Open the volume.
-	HANDLE volume = openVolume(driveLetter);
-	if (volume == INVALID_HANDLE_VALUE)
-	return FALSE;
-
-	BOOL removeSafely = FALSE;
-	BOOL autoEject = FALSE;
-	// Lock and dismount the volume.
-	if (lockVolume(volume) && dismountVolume(volume)) {
-		removeSafely = TRUE;
-
-		// Set prevent removal to false and eject the volume.
-		if (preventRemovalOfVolume(volume, FALSE) && autoEjectVolume(volume)) autoEject = TRUE;
-	}
-	if (!closeVolume(volume)) return FALSE;
-
-	if (autoEject) {
-		_log.warning(Poco::format("media in drive %s has been ejected safely.", driveLetter));
-	} else if (removeSafely) {
-		_log.information(Poco::format("media in drive %s can be safely removed.", driveLetter));
-	}
-
-	return TRUE;
-}
 
 //
 // この関数は以下のURLよりコピー＆改変
@@ -552,7 +463,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						if (data && data->dbch_devicetype == DBT_DEVTYP_VOLUME) {
 							DEV_BROADCAST_VOLUME* extend = (DEV_BROADCAST_VOLUME*)data;
 							if (extend) {
-								//ejectVolume(firstDriveFromMask(extend->dbcv_unitmask));
+								MainScenePtr scene = dynamic_cast<MainScene*>(_renderer->getScene("main"));
+								if (scene) scene->activeAddRemovableMedia(firstDriveFromMask(extend->dbcv_unitmask));
 							}
 						}
 					}

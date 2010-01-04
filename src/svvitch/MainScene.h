@@ -39,6 +39,10 @@ struct PrepareArgs
 	int i;
 };
 
+struct RemovableMediaArgs {
+	const string& driveLetter;
+};
+
 class MainScene: public Scene
 {
 private:
@@ -104,6 +108,8 @@ private:
 	/** 現在時刻の秒 */
 	int _timeSecond;
 
+	bool _initializing;
+
 
 	void run();
 
@@ -115,6 +121,31 @@ private:
 
 	/** Containerに指定されたプレイリストのコンテンツを準備します */
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
+
+	void addRemovableMedia(const string& driveLetter);
+
+	void copyFiles(const string& src, const string& dst);
+
+	// ボリュームをオープンしハンドルを取得します
+	HANDLE openVolume(const string& driveLetter);
+
+	// ボリュームハンドルを解放します
+	BOOL closeVolume(HANDLE volume);
+
+	// ボリュームをロックします
+	BOOL lockVolume(HANDLE volume);
+
+	// マウント解除
+	BOOL dismountVolume(HANDLE volume);
+
+	// メディアの強制排出設定
+	BOOL preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval);
+
+	// メディアの排出
+	BOOL autoEjectVolume(HANDLE volume);
+
+	// ボリュームのイジェクト
+	BOOL ejectVolume(const string& driveLetter);
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
@@ -143,6 +174,9 @@ public:
 
 	/** 次再生コンテンツを準備(アクティブ版) */
 	ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
+
+	/** リムーバブルメディアの追加(アクティブ版) */
+	ActiveMethod<void, string, MainScene> activeAddRemovableMedia;
 
 	/** 毎フレームで行う処理 */
 	virtual void process();

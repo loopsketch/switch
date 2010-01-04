@@ -2,6 +2,7 @@
 
 #include <Psapi.h>
 #include <Poco/format.h>
+#include <Poco/DirectoryIterator.h>
 #include <Poco/Exception.h>
 #include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
@@ -9,6 +10,8 @@
 #include <Poco/LocalDateTime.h>
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
+#include <Poco/FileStream.h>
+#include <Poco/StreamCopier.h>
 
 #include "Image.h"
 #include "FFMovieContent.h"
@@ -25,9 +28,11 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
+	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
 	_frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
-	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL)
+	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
+	_initializing(false)
 {
 	_luminance = config().luminance;
 	initialize();
@@ -443,6 +448,156 @@ bool MainScene::updateWorkspace() {
 	return false;
 }
 
+void MainScene::addRemovableMedia(const string& driveLetter) {
+	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
+	Sleep(2000);
+
+	Path dst = Path(config().dataRoot.parent(), "removable-copys\\");
+	File dir(dst);
+	if (dir.exists()) dir.remove(true);
+	copyFiles(Poco::format("%s:\\switch-datas", driveLetter), dst.toString());
+	ejectVolume(driveLetter);
+
+	WorkspacePtr workspace = new Workspace(Path(dst, "workspace.xml"));
+	if (!workspace->parse()) {
+		SAFE_DELETE(workspace);
+		return;
+	}
+	SAFE_DELETE(workspace);
+
+	_initializing = true;
+	int retry = 10;
+	while (_initializing) {
+		if (retry-- <= 0) {
+			_log.warning("failed content initializing time out");
+			return;
+		}
+		Sleep(1000);
+	}
+	
+	File old(Path(config().dataRoot.parent(), "datas_old"));
+	if (old.exists()) old.remove(true);
+	File(config().dataRoot).renameTo(old.path());
+	dir.renameTo(config().dataRoot.toString());
+	if (updateWorkspace()) {
+		_startup = false;
+	}
+}
+
+void MainScene::copyFiles(const string& src, const string& dst) {
+	_log.information(Poco::format("copy root: %s -> %s", src, dst));
+	Poco::DirectoryIterator it(src);
+	Poco::DirectoryIterator end;
+	while (it != end) {
+		if (it->isDirectory()) {
+			File dir(dst + it.path().getFileName() + "\\");
+			if (!dir.exists()) dir.createDirectories();
+			copyFiles(it->path(), dst + it.path().getFileName() + "\\");
+		} else {
+			_log.information(Poco::format("copy: %s -> %s", it->path(), dst + it.path().getFileName()));
+			try {
+				File dir(dst);
+				if (!dir.exists()) dir.createDirectories();
+				Poco::FileInputStream is(it->path());
+				Poco::FileOutputStream os(dst + it.path().getFileName());
+				if (is.good() && os.good()) {
+					Poco::StreamCopier::copyStream(is, os);
+				}
+			} catch (Poco::FileException ex) {
+				_log.warning(ex.displayText());
+			}
+		}
+		++it;
+	}
+}
+
+HANDLE MainScene::openVolume(const string& driveLetter) {
+	UINT driveType = GetDriveTypeA(Poco::format("%s:\\", driveLetter).c_str());
+	DWORD accessFlags;
+	switch (driveType) {
+	case DRIVE_REMOVABLE:
+	case DRIVE_FIXED: // USB-HDDÇÕÇ±ÇÍÇ…Ç»ÇÈÅH
+		accessFlags = GENERIC_READ | GENERIC_WRITE;
+		break;
+	case DRIVE_CDROM:
+		accessFlags = GENERIC_READ;
+		break;
+	default:
+		_log.warning(Poco::format("cannot eject.  Drive type is incorrect: %s=%?d", driveLetter, driveType));
+		return INVALID_HANDLE_VALUE;
+	}
+
+	HANDLE volume = CreateFileA(Poco::format("\\\\.\\%s:", driveLetter).c_str(), accessFlags, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (volume == INVALID_HANDLE_VALUE) {
+		_log.warning(Poco::format("failed open handle: %s", driveLetter));
+	}
+	return volume;
+}
+
+BOOL MainScene::closeVolume(HANDLE volume) {
+	return CloseHandle(volume);
+}
+
+#define LOCK_TIMEOUT        10000       // 10 Seconds
+#define LOCK_RETRIES        20
+
+BOOL MainScene::lockVolume(HANDLE volume) {
+	DWORD retBytes;
+	DWORD sleepAmount = LOCK_TIMEOUT / LOCK_RETRIES;
+	// Do this in a loop until a timeout period has expired
+	for (int nTryCount = 0; nTryCount < LOCK_RETRIES; nTryCount++) {
+		if (DeviceIoControl(volume, FSCTL_LOCK_VOLUME, NULL, 0,  NULL, 0, &retBytes, NULL)) {
+			return TRUE;
+		}
+		Sleep(sleepAmount);
+	}
+
+	return FALSE;
+}
+
+BOOL MainScene::dismountVolume(HANDLE volume) {
+	DWORD retBytes;
+	return DeviceIoControl(volume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &retBytes, NULL);
+}
+
+BOOL MainScene::preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval) {
+	DWORD retBytes;
+	PREVENT_MEDIA_REMOVAL pmr;
+	pmr.PreventMediaRemoval = preventRemoval;
+	return DeviceIoControl(volume, IOCTL_STORAGE_MEDIA_REMOVAL, &pmr, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &retBytes,  NULL);
+}
+
+BOOL MainScene::autoEjectVolume(HANDLE volume) {
+	DWORD retBytes;
+	return DeviceIoControl(volume, IOCTL_STORAGE_EJECT_MEDIA, NULL, 0, NULL, 0, &retBytes, NULL);
+}
+
+BOOL MainScene::ejectVolume(const string& driveLetter) {
+	// Open the volume.
+	HANDLE volume = openVolume(driveLetter);
+	if (volume == INVALID_HANDLE_VALUE)
+	return FALSE;
+
+	BOOL removeSafely = FALSE;
+	BOOL autoEject = FALSE;
+	// Lock and dismount the volume.
+	if (lockVolume(volume) && dismountVolume(volume)) {
+		removeSafely = TRUE;
+
+		// Set prevent removal to false and eject the volume.
+		if (preventRemovalOfVolume(volume, FALSE) && autoEjectVolume(volume)) autoEject = TRUE;
+	}
+	if (!closeVolume(volume)) return FALSE;
+
+	if (autoEject) {
+		_log.warning(Poco::format("media in drive %s has been ejected safely.", driveLetter));
+	} else if (removeSafely) {
+		_log.information(Poco::format("media in drive %s can be safely removed.", driveLetter));
+	}
+
+	return TRUE;
+}
+
 
 void MainScene::process() {
 	switch (_keycode) {
@@ -472,8 +627,24 @@ void MainScene::process() {
 				_log.warning("no playlist, no auto starting");
 			}
 		}
-	}
-	if (_startup) {
+	} else if (_startup) {
+		if (_initializing) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
+				(*it)->initialize();
+			}
+			SAFE_RELEASE(_playlistName);
+			SAFE_RELEASE(_currentName);
+			SAFE_RELEASE(_nextPlaylistName);
+			SAFE_RELEASE(_nextName);
+			_status.erase(_status.find("current-playlist"));
+			_status.erase(_status.find("current-content"));
+			_status.erase(_status.find("next-playlist"));
+			_status.erase(_status.find("next-content"));
+			_currentCommand.clear();
+			_nextTransition.clear();
+			_initializing = false;
+		}
 		for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
 			(*it)->process(_frame);
 		}
@@ -583,7 +754,7 @@ void MainScene::process() {
 		SAFE_DELETE(_workspace);
 		_workspace = _updatedWorkspace;
 		_updatedWorkspace = NULL;
-		if (_currentCommand != "stop") {
+		if (!_status["next-content"].empty() && _currentCommand != "stop") {
 			_playlistItem--;
 			activePrepareNextMedia();
 		}
@@ -623,7 +794,6 @@ void MainScene::process() {
 			}
 		}
 	}
-
 	_frame++;
 }
 
