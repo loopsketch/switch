@@ -3,7 +3,8 @@
 
 
 FFMovieContent::FFMovieContent(Renderer& renderer):
-	Content(renderer), _ic(NULL), _rate(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL), _finished(true), _seeking(false)
+	Content(renderer), _ic(NULL), _rate(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL),
+	_starting(false), _frameOddEven(0), _finished(true), _seeking(false)
 {
 	initialize();
 }
@@ -138,6 +139,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	_mediaID = media->id();
 	if (media->duration() > 0) _duration = media->duration() / 30;
 	set("alpha", 1.0f);
+	_starting = false;
 	_finished = false;
 	return true;
 }
@@ -194,6 +196,7 @@ void FFMovieContent::play() {
 	if (_audioDecoder) _audioDecoder->play();
 	_current = 0;
 	_playing = true;
+	_starting = true;
 	_playTimer.start();
 }
 
@@ -290,12 +293,23 @@ void FFMovieContent::process(const DWORD& frame) {
 				// ビデオのフレームが無くなった時点でオーディオ停止(リングバッファのオーバーラン再生防止)
 //				_audioDecoder->stop();
 //			}
-			if (0 == (frame % 2)) {
+			if (_starting) {
+				_frameOddEven = frame % 2;
+				_starting = false;
+			}
+			if (_frameOddEven == (frame % 2)) {
 				VideoFrame* vf = _videoDecoder->popFrame();
 				if (vf) {
 					if (_vf) _videoDecoder->pushFrame(_vf);
 					_vf = vf;
 					_current++;
+					int fps = _rate + 0.03f;
+					unsigned long cu = _current / fps;
+					unsigned long re = (_duration - _current) / fps;
+					string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, _current % fps);
+					string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (_duration - _current) % fps);
+					set("time", Poco::format("%s %s", t1, t2));
+					set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 					_fpsCounter.count();
 				}
 			}
@@ -407,18 +421,35 @@ void FFMovieContent::draw(const DWORD& frame) {
 				break;
 			default:
 				{
-					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-					float dar = _videoDecoder->getDisplayAspectRatio();
-					if (_h * dar > _w) {
-						// 画角よりディスプレイサイズは横長
-						_vf->draw(L(_x), L(_y), L(_w), L(_w / dar), 0, col);
-					} else {
-						_vf->draw(L(_x), L(_y), L(_h * dar), L(_h), 0, col);
-					}
+					RECT rect = config().stageRect;
+					string aspectMode = get("aspect-mode");
+					if (aspectMode == "fit") {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						_vf->draw(L(_x), L(_y), L(_w), L(_h), 0, col);
+//						_vf->draw(rect.left, rect.top, rect.right, rect.bottom, 0, col);
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 
-					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+					} else {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, 0xff000000, 0xff000000, 0xff000000, 0xff000000);
+						float dar = _videoDecoder->getDisplayAspectRatio();
+						if (_h * dar > _w) {
+							// 画角よりディスプレイサイズは横長
+							long h = _w / dar;
+							long dy = (_h - h) / 2;
+							_vf->draw(L(_x), L(_y + dy), L(_w), h, 0, col);
+						} else {
+							long w = _h * dar;
+							long dx = (_w - w) / 2;
+							_vf->draw(L(_x + dx), L(_y), w, L(_h), 0, col);
+						}
+
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+					}
 				}
 				break;
 			}

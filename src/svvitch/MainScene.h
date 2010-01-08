@@ -109,6 +109,16 @@ private:
 	int _timeSecond;
 
 	bool _initializing;
+	bool _running;
+
+	/** USBアイコン */
+	LPDIRECT3DTEXTURE9 _removableIcon;
+	float _removableAlpha;
+	float _removableCover;
+	int _copySize;
+	int _currentCopySize;
+	int _copyProgress;
+	int _currentCopyProgress;
 
 
 	void run();
@@ -124,7 +134,7 @@ private:
 
 	void addRemovableMedia(const string& driveLetter);
 
-	void copyFiles(const string& src, const string& dst);
+	int copyFiles(const string& src, const string& dst);
 
 	// ボリュームをオープンしハンドルを取得します
 	HANDLE openVolume(const string& driveLetter);

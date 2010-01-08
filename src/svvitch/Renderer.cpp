@@ -15,7 +15,10 @@
 #include <errors.h>
 
 
-Renderer::Renderer(): _log(Poco::Logger::get("")), _d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL) 
+Renderer::Renderer():
+	_log(Poco::Logger::get("")),
+	_d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL),
+	_viewStatus(false)
 {
 }
 
@@ -474,6 +477,13 @@ void Renderer::renderScene(const DWORD current) {
 	}
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
+		switch (keycode) {
+			case 'S':
+			case 's':
+				_viewStatus = !_viewStatus;
+				break;
+		}
+
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			Scene* scene = (*it);
 			scene->notifyKey(keycode, shift, ctrl);
@@ -570,13 +580,14 @@ void Renderer::renderScene(const DWORD current) {
 		PROCESS_MEMORY_COUNTERS pmc = {0};
 		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
 		int mem = pmc.WorkingSetSize / 1024 / 1024;
-
-		string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
-		Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
-		string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
-//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-		drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0xffcccccc, Poco::format("FPS:%03lu %s %s", _fpsCounter.getFPS(), time, memory));
-
+		Uint32 fps = _fpsCounter.getFPS();
+		if (_viewStatus) {
+			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
+			Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
+			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
+	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
+			drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0xffcccccc, Poco::format("FPS:%03lu %s %s", fps, time, memory));
+		}
 		_device->EndScene();
 	}
 	if (_displayAdpters > 1) {
@@ -1054,3 +1065,6 @@ const LPDIRECT3DTEXTURE9 Renderer::getCachedTexture(const string& name) const {
 	return NULL;
 }
 
+const bool Renderer::viewStatus() const {
+	return _viewStatus;
+}

@@ -106,6 +106,8 @@ private:
 	bool _shift;
 	bool _ctrl;
 
+	bool _viewStatus;
+
 
 	/**
 	 * GDI+‚ğg‚Á‚Ä•¶š—ñ‚ğ•`‰æ‚µ‚Ü‚·
@@ -246,6 +248,8 @@ public:
 	void removeCachedTexture(const string& name);
 
 	const LPDIRECT3DTEXTURE9 getCachedTexture(const string& name) const;
+
+	const bool viewStatus() const;
 
 	/**
 	 * I—¹ˆ—

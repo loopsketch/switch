@@ -46,6 +46,8 @@ private:
 	VideoFrame* _vf;
 	VideoFrame* _prepareVF;
 
+	bool _starting;
+	int _frameOddEven;
 	bool _finished;
 	bool _seeking;
 	PerformanceTimer _playTimer;

@@ -32,7 +32,8 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	_frame(0), _luminance(100), _preparing(false), _playCount(0), _transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
-	_initializing(false)
+	_initializing(false), _running(false),
+	_removableIcon(NULL), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0)
 {
 	_luminance = config().luminance;
 	initialize();
@@ -53,6 +54,7 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_nextPlaylistName);
 	SAFE_RELEASE(_nextName);
 	SAFE_RELEASE(_preparedName);
+	SAFE_RELEASE(_removableIcon);
 
 	SAFE_DELETE(_workspace);
 
@@ -115,6 +117,7 @@ bool MainScene::initialize() {
 	_timeSecond = -1;
 	_frame = 0;
 	_log.information("*initialized MainScene");
+	_running = true;
 	_startup = false;
 	_autoStart = false;
 	_log.information("*created main-scene");
@@ -293,6 +296,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 						if (movie->open(media)) {
 							movie->setPosition(config().stageRect.left, config().stageRect.top);
 							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
+							// movie->set("aspect-mode", "fit");
 							container->add(movie);
 						} else {
 							SAFE_DELETE(movie);
@@ -452,29 +456,65 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
 	Sleep(2000);
 
+	if (!_removableIcon) {
+		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
+		if (texture) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			_removableIcon = texture;
+		}
+	}
+	_copySize = 0;
+	_copyProgress = 0;
+	_currentCopyProgress = 0;
+	_removableAlpha = 0.01f;
+	_removableCover = 0;
+
 	Path dst = Path(config().dataRoot.parent(), "removable-copys\\");
 	File dir(dst);
 	if (dir.exists()) dir.remove(true);
+	int size = copyFiles(Poco::format("%s:\\switch-datas", driveLetter), "");
+	_currentCopySize = 0;
+	_copySize = size;
 	copyFiles(Poco::format("%s:\\switch-datas", driveLetter), dst.toString());
 	ejectVolume(driveLetter);
 
+	// Workspace‚ð‰¼¶¬
 	WorkspacePtr workspace = new Workspace(Path(dst, "workspace.xml"));
 	if (!workspace->parse()) {
 		SAFE_DELETE(workspace);
+		_removableAlpha = 0;
 		return;
 	}
 	SAFE_DELETE(workspace);
-
-	_initializing = true;
-	int retry = 10;
-	while (_initializing) {
-		if (retry-- <= 0) {
-			_log.warning("failed content initializing time out");
-			return;
-		}
-		Sleep(1000);
+	while (_currentCopyProgress < 100) {
+		Sleep(100);
 	}
-	
+
+	if (_startup) {
+		while (_removableCover < 1) {
+			Sleep(100);
+		}
+		_running = false;
+		Sleep(2000);
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
+				(*it)->initialize();
+			}
+		}
+		_running = true;
+		SAFE_RELEASE(_playlistName);
+		SAFE_RELEASE(_currentName);
+		SAFE_RELEASE(_nextPlaylistName);
+		SAFE_RELEASE(_nextName);
+		_status.erase(_status.find("current-playlist"));
+		_status.erase(_status.find("current-content"));
+		_status.erase(_status.find("next-playlist"));
+		_status.erase(_status.find("next-content"));
+		_currentCommand.clear();
+		_nextTransition.clear();
+	}
+
 	File old(Path(config().dataRoot.parent(), "datas_old"));
 	if (old.exists()) old.remove(true);
 	File(config().dataRoot).renameTo(old.path());
@@ -484,31 +524,40 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	}
 }
 
-void MainScene::copyFiles(const string& src, const string& dst) {
-	_log.information(Poco::format("copy root: %s -> %s", src, dst));
+int MainScene::copyFiles(const string& src, const string& dst) {
+	int size = 0;
 	Poco::DirectoryIterator it(src);
 	Poco::DirectoryIterator end;
 	while (it != end) {
 		if (it->isDirectory()) {
 			File dir(dst + it.path().getFileName() + "\\");
 			if (!dir.exists()) dir.createDirectories();
-			copyFiles(it->path(), dst + it.path().getFileName() + "\\");
+			if (dst.empty()) {
+				size += copyFiles(it->path(), "");
+			} else {
+				size += copyFiles(it->path(), dst + it.path().getFileName() + "\\");
+			}
 		} else {
-			_log.information(Poco::format("copy: %s -> %s", it->path(), dst + it.path().getFileName()));
-			try {
-				File dir(dst);
-				if (!dir.exists()) dir.createDirectories();
-				Poco::FileInputStream is(it->path());
-				Poco::FileOutputStream os(dst + it.path().getFileName());
-				if (is.good() && os.good()) {
-					Poco::StreamCopier::copyStream(is, os);
+			size += it->getSize();
+			if (!dst.empty()) {
+				_log.information(Poco::format("copy: %s -> %s", it->path(), dst + it.path().getFileName()));
+				try {
+					File dir(dst);
+					if (!dir.exists()) dir.createDirectories();
+					Poco::FileInputStream is(it->path());
+					Poco::FileOutputStream os(dst + it.path().getFileName());
+					if (is.good() && os.good()) {
+						Poco::StreamCopier::copyStream(is, os);
+						_currentCopySize += it->getSize();
+					}
+				} catch (Poco::FileException ex) {
+					_log.warning(ex.displayText());
 				}
-			} catch (Poco::FileException ex) {
-				_log.warning(ex.displayText());
 			}
 		}
 		++it;
 	}
+	return size;
 }
 
 HANDLE MainScene::openVolume(const string& driveLetter) {
@@ -608,9 +657,20 @@ void MainScene::process() {
 			if (_luminance < 100) _luminance++;
 			break;
 	}
+	if (_running && _removableAlpha > 0) {
+		_removableAlpha += 0.01f;
+		if (_removableAlpha >= 1) _removableAlpha = 1;
+	}
+	if (_copySize > 0) {
+		_copyProgress = 100 * _currentCopySize / _copySize;
+		if (_currentCopyProgress < _copyProgress) _currentCopyProgress++;
+		if (_copyProgress == 100 && _removableCover < 1) _removableCover += 0.01f;
+		if (!_running && _removableAlpha > 0) _removableAlpha -= 0.01f;
+	}
+
+	if (!_running) return;
 
 	if (!_startup && _frame > 100) {
-		_startup = true;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			if (_workspace->getPlaylistCount() > 0) {
@@ -622,29 +682,14 @@ void MainScene::process() {
 					activePrepareNextMedia();
 					_autoStart = true;
 					_frame = 0;
+					_startup = true;
 				}
 			} else {
-				_log.warning("no playlist, no auto starting");
+				if (_frame == 101) _log.warning("no playlist, no auto starting");
+				// _frame = 0;
 			}
 		}
 	} else if (_startup) {
-		if (_initializing) {
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
-				(*it)->initialize();
-			}
-			SAFE_RELEASE(_playlistName);
-			SAFE_RELEASE(_currentName);
-			SAFE_RELEASE(_nextPlaylistName);
-			SAFE_RELEASE(_nextName);
-			_status.erase(_status.find("current-playlist"));
-			_status.erase(_status.find("current-content"));
-			_status.erase(_status.find("next-playlist"));
-			_status.erase(_status.find("next-content"));
-			_currentCommand.clear();
-			_nextTransition.clear();
-			_initializing = false;
-		}
 		for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
 			(*it)->process(_frame);
 		}
@@ -798,6 +843,7 @@ void MainScene::process() {
 }
 
 void MainScene::draw1() {
+	if (!_running) return;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
 	device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
@@ -812,6 +858,10 @@ void MainScene::draw1() {
 
 	if (_luminance < 100) {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
+		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
+	}
+	if (_removableCover > 0) {
+		DWORD col = ((DWORD)(0xff * _removableCover) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	// _renderer.drawFontTextureText(0, config().mainRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("LUMINANCE:%03d", _luminance));
@@ -844,7 +894,8 @@ void MainScene::draw2() {
 				Uint32 fps = movie->getFPS();
 				float avgTime = movie->getAvgTime();
 				status1 = Poco::format("%03lufps(%03.2hfms)", fps, avgTime);
-				time = Poco::format("%02lu:%02lu.%03lu %02lu:%02lu.%03lu", currentTime / 60000, currentTime / 1000 % 60, currentTime % 1000 , timeLeft / 60000, timeLeft / 1000 % 60, timeLeft % 1000);
+//				time = Poco::format("%02lu:%02lu.%03lu %02lu:%02lu.%03lu", currentTime / 60000, currentTime / 1000 % 60, currentTime % 1000 , timeLeft / 60000, timeLeft / 1000 % 60, timeLeft % 1000);
+				time = movie->get("time");
 			} else {
 //				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
 //				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
@@ -853,7 +904,7 @@ void MainScene::draw2() {
 		}
 	}
 
-	{
+	if (_renderer.viewStatus()) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
 		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
@@ -869,5 +920,23 @@ void MainScene::draw2() {
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, 730, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d playing no<%d> next:%s", _nowTime, _playCount, _currentContent, wait));
+	}
+
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_removableIcon && _removableAlpha > 0) {
+			D3DSURFACE_DESC desc;
+			HRESULT hr = _removableIcon->GetLevelDesc(0, &desc);
+			int tw = desc.Width / 2;
+			int th = desc.Height / 2;
+			DWORD col = ((DWORD)(0xff * _removableAlpha) << 24) | 0xffffff;
+			_renderer.drawTexture(0, config().subRect.bottom - th, tw, th, _removableIcon, 0, col, col, col, col);
+			col = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x333333;
+			_renderer.drawTexture(tw + 1, config().subRect.bottom - th / 2, config().subRect.right - tw - 1, 10, NULL, 0, col, col, col, col);
+			DWORD col1 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x33ccff;
+			DWORD col2 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x3399cc;
+			_renderer.drawTexture(tw + 2, config().subRect.bottom - th / 2 + 1, (config().subRect.right - tw - 2) * _currentCopyProgress / 100, 8, NULL, 0, col1, col1, col2, col2);
+//			_renderer.drawFontTextureText(tw, config().subRect.bottom - th / 2, 12, 16, 0xccffffff, Poco::format("%d %d(%d%%)", _currentCopySize, _copySize, _currentCopyProgress));
+		}
 	}
 }
