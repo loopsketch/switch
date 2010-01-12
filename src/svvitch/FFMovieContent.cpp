@@ -434,17 +434,20 @@ void FFMovieContent::draw(const DWORD& frame) {
 					} else {
 						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-						_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, 0xff000000, 0xff000000, 0xff000000, 0xff000000);
-						float dar = _videoDecoder->getDisplayAspectRatio();
-						if (_h * dar > _w) {
-							// 画角よりディスプレイサイズは横長
-							long h = _w / dar;
-							long dy = (_h - h) / 2;
-							_vf->draw(L(_x), L(_y + dy), L(_w), h, 0, col);
-						} else {
-							long w = _h * dar;
-							long dx = (_w - w) / 2;
-							_vf->draw(L(_x + dx), L(_y), w, L(_h), 0, col);
+						if (alpha > 0.0f) {
+							DWORD base = ((DWORD)(0xff * alpha) << 24) | 0x000000;
+							_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, base, base, base, base);
+							float dar = _videoDecoder->getDisplayAspectRatio();
+							if (_h * dar > _w) {
+								// 画角よりディスプレイサイズは横長
+								long h = _w / dar;
+								long dy = (_h - h) / 2;
+								_vf->draw(L(_x), L(_y + dy), L(_w), h, 0, col);
+							} else {
+								long w = _h * dar;
+								long dx = (_w - w) / 2;
+								_vf->draw(L(_x + dx), L(_y), w, L(_h), 0, col);
+							}
 						}
 
 						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);

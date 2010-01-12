@@ -462,7 +462,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		_addRemovable = driveLetter;
 	}
 	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
-	Sleep(1000);
+	Sleep(2000);
 
 	if (!_removableIcon) {
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
