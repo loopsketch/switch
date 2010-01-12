@@ -453,8 +453,16 @@ bool MainScene::updateWorkspace() {
 }
 
 void MainScene::addRemovableMedia(const string& driveLetter) {
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (!_addRemovable.empty() && _addRemovable == driveLetter) {
+			_log.information(Poco::format("processing same device, ignore notifier removable device[%s]", driveLetter));
+			return;
+		}
+		_addRemovable = driveLetter;
+	}
 	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
-	Sleep(2000);
+	Sleep(1000);
 
 	if (!_removableIcon) {
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
@@ -483,17 +491,21 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	if (!workspace->parse()) {
 		SAFE_DELETE(workspace);
 		_removableAlpha = 0;
+		_addRemovable.clear();
 		return;
 	}
 	SAFE_DELETE(workspace);
 	while (_currentCopyProgress < 100) {
+//		_log.information(Poco::format("size:%lu/%lu progress:%d%%", _currentCopySize, _copySize, _copyProgress));
 		Sleep(100);
 	}
 
 	if (_startup) {
-		while (_removableCover < 1) {
+		_log.information("wait viewing removable cover");
+		while (_removableCover < 1.0f) {
 			Sleep(100);
 		}
+		_log.information("stop current playing");
 		_running = false;
 		Sleep(2000);
 		{
@@ -502,7 +514,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 				(*it)->initialize();
 			}
 		}
-		_running = true;
+		_log.information("purge all contents");
 		SAFE_RELEASE(_playlistName);
 		SAFE_RELEASE(_currentName);
 		SAFE_RELEASE(_nextPlaylistName);
@@ -513,15 +525,28 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		_status.erase(_status.find("next-content"));
 		_currentCommand.clear();
 		_nextTransition.clear();
+	} else {
+		_running = false;
+		while (_removableAlpha > 0.0f) {
+			Sleep(100);
+		}
 	}
+	_running = true;
+	_copySize = 0;
+	_removableCover = 0.0f;
 
+	_log.information("backup current data");
 	File old(Path(config().dataRoot.parent(), "datas_old"));
 	if (old.exists()) old.remove(true);
-	File(config().dataRoot).renameTo(old.path());
+	File currentDataDir(config().dataRoot);
+	if (currentDataDir.exists()) {
+		currentDataDir.renameTo(old.path());
+	}
 	dir.renameTo(config().dataRoot.toString());
 	if (updateWorkspace()) {
 		_startup = false;
 	}
+	_addRemovable.clear();
 }
 
 int MainScene::copyFiles(const string& src, const string& dst) {
@@ -659,13 +684,19 @@ void MainScene::process() {
 	}
 	if (_running && _removableAlpha > 0) {
 		_removableAlpha += 0.01f;
-		if (_removableAlpha >= 1) _removableAlpha = 1;
+		if (_removableAlpha >= 1.0f) _removableAlpha = 1;
 	}
 	if (_copySize > 0) {
-		_copyProgress = 100 * _currentCopySize / _copySize;
+		_copyProgress = 100 * F(_currentCopySize) / F(_copySize);
 		if (_currentCopyProgress < _copyProgress) _currentCopyProgress++;
-		if (_copyProgress == 100 && _removableCover < 1) _removableCover += 0.01f;
-		if (!_running && _removableAlpha > 0) _removableAlpha -= 0.01f;
+		if (_copyProgress >= 100 && _removableCover < 1.0f) {
+			_removableCover += 0.01f;
+			if (_removableCover > 1.0f) _removableCover = 1.0f;
+		}
+		if (!_running && _removableAlpha > 0.0f) {
+			_removableAlpha -= 0.01f;
+			if (_removableAlpha < 0.0f) _removableAlpha = 0.0f;
+		}
 	}
 
 	if (!_running) return;
@@ -860,7 +891,7 @@ void MainScene::draw1() {
 		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
-	if (_removableCover > 0) {
+	if (_removableCover > 0.0f) {
 		DWORD col = ((DWORD)(0xff * _removableCover) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}

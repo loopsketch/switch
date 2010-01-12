@@ -113,10 +113,11 @@ private:
 
 	/** USBÉAÉCÉRÉì */
 	LPDIRECT3DTEXTURE9 _removableIcon;
+	string _addRemovable;
 	float _removableAlpha;
 	float _removableCover;
-	int _copySize;
-	int _currentCopySize;
+	unsigned long _copySize;
+	unsigned long _currentCopySize;
 	int _copyProgress;
 	int _currentCopyProgress;
 
