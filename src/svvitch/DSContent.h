@@ -15,6 +15,7 @@ private:
 	IMediaControl* _mc;
 	IMediaSeeking* _ms;
 	IMediaEvent* _me;
+	bool _finished;
 
 public:
 	DSContent(Renderer& renderer);

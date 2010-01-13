@@ -96,6 +96,7 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	}
 	_current = 0;
 	_mediaID = media->id();
+	_finished = false;
 	return true;
 }
 
@@ -128,7 +129,7 @@ const bool DSContent::playing() const {
 
 const bool DSContent::finished() {
 //	return _current >= _duration;
-	return false;
+	return _finished;
 }
 
 /** ファイルをクローズします */
@@ -159,6 +160,7 @@ void DSContent::process(const DWORD& frame) {
 		if (SUCCEEDED(hr)) {
 			if (EC_COMPLETE == eventCode) {
 //				hr = _mp->put_CurrentPosition(0);
+				_finished = true;
 			}
 			hr = _me->FreeEventParams(eventCode, param1, param2);
 		}
@@ -168,8 +170,10 @@ void DSContent::process(const DWORD& frame) {
 void DSContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
 		if (_vr) {
-//			LPDIRECT3DTEXTURE9 texture = _vr->getTexture();
-//			if (texture) _renderer.drawTexture(_x, _y, texture);
+			float alpha = getF("alpha");
+			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
+			LPDIRECT3DTEXTURE9 texture = _vr->getTexture();
+			if (texture) _renderer.drawTexture(_x, _y, texture, 0, col, col, col, col);
 		}
 	}
 }
