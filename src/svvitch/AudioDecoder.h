@@ -100,7 +100,7 @@ private:
 		desc.dwSize		= sizeof(desc);
 //		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLFREQUENCY;
 //		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLPOSITIONNOTIFY;
-		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLVOLUME;
+		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME;
 		desc.dwBufferBytes = _bufferSize;
 		desc.lpwfxFormat = &wfwav;
 		desc.guid3DAlgorithm = GUID_NULL;
@@ -185,7 +185,7 @@ private:
 						if (writeCursor <= _bufferOffset) break;
 						if (playCursor > _bufferOffset + len * 2) break;
 					}
-					Poco::Thread::sleep(1000);
+					Poco::Thread::sleep(30);
 				}
 				if (_bufferOffset + len <= _bufferSize) {
 					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
@@ -225,7 +225,7 @@ private:
 							// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
 							if (SUCCEEDED(hr) && playCursor > _bufferSize / 2) break;
 						}
-						Poco::Thread::sleep(1000);
+						Poco::Thread::sleep(30);
 					}
 					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
 					if (SUCCEEDED(hr)) {
@@ -243,9 +243,9 @@ private:
 				}
 			}
 
-//			timeBeginPeriod(1);
-			Poco::Thread::sleep(3);
-//			timeEndPeriod(1);
+			timeBeginPeriod(1);
+			Poco::Thread::sleep(2);
+			timeEndPeriod(1);
 		}
 
 		delete data;
