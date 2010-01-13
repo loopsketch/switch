@@ -146,17 +146,17 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 void FFMovieContent::run() {
 	_log.information("movie thread start");
-	int count = 0;
+	long count = 0;
 	AVPacket packet;
 	while (_worker) {
-		if (_videoDecoder && _videoDecoder->bufferedPackets() > 30) {
-			Poco::Thread::sleep(10);
-			continue;
-		}
-//		if (_audioDecoder && _audioDecoder->bufferedPackets() > 40) {
-//			Poco::Thread::sleep(10);
-//			continue;
-//		}
+		//if (_videoDecoder && _videoDecoder->bufferedPackets() > 30) {
+		//	Poco::Thread::sleep(10);
+		//	continue;
+		//}
+		// if (_audioDecoder && _audioDecoder->bufferedPackets() > 40) {
+		//	Poco::Thread::sleep(10);
+		//	continue;
+		// }
 		if (_seeking) {
 			// ƒV[ƒN’†
 			Poco::Thread::sleep(10);
@@ -186,7 +186,7 @@ void FFMovieContent::run() {
 		}
 		count++;
 	}
-	_log.information("movie thread end");
+	_log.information(Poco::format("movie thread end %ldpackets", count));
 }
 
 /**
@@ -237,7 +237,11 @@ const bool FFMovieContent::finished() {
 	if (_playing) {
 		if (_finished) {
 			if (_videoDecoder) {
-				return _videoDecoder->bufferedFrames() == 0;
+				if (_videoDecoder->bufferedFrames() == 0) {
+					if (_audioDecoder && _audioDecoder->playing()) _audioDecoder->stop();
+					return true;
+				}
+				return false;
 			}
 			return _mediaID.empty();
 		}
@@ -310,6 +314,9 @@ void FFMovieContent::process(const DWORD& frame) {
 					string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (_duration - _current) % fps);
 					set("time", Poco::format("%s %s", t1, t2));
 					set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
+					int vf = _videoDecoder?(int)_videoDecoder->bufferedFrames():0;
+					int af = _audioDecoder?(int)_audioDecoder->bufferedFrames():0;
+					set("buffers", Poco::format("%d:%d", vf, af));
 					_fpsCounter.count();
 				}
 			}

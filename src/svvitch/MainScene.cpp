@@ -744,7 +744,7 @@ void MainScene::process() {
 				}
 			}
 		} else {
-			if (_autoStart && !_status["next-content"].empty()) {
+			if (_autoStart && !_status["next-content"].empty() && _frame > 200) {
 				_log.information("auto start content");
 				_doSwitch = true;
 				_autoStart = false;
@@ -931,7 +931,8 @@ void MainScene::draw2() {
 //				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
 //				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
-			status2 = Poco::format("%04d/%04d %s", current, duration, time);
+			string buffers = movie->get("buffers");
+			status2 = Poco::format("%04d/%04d %s %s", current, duration, time, buffers);
 		}
 	}
 
@@ -942,11 +943,11 @@ void MainScene::draw2() {
 		if (!_currentCommand.empty()) _renderer.drawFontTextureText(0, 680, 12, 16, 0xccffffff, Poco::format("next>%s", _currentCommand));
 		if (!_nextTransition.empty()) _renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("transition>%s", _nextTransition));
 
-		_renderer.drawTexture(500, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(500, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(500, 670, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(500, 685, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(500, 700, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, 670, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, 685, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, 700, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");

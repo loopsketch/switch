@@ -98,7 +98,9 @@ private:
 		DSBUFFERDESC desc;
 		ZeroMemory(&desc, sizeof(desc));
 		desc.dwSize		= sizeof(desc);
-		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLFREQUENCY;
+//		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLFREQUENCY;
+//		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLPOSITIONNOTIFY;
+		desc.dwFlags	= DSBCAPS_GLOBALFOCUS | DSBCAPS_LOCDEFER | DSBCAPS_CTRLVOLUME;
 		desc.dwBufferBytes = _bufferSize;
 		desc.lpwfxFormat = &wfwav;
 		desc.guid3DAlgorithm = GUID_NULL;
@@ -108,6 +110,7 @@ private:
 			_log.warning("failed not create sound buffer");
 
 		} else {
+			hr = _buffer->SetCurrentPosition(0);
 //			DWORD frq;
 //			_buffer->GetFrequency(&frq);
 //			_buffer->SetFrequency(frq * 1.25);
@@ -134,7 +137,7 @@ private:
 		while (_worker) {
 			packetList = popPacket();
 			if (!packetList) {
-				Poco::Thread::sleep(17);
+				Poco::Thread::sleep(20);
 				continue;
 			}
 			AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
@@ -170,12 +173,22 @@ private:
 			av_freep(&packetList);
 
 			if (len > 0) {
-//				UINT adrs = (UINT)write1;
-//				_log.information(Poco::format("audio frame: %X %d %lu %lu", adrs, len, len1, len2));
 				LPVOID lockedBuf = NULL;
 				DWORD lockedLen = 0;
+				HRESULT hr;
+				DWORD playCursor = 0;
+				DWORD writeCursor = 0;
+				while (_worker) {
+					// 書込みカーソル以降か、再生カーソルのデータx2個分余裕ができるまで待ち
+					hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
+					if SUCCEEDED(hr) {
+						if (writeCursor <= _bufferOffset) break;
+						if (playCursor > _bufferOffset + len * 2) break;
+					}
+					Poco::Thread::sleep(1000);
+				}
 				if (_bufferOffset + len <= _bufferSize) {
-					HRESULT hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
+					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
 					if (SUCCEEDED(hr)) {
 						CopyMemory(lockedBuf, data, lockedLen);
 						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
@@ -186,11 +199,12 @@ private:
 							_bufferReady = true;
 						}
 					} else {
-						_log.warning(Poco::format("SoundBuffer not locked: %d", len));
+						_log.warning(Poco::format("sound buffer not locked: %d", len));
 					}
 				} else {
+					_log.information("round sound buffer");
 					int lenRound = _bufferSize - _bufferOffset;
-					HRESULT hr = _buffer->Lock(_bufferOffset, lenRound, &lockedBuf, &lockedLen, NULL, 0, 0);
+					hr = _buffer->Lock(_bufferOffset, lenRound, &lockedBuf, &lockedLen, NULL, 0, 0);
 					if (SUCCEEDED(hr)) {
 						CopyMemory(lockedBuf, data, lockedLen);
 						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
@@ -204,8 +218,14 @@ private:
 					} else {
 						_log.warning(Poco::format("SoundBuffer not locked: %d", lenRound));
 					}
-					while (_worker && !_running) {
-						Poco::Thread::sleep(17);
+					while (_worker) {
+						if (_running) {
+							// 再生中で再生カーソルがバッファの半分以降になるまで待ち
+							hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
+							// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
+							if (SUCCEEDED(hr) && playCursor > _bufferSize / 2) break;
+						}
+						Poco::Thread::sleep(1000);
 					}
 					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
 					if (SUCCEEDED(hr)) {
@@ -214,7 +234,7 @@ private:
 						if (FAILED(hr)) {
 							_log.warning("failed unlocked sound buffer");
 						} else {
-							_bufferOffset = (_bufferOffset + len) % _bufferSize;
+							_bufferOffset = len; //(_bufferOffset + len) % _bufferSize;
 							_bufferReady = true;
 						}
 					} else {
@@ -224,7 +244,7 @@ private:
 			}
 
 //			timeBeginPeriod(1);
-			Poco::Thread::sleep(2);
+			Poco::Thread::sleep(3);
 //			timeEndPeriod(1);
 		}
 
@@ -239,16 +259,16 @@ private:
 
 	void play() {
 		if (_buffer && !_running) {
-			if (_bufferReady) {
+//			if (_bufferReady) {
 				HRESULT hr = _buffer->Play(0, 0, DSBPLAY_LOOPING);
 				if (SUCCEEDED(hr)) {
 					_running = true;
 				} else {
 					_log.warning("failed play sound buffer");
 				}
-			} else {
-				_log.warning("buffer not ready!");
-			}
+//			} else {
+//				_log.warning("buffer not ready!");
+//			}
 		}
 	}
 
