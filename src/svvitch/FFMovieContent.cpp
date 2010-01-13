@@ -149,10 +149,10 @@ void FFMovieContent::run() {
 	long count = 0;
 	AVPacket packet;
 	while (_worker) {
-		//if (_videoDecoder && _videoDecoder->bufferedPackets() > 30) {
-		//	Poco::Thread::sleep(10);
-		//	continue;
-		//}
+		if (_videoDecoder && _videoDecoder->bufferedPackets() > 80) {
+			Poco::Thread::sleep(30);
+			continue;
+		}
 		// if (_audioDecoder && _audioDecoder->bufferedPackets() > 40) {
 		//	Poco::Thread::sleep(10);
 		//	continue;
