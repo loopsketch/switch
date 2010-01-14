@@ -238,14 +238,14 @@ private:
 							_bufferReady = true;
 						}
 					} else {
-						_log.warning(Poco::format("SoundBuffer not locked: %d", len));
+						_log.warning(Poco::format("sound buffer not locked: %d", len));
 					}
 				}
 			}
 
-//			timeBeginPeriod(1);
-			Poco::Thread::sleep(0);
-//			timeEndPeriod(1);
+			timeBeginPeriod(1);
+			Poco::Thread::sleep(2);
+			timeEndPeriod(1);
 		}
 
 		delete data;
@@ -274,8 +274,10 @@ private:
 
 	void stop() {
 		if (_buffer && _running) {
-			_buffer->Stop();
-			_running = false;
+			HRESULT hr = _buffer->Stop();
+			if (SUCCEEDED(hr)) {
+				_running = false;
+			}
 		}
 	}
 };

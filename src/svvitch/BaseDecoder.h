@@ -43,13 +43,16 @@ public:
 	 * パケットをクリアします
 	 */
 	void clearAllPackets() {
+		_log.information("clear packets");
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		int count = 0;
 		while (_packets.size() > 0) {
 			AVPacketList* packetList = _packets.front();
 			_packets.pop();
 			av_free_packet(&packetList->pkt);
 			av_freep(&packetList);
 		}
+		_log.information(Poco::format("clear packets: %d", count));
 	}
 
 	/**

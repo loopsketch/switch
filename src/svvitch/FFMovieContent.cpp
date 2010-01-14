@@ -105,7 +105,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				if (_video < 0 && avcodec_open(avctx, avcodec) < 0) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
-					// codec‚ªopen‚Å‚«‚½
+					// codec‚ªopen‚Å‚«‚½s
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
 					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
@@ -149,7 +149,7 @@ void FFMovieContent::run() {
 	long count = 0;
 	AVPacket packet;
 	while (_worker) {
-		if (_videoDecoder && _videoDecoder->bufferedPackets() > 80) {
+		if (_videoDecoder && _videoDecoder->bufferedPackets() > 100) {
 			Poco::Thread::sleep(30);
 			continue;
 		}

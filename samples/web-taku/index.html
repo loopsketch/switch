@@ -14,6 +14,12 @@
 	<form>
 		<input type="button" value="切替" id="doSwitch" />
 	</form>
+	<hr noshade />
+	<h1>アップロードチェック</h1>
+	<form action="http://127.0.0.1:9090/upload/test/test.mpg" method="post" enctype="multipart/form-data">
+		<input type="file" name="file" />
+		<input type="submit" value="送信" />
+	</form>
 	<div class="footer">
 	<hr noshade />
 	&copy;2009 the svvitch project. all rights reserved.

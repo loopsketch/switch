@@ -1,5 +1,5 @@
 var display = new Array();
-display.push("127.0.0.1");
+display.push("192.168.1.141");
 var root = "http://" + display[0] + ":9090/";
 
 $(document).ready(function() {
