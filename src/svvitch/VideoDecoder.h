@@ -433,6 +433,7 @@ private:
 			AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
 			int bytes = avcodec_decode_video2(avctx, frame, &gotPicture, &packetList->pkt);
 			if (gotPicture) {
+				const uint8_t* src[4] = {frame->data[0], frame->data[1], frame->data[2], frame->data[3]};
 				int pos = avctx->frame_number;
 				int w = avctx->width;
 				int h = avctx->height;
@@ -441,7 +442,7 @@ private:
 				VideoFrame* vf = popUsedFrame();
 				if (PIX_FMT_RGB32 == format) {
 					if (_swsCtx) {
-						if (sws_scale(_swsCtx, frame->data, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
+						if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
 							if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
 								SAFE_DELETE(vf);
 								vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_A8R8G8B8);
@@ -461,7 +462,7 @@ private:
 					}
 				} else {
 					if (_swsCtx) {
-						if (sws_scale(_swsCtx, frame->data, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
+						if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
 							if (!vf || !vf->equals(w, h, D3DFMT_X8R8G8B8)) {
 								SAFE_DELETE(vf);
 								vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_X8R8G8B8);
