@@ -198,7 +198,7 @@ void SwitchRequestHandler::set(const string& name) {
 			string playlistID = form().get("pl", "");
 			Workspace& workspace = scene->getWorkspace();
 			PlayListPtr playlist = workspace.getPlaylist(playlistID);
-			playlist->text(form().get("t", ""));
+			if (playlist) playlist->text(form().get("t", ""));
 			map<string, string> params;
 			params["text"] = Poco::format("\"%s\"", playlist->text());
 			sendJSONP(form().get("callback", ""), params);

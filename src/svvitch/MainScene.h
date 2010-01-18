@@ -98,6 +98,7 @@ private:
 
 	/** 再生回数 */
 	int _playCount;
+	bool _preparingNext;
 	/** 切替フラグ */
 	bool _doSwitchNext;
 	/** 切替準備コンテンツの切替フラグ */

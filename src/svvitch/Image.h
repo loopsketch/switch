@@ -198,7 +198,17 @@ public:
 	}
 
 	virtual void process(const DWORD& frame) {
-		if (_playing) _current++;
+		if (_playing) {
+			_current++;
+			if (_duration < _current) _current = _duration;
+
+			int fps = 60;
+			unsigned long cu = _current / fps;
+			unsigned long re = (_duration - _current) / fps;
+			string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current % fps) / 2);
+			string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, ((_duration - _current) % fps) / 2);
+			set("time", Poco::format("%s %s", t1, t2));
+		}
 	}
 
 	virtual void draw(const DWORD& frame) {

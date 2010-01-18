@@ -141,11 +141,15 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 }
 
 bool MainScene::prepareNextMedia() {
+	_preparingNext = true;
 	// 初期化フェーズ
 	int count = 15;
 	while (_transition || count-- > 0) {
 		// トランジション中は解放しないようにする。更に初期化まで0.5秒くらいウェイトする
-		if (_contents.empty()) return false;
+		if (_contents.empty()) {
+			_preparingNext = false;
+			return false;
+		}
 		Poco::Thread::sleep(30);
 	}
 
@@ -182,6 +186,7 @@ bool MainScene::prepareNextMedia() {
 			}
 		} else if (_currentCommand == "stop") {
 			_contents[next]->initialize();
+			_preparingNext = false;
 			return true;
 		}
 	}
@@ -217,6 +222,7 @@ bool MainScene::prepareNextMedia() {
 	} else {
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
+	_preparingNext = false;
 	return true;
 }
 
@@ -648,6 +654,21 @@ void MainScene::process() {
 		}
 	}
 
+	// ワークスペースの更新チェック
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_updatedWorkspace && !_preparingNext && _prepareStack.empty()) {
+			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+			SAFE_DELETE(_workspace);
+			_workspace = _updatedWorkspace;
+			_updatedWorkspace = NULL;
+			if (!_status["next-content"].empty() && _currentCommand != "stop") {
+				_playlistItem--;
+				activePrepareNextMedia();
+			}
+		}
+	}
+
 	if (!_running) return;
 
 	if (!_startup && _frame > 100) {
@@ -833,20 +854,6 @@ void MainScene::process() {
 		}
 	}
 
-	// ワークスペースの更新チェック
-	if (_updatedWorkspace) {
-		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-		SAFE_DELETE(_workspace);
-		_workspace = _updatedWorkspace;
-		_updatedWorkspace = NULL;
-		if (!_status["next-content"].empty() && _currentCommand != "stop") {
-			_playlistItem--;
-			activePrepareNextMedia();
-		}
-		if (_prepared) {
-		}
-	}
-
 	// スケジュール処理
 	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
@@ -930,18 +937,15 @@ void MainScene::draw2() {
 			string buffers;
 			FFMovieContentPtr movie = dynamic_cast<FFMovieContentPtr>(c);
 			if (movie != NULL) {
-				DWORD currentTime = movie->currentTime();
-				DWORD timeLeft = movie->timeLeft();
 				Uint32 fps = movie->getFPS();
 				float avgTime = movie->getAvgTime();
 				status1 = Poco::format("%03lufps(%03.2hfms)", fps, avgTime);
-//				time = Poco::format("%02lu:%02lu.%03lu %02lu:%02lu.%03lu", currentTime / 60000, currentTime / 1000 % 60, currentTime % 1000 , timeLeft / 60000, timeLeft / 1000 % 60, timeLeft % 1000);
-				time = movie->get("time");
 				buffers = movie->get("buffers");
 			} else {
 //				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
 //				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
+			time = c->get("time");
 			status2 = Poco::format("%04d/%04d %s %s", current, duration, time, buffers);
 		}
 	}
