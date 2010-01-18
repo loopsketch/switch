@@ -12,8 +12,9 @@ private:
 
 	LPDIRECT3DTEXTURE9 _texture;
 	Text* _referencedText;
-	string _font;
-	int _fontH;
+	string _textFont;
+	Gdiplus::FontStyle _textStyle;
+	int _textHeight;
 	int _ax;
 	int _tw;
 	int _th;
@@ -23,6 +24,7 @@ private:
 	int _cy;
 	int _cw;
 	int _ch;
+	string _move;
 	float _dx;
 	float _dy;
 	string _align;

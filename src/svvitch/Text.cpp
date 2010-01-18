@@ -2,6 +2,7 @@
 
 #include <Poco/FileStream.h>
 #include <Poco/LineEndingConverter.h>
+#include <Poco/NumberParser.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
@@ -90,9 +91,20 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 				_log.information("text template mode");
 				valid = true;
 			}
-			_font = mif.getProperty("font");
-			if (_font.empty()) _font = config().textFont;
-			_fontH = mif.getNumProperty("fh", config().textHeight);
+			_textFont = mif.getProperty("font");
+			if (_textFont.empty()) _textFont = config().textFont;
+			_textHeight = mif.getNumProperty("fh", config().textHeight);
+			string style = mif.getProperty("style");
+			if (style == "bold") {
+				_textStyle = Gdiplus::FontStyleBold;
+			} else if (style == "italic") {
+				_textStyle = Gdiplus::FontStyleItalic;
+			} else if (style == "bolditalic") {
+				_textStyle = Gdiplus::FontStyleBoldItalic;
+			} else {
+				_textStyle = config().textStyle;
+			}
+
 			_x = mif.getNumProperty("x", 0);
 			_y = mif.getNumProperty("y", 0);
 			_w = mif.getNumProperty("w", config().stageRect.right);
@@ -101,10 +113,12 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			_cy = mif.getNumProperty("cy", _y);
 			_cw = mif.getNumProperty("cw", _w);
 			_ch = mif.getNumProperty("ch", _h);
-			_dx = mif.getFloatProperty("dx", F(0));
-			_dy = mif.getFloatProperty("dy", F(0));
+			_move = mif.getProperty("move");
+			//_dx = mif.getFloatProperty("dx", F(0));
+			//_dy = mif.getFloatProperty("dy", F(0));
 			_align = mif.getProperty("align");
-			_log.information(Poco::format("text: (%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy));
+			string pos = Poco::format("(%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy);
+			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
 		} else {
 			_log.warning("failed type error");
 		}
@@ -125,6 +139,14 @@ void Text::setReference(TextPtr text) {
 }
 
 void Text::play() {
+	if (_move.find("roll-left-") == 0) {
+		_x = _cx + _cw;
+		_y = 0;
+		int dx = 0;
+		Poco::NumberParser::tryParse(_move.substr(10), dx);
+		_dx = -dx;
+		_log.information(Poco::format("move: scroll-left: %hf", _dx));
+	}
 	_playing = true;
 }
 
@@ -134,13 +156,7 @@ void Text::stop() {
 
 const bool Text::finished() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (_mediaID.empty() && _texture) {
-		if (_dx != 0) {
-			return true;
-//			return _x < (_cx -_iw);
-		}
-	}
-	return _playing;
+	return !_playing;
 }
 
 /** ファイルをクローズします */
@@ -172,11 +188,14 @@ void Text::process(const DWORD& frame) {
 			_th = _referencedText->_th;
 		}
 	}
-	if (!_mediaID.empty() && _texture) {
-		if (_playing) {
-			if (_dx != 0) {
-				_x += _dx;
-				if (_x < (_cx - _iw - config().stageRect.right)) _playing = false;
+	if (!_mediaID.empty() && _texture && _playing) {
+		if (!_move.empty()) {
+			_x += _dx;
+			// if (_x < (_cx - _iw - config().stageRect.right)) _playing = false;
+			if (_x < (_cx - _iw)) {
+				// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
+				_dx = 0;
+				_playing = false;
 			}
 		}
 	}
@@ -205,9 +224,9 @@ void Text::draw(const DWORD& frame) {
 				int cww = 0;
 				int chh = (ch > _ih)?_ih:ch;
 				int clipX = _cx;
-				while (dx < 1024) {
+				while (dx < config().mainRect.right) {
 					RECT rect = {dx, dy, dx + cw, dy + chh};
-					int cx = dx /cw * dh + dy / ch * cw;
+					int cx = dx / cw * dh + dy / ch * cw;
 					if (cx > config().stageRect.right) break;
 					int cxx = _cx - cx;
 					if (cxx > cw) {
@@ -222,18 +241,19 @@ void Text::draw(const DWORD& frame) {
 						SetRect(&rect, rect.left, rect.top, dx + cxx, rect.bottom);
 					}
 					device->SetScissorRect(&rect);
+//					if ((sx + cw - dxx) >= _tw) {
 					if ((sx + cw - dxx) >= _tw) {
-						// ソースの横がはみ出る
-						cww = _tw - sx - dxx;
+						// ソースの横がはみ出る()
+						cww = _tw - sx;
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, col, col, col, col);
-//						_renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffffff, Poco::format(">%d,%d", sx, sy));
+						// _renderer.drawFontTextureText(dx + dxx, y + dy, 10, 10, 0xffff0000, Poco::format("%d,%d %d %d %d %d", sx, sy, cw, dxx, _tw, cww));
 						sx = 0;
 						sy += _ih;
 						if (sy < _th) {
 							// srcを折り返してdstの残りに描画
 							if (_th - sy < ch) chh = _th - sy;
 							_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _texture, col, col, col, col);
-//							_renderer.drawFontTextureText(dx + dxx + cww, y + dy, 12, 12, 0xffffffff, Poco::format("t%d,%d", sx, sy));
+							// _renderer.drawFontTextureText(dx + dxx + cww, y + dy, 12, 12, 0xff00ff00, Poco::format("t%d,%d", sx, sy));
 							sx += cw - cww;
 							ix += cw;
 							dxx = cww + cw - cww;
@@ -255,7 +275,7 @@ void Text::draw(const DWORD& frame) {
 							cww = _tw - sx;
 						}
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, col, col, col, col);
-//						_renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffffff, Poco::format("%d,%d", sx, sy));
+						// _renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffcc00, Poco::format("%d,%d", sx, sy));
 						sx += cww;
 						ix += cww;
 //						dxx = cww;
@@ -389,7 +409,6 @@ void Text::drawTexture(string text) {
 				ih = h;
 				tw = desc.Width;
 				th = desc.Height;
-				// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
 			}
 
 		} else {
@@ -412,6 +431,7 @@ void Text::drawTexture(string text) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_texture) SAFE_RELEASE(_texture);
 			_texture = texture;
+			D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, _texture, NULL);
 			_iw = iw;
 			_ih = ih;
 			_tw = tw;
@@ -444,16 +464,16 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	g.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
 	std::wstring wfontFamily;
-	Poco::UnicodeConverter::toUTF16(_font, wfontFamily);
-	Font f(wfontFamily.c_str(), _fontH);
+	Poco::UnicodeConverter::toUTF16(_textFont, wfontFamily);
+	Font f(wfontFamily.c_str(), _textHeight);
 	Gdiplus::FontFamily ff;
 	f.GetFamily(&ff);
 //	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &_ff[0], FontStyleRegular, 30, Point(x, y), StringFormat::GenericDefault());
 	GraphicsPath path;
 
-	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, config().textStyle, _fontH, Point(x, y), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, _fontH), Color(255, 255, 255), Color(128, 128, 128), LinearGradientModeVertical);
-	SolidBrush borderBrush1(Color(0, 224, 224, 224));
+	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), Color(0xff, 0xff, 0xff), Color(0xcc, 0xcc, 0xcc), LinearGradientModeVertical);
+	SolidBrush borderBrush1(Color(0, 0xcc, 0xcc, 0xcc));
 	SolidBrush borderBrush2(Color::Black);
 	Pen pen1(&borderBrush1, 8);
 	Pen pen2(&borderBrush2, 4);
