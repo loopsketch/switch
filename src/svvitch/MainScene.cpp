@@ -870,7 +870,7 @@ void MainScene::process() {
 				if (command.find("playlist ") == 0) {
 					if (_prepared) {
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						switchContent();
+						_doSwitchPrepared = true;
 					} else {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
 					}
