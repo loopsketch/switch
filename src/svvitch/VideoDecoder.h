@@ -319,7 +319,7 @@ private:
 				type = "BGR24";
 				changeFormat = true;
 				break;
-			case PIX_FMT_RGB32:
+			case PIX_FMT_ARGB:
 				type = "RGB32";
 				changeFormat = true;
 				break;
@@ -358,11 +358,11 @@ private:
 		if (changeFormat) {
 			_outFrame = avcodec_alloc_frame();
 			if (_outFrame) {
-				int bytes  = avpicture_get_size(PIX_FMT_RGB32, w, h);
+				int bytes  = avpicture_get_size(PIX_FMT_BGRA, w, h);
 				_buffer = (uint8_t*)av_malloc(bytes * sizeof(uint8_t));
 				if (_buffer) {
-					avpicture_fill((AVPicture*)_outFrame, _buffer, PIX_FMT_RGB32, w, h);
-					_swsCtx = sws_getContext(w, h, avctx->pix_fmt, w, h, PIX_FMT_RGB32, flags, NULL, NULL, NULL);
+					avpicture_fill((AVPicture*)_outFrame, _buffer, PIX_FMT_BGRA, w, h);
+					_swsCtx = sws_getContext(w, h, avctx->pix_fmt, w, h, PIX_FMT_BGRA, flags, NULL, NULL, NULL);
 					if (_swsCtx) {
 						_log.information(Poco::format("change format by sws: %s -> RGB32", type));
 					} else {
@@ -440,7 +440,7 @@ private:
 				bool interlaced = frame->interlaced_frame != 0;
 				PixelFormat format = avctx->pix_fmt;
 				VideoFrame* vf = popUsedFrame();
-				if (PIX_FMT_RGB32 == format) {
+				if (PIX_FMT_BGRA == format) {
 					if (_swsCtx) {
 						if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
 							if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
