@@ -383,8 +383,8 @@ bool MainScene::switchContent() {
 	while (_doSwitchPrepared) {
 		Poco::Thread::sleep(30);
 	}
-	_log.information("purge prepared next contents");
-	SAFE_DELETE(_prepared);
+//	_log.information("purge prepared next contents");
+//	SAFE_DELETE(_prepared);
 	return true;
 }
 

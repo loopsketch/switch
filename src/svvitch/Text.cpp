@@ -425,13 +425,12 @@ void Text::drawTexture(string text) {
 				iw = tw;
 				ih = th;
 			}
-			// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, texture, NULL);
 		}
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_texture) SAFE_RELEASE(_texture);
 			_texture = texture;
-			D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, _texture, NULL);
+			// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, _texture, NULL);
 			_iw = iw;
 			_ih = ih;
 			_tw = tw;
