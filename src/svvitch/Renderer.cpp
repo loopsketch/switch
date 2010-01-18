@@ -154,7 +154,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	case 2:
 		;
 	}
-	_captureTexture = createRenderTarget(w, h);
+	_captureTexture = createRenderTarget(w / 2, h / 2);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
 		_captureTexture->GetLevelDesc(0, &desc);
