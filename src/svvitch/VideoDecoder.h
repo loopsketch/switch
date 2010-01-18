@@ -426,7 +426,7 @@ private:
 		while (_worker) {
 			packetList = popPacket();
 			if (!packetList) {
-				Poco::Thread::sleep(17);
+				Poco::Thread::sleep(10);
 				continue;
 			}
 			timer.start();
@@ -545,9 +545,9 @@ private:
 				if (vf) {
 					while (_worker != NULL && _frames.size() >= 30) {
 						// ƒLƒ…[‹ó‚«‘Ò‚¿
-						timeBeginPeriod(1);
-						Poco::Thread::sleep(17);
-						timeEndPeriod(1);
+						//timeBeginPeriod(1);
+						Poco::Thread::sleep(10);
+						//timeEndPeriod(1);
 					}
 					{
 						Poco::ScopedLock<Poco::FastMutex> lock(_lock);
