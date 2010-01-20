@@ -455,6 +455,8 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 		x = -rect.GetLeft();
 	}
 
+	Poco::RegularExpression re1("\\r|\\n");
+	re1.subst(text, "     ", Poco::RegularExpression::RE_GLOBAL);
 	std::wstring wtext;
 	Poco::UnicodeConverter::toUTF16(text, wtext);
 
