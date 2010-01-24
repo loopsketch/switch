@@ -1,13 +1,16 @@
 #pragma once
 
+#include <d3d9.h>
 extern "C" {
 #define inline _inline
 #include <libavutil/avstring.h>
 #include <libavcodec/avcodec.h>
+#include <libavcodec/dxva2.h>
 #include <libavformat/avformat.h>
 #include <libavdevice/avdevice.h>
 #include <libswscale/swscale.h>
 }
+#pragma comment(lib, "dxva2.lib")
 
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>

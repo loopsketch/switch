@@ -72,7 +72,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		string file = Path(config().dataRoot, Path(mif.file())).absolute().toString();
 		string mbfile;
 		svvitch::utf8_sjis(file, mbfile);
-		if (av_open_input_file(&_ic, mbfile.c_str(), NULL, 0, NULL) != 0) {
+		if (av_open_input_file(&_ic, mbfile.c_str(), format, 0,NULL) != 0) {
 			_log.warning(Poco::format("failed open file: [%s]", file));
 			return false;
 		}
@@ -84,6 +84,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		close();
 		return false;
 	}
+
 	_log.information(Poco::format("find stream information: %s streams: %u", string(_ic->title), _ic->nb_streams));
 	for (int i = 0; i < _ic->nb_streams; i++) {
 		AVStream* stream = _ic->streams[i];
@@ -92,6 +93,32 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 			_log.warning(Poco::format("failed stream codec[%d]: %s", i, mif.file()));
 			continue;
 		}
+		if (avctx->codec_type == CODEC_TYPE_VIDEO) {
+			IDirectXVideoDecoderService* service = NULL;
+			DXVA2CreateVideoService(_renderer.get3DDevice(), IID_PPV_ARGS(&service));
+			UINT resetToken = 0;
+		    IDirect3DDeviceManager9* d3dManager = NULL;
+		    HRESULT hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &d3dManager);
+			if SUCCEEDED(hr) {
+				hr = d3dManager->ResetDevice(_renderer.get3DDevice(), resetToken);
+				if SUCCEEDED(hr) {
+				} else {
+					_log.warning("failed ResetDevice()");
+				}
+			} else {
+				_log.warning("failed DXVA2CreateDirect3DDeviceManager9()");
+			}
+			SAFE_RELEASE(d3dManager);
+
+			dxva_context* dxva = (dxva_context*)av_malloc(sizeof(dxva_context));
+		//	AVHWAccel* hwaccel = av_hwaccel_next(NULL);
+		//	if (hwaccel) {
+		//		avctx->hwaccel_context = hwaccel;
+		//		avctx->codec_id = hwaccel->id;
+		//		_log.information(Poco::format("set hardware accelerator: %s %d", string(hwaccel->name), ((int)hwaccel->pix_fmt)));
+		//	}
+		}
+
 		AVCodec* avcodec = avcodec_find_decoder(avctx->codec_id);
 		if (!avcodec) {
 			_log.warning(Poco::format("not found decoder[%d]: %s", i, mif.file()));
@@ -101,11 +128,21 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		float rate = 0;
 		switch (avctx->codec_type) {
 			case CODEC_TYPE_VIDEO:
+				{
+					//string name(avcodec->long_name);
+					//if (name.find("H.264") != string::npos) {
+					//	AVHWAccel* hwaccel = av_hwaccel_next(NULL);
+					//	if (hwaccel) {
+					//		avctx->hwaccel_context = hwaccel;
+					//		_log.information(Poco::format("set hardware accelerator: %s %d", string(hwaccel->name), ((int)hwaccel->pix_fmt)));
+					//	}
+					//}
+				}
 				_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
 				if (_video < 0 && avcodec_open(avctx, avcodec) < 0) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
-					// codec‚ªopen‚Å‚«‚½s
+					// codec‚ªopen‚Å‚«‚½
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
 					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
