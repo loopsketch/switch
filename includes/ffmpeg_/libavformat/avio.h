@@ -65,10 +65,41 @@ typedef struct URLPollEntry {
 
 typedef int URLInterruptCB(void);
 
+/**
+ * Creates an URLContext for accessing to the resource indicated by
+ * filename, and opens it using the URLProtocol up.
+ *
+ * @param puc pointer to the location where, in case of success, the
+ * function puts the pointer to the created URLContext
+ * @param flags flags which control how the resource indicated by filename
+ * is to be opened
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
 int url_open_protocol (URLContext **puc, struct URLProtocol *up,
                        const char *filename, int flags);
+
 int url_open(URLContext **h, const char *filename, int flags);
+
+/**
+ * Reads up to size bytes from the resource accessed by h, and stores
+ * the read bytes in buf.
+ *
+ * @return The number of bytes actually read, or a negative value
+ * corresponding to an AVERROR code in case of error. A value of zero
+ * indicates that it is not possible to read more from the accessed
+ * resource (except if the value of the size argument is also zero).
+ */
 int url_read(URLContext *h, unsigned char *buf, int size);
+
+/**
+ * Read as many bytes as possible (up to size), calling the
+ * read function multiple times if necessary.
+ * Will also retry if the read function returns AVERROR(EAGAIN).
+ * This makes special short-read handling in applications
+ * unnecessary, if the return value is < size then it is
+ * certain there was either an error or the end of file was reached.
+ */
 int url_read_complete(URLContext *h, unsigned char *buf, int size);
 int url_write(URLContext *h, unsigned char *buf, int size);
 int64_t url_seek(URLContext *h, int64_t pos, int whence);
