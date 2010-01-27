@@ -106,9 +106,9 @@ public:
 			// ÉvÉåÉiÅ[
 			D3DLOCKED_RECT lockRect = {0};
 			int i;
-#ifndef _DEBUG
-			#pragma omp for private(i)
-#endif
+//#ifndef _DEBUG
+//			#pragma omp for private(i)
+//#endif
 			for (i = 0; i < 3; i++) {
 				if (texture[i]) {
 					HRESULT hr = texture[i]->LockRect(0, &lockRect, NULL, 0);
