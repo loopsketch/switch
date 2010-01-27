@@ -140,27 +140,6 @@ private:
 
 	int copyFiles(const string& src, const string& dst);
 
-	// ボリュームをオープンしハンドルを取得します
-	HANDLE openVolume(const string& driveLetter);
-
-	// ボリュームハンドルを解放します
-	BOOL closeVolume(HANDLE volume);
-
-	// ボリュームをロックします
-	BOOL lockVolume(HANDLE volume);
-
-	// マウント解除
-	BOOL dismountVolume(HANDLE volume);
-
-	// メディアの強制排出設定
-	BOOL preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval);
-
-	// メディアの排出
-	BOOL autoEjectVolume(HANDLE volume);
-
-	// ボリュームのイジェクト
-	BOOL ejectVolume(const string& driveLetter);
-
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
 

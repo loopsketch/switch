@@ -318,26 +318,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 
-//
-// この関数は以下のURLよりコピー＆改変
-// http://support.microsoft.com/kb/163503/ja
-//
-string firstDriveFromMask(ULONG unitmask) {
-//	_log.information(Poco::format("firstDriveFromMask: %lu", unitmask));
-	CHAR i;
-	for (i = 0; i < 26; ++i)
-	{
-		if (unitmask & 0x1) break;
-		unitmask = unitmask >> 1;
-	}
-	vector<CHAR> s;
-	s.push_back(i + 'A');
-	s.push_back('\0');
-//	_log.information(Poco::format("drive: %s", string(&s[0])));
-	return &s[0];
-}
-
-
 //-------------------------------------------------------------
 // メッセージ処理用コールバック関数
 // 引数
@@ -439,163 +419,20 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 		case WM_DEVICECHANGE:
 			{
-				bool addData = false;
-				wstring ws;
 				switch (wParam) {
-				case DBT_CONFIGCHANGECANCELED:
-					ws = L"DBT_CONFIGCHANGECANCELED：設定変更要求がキャンセルされました";
-					break;
-
-				case DBT_CONFIGCHANGED:
-					ws = L"DBT_CONFIGCHANGED：設定が変更されました";
-					break;
-
-				case DBT_CUSTOMEVENT:
-					ws = L"DBT_CUSTOMEVENT：ドライバー定義のカスタムイベントが発行されました";
-					addData = true;
-					break;
-
 				case DBT_DEVICEARRIVAL:
-					ws = L"DBT_DEVICEARRIVAL：デバイスが使用可能になりました";
-					addData = true;
 					{
 						DEV_BROADCAST_HDR* data = (DEV_BROADCAST_HDR*)lParam;
 						if (data && data->dbch_devicetype == DBT_DEVTYP_VOLUME) {
 							DEV_BROADCAST_VOLUME* extend = (DEV_BROADCAST_VOLUME*)data;
-							if (extend) {
-								MainScenePtr scene = dynamic_cast<MainScene*>(_renderer->getScene("main"));
-								if (scene) scene->activeAddRemovableMedia(firstDriveFromMask(extend->dbcv_unitmask));
-							}
+							if (extend && _renderer) _renderer->notifyAddDrive(extend->dbcv_unitmask);
 						}
 					}
 					break;
-
-				case DBT_DEVICEQUERYREMOVE:
-					ws = L"DBT_DEVICEQUERYREMOVE：デバイス停止要求が発行されました";
-					addData = true;
-					break;
-
-				case DBT_DEVICEQUERYREMOVEFAILED:
-					ws = L"DBT_DEVICEQUERYREMOVEFAILED：デバイス停止要求が失敗されました";
-					addData = true;
-					break;
-
-				case DBT_DEVICEREMOVECOMPLETE:
-					ws = L"DBT_DEVICEREMOVECOMPLETE：デバイスが停止されました";
-					addData = true;
-					break;
-
-				case DBT_DEVICEREMOVEPENDING:
-					ws = L"DBT_DEVICEREMOVEPENDING：デバイスを停止中です";
-					addData = true;
-					break;
-
-				case DBT_DEVICETYPESPECIFIC:
-					ws = L"DBT_DEVICETYPESPECIFIC：デバイスの独自イベントが発行されました";
-					addData = true;
-					break;
-
 				case DBT_DEVNODES_CHANGED:
-					ws = L"DBT_DEVNODES_CHANGED：システムのデバイス状態が変化しました";
-					break;
-
-				case DBT_QUERYCHANGECONFIG:
-					ws = L"DBT_QUERYCHANGECONFIG：設定変更要求が発行されました";
-					break;
-
-				case DBT_USERDEFINED:
-					ws = L"DBT_USERDEFINED";
+					_renderer->notifyDeviceChanged();
 					break;
 				}
-
-				string p;
-				if (addData) {
-					DEV_BROADCAST_HDR* data = (DEV_BROADCAST_HDR*)lParam;
-					if (data) {
-						string type;
-						switch (data->dbch_devicetype) {
-						case DBT_DEVTYP_OEM:
-							{
-								type="OEM";
-								DEV_BROADCAST_OEM* extend = (DEV_BROADCAST_OEM*)data;
-								if (extend) {
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_DEVNODE:
-							{
-								type="DEVNODE";
-								DEV_BROADCAST_DEVNODE* extend = (DEV_BROADCAST_DEVNODE*)data;
-								if (extend) {
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_VOLUME:
-							{
-								type="VOLUME";
-								DEV_BROADCAST_VOLUME* extend = (DEV_BROADCAST_VOLUME*)data;
-								if (extend) {
-									string s = firstDriveFromMask(extend->dbcv_unitmask);
-									type = Poco::format("volue[%s:]", s);
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_PORT:
-							{
-								type="PORT";
-								DEV_BROADCAST_PORT* extend = (DEV_BROADCAST_PORT*)data;
-								if (extend) {
-									string s;
-									Poco::UnicodeConverter::toUTF8(extend->dbcp_name, s);
-									type = Poco::format("PORT %s", s);
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_NET:
-							{
-								type="NET";
-								DEV_BROADCAST_NET* extend = (DEV_BROADCAST_NET*)data;
-								if (extend) {
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_DEVICEINTERFACE:
-							{
-								type="DEVICEINTERFACE";
-								DEV_BROADCAST_DEVICEINTERFACE* extend = (DEV_BROADCAST_DEVICEINTERFACE*)data;
-								if (extend) {
-									string s;
-									Poco::UnicodeConverter::toUTF8(extend->dbcc_name, s);
-									type = Poco::format("I/F %s", s);
-								}
-							}
-							break;
-
-						case DBT_DEVTYP_HANDLE:
-							{
-								type="HANDLE";
-								DEV_BROADCAST_HANDLE* extend = (DEV_BROADCAST_HANDLE*)data;
-								if (extend && extend->dbch_handle && extend->dbch_handle != INVALID_HANDLE_VALUE) {
-								}
-							}
-							break;
-						default:
-							type = Poco::format("%08d", data->dbch_devicetype);
-						}
-						p = Poco::format(" (Size=%d DeviceType=%s) ", ((int)data->dbch_size), type);
-					}
-				}
-
-				string s;
-				Poco::UnicodeConverter::toUTF8(ws, s);
-				if (!p.empty()) s.append(p);
-				_log.information(Poco::format("device change: %s",s));
-				// SetupDiEnumDeviceInfo, SetupDiGetDeviceRegistryProperty, CM_Request_Device_Eject
 			}
 			break;
 

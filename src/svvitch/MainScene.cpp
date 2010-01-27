@@ -439,7 +439,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	_currentCopySize = 0;
 	_copySize = size;
 	copyFiles(Poco::format("%s:\\switch-datas", driveLetter), dst.toString());
-	ejectVolume(driveLetter);
+	_renderer.ejectVolume(driveLetter);
 
 	// Workspaceを仮生成
 	WorkspacePtr workspace = new Workspace(Path(dst, "workspace.xml"));
@@ -540,93 +540,6 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 	return size;
 }
 
-HANDLE MainScene::openVolume(const string& driveLetter) {
-	UINT driveType = GetDriveTypeA(Poco::format("%s:\\", driveLetter).c_str());
-	DWORD accessFlags;
-	switch (driveType) {
-	case DRIVE_REMOVABLE:
-	case DRIVE_FIXED: // USB-HDDはこれになる？
-		accessFlags = GENERIC_READ | GENERIC_WRITE;
-		break;
-	case DRIVE_CDROM:
-		accessFlags = GENERIC_READ;
-		break;
-	default:
-		_log.warning(Poco::format("cannot eject.  Drive type is incorrect: %s=%?d", driveLetter, driveType));
-		return INVALID_HANDLE_VALUE;
-	}
-
-	HANDLE volume = CreateFileA(Poco::format("\\\\.\\%s:", driveLetter).c_str(), accessFlags, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-	if (volume == INVALID_HANDLE_VALUE) {
-		_log.warning(Poco::format("failed open handle: %s", driveLetter));
-	}
-	return volume;
-}
-
-BOOL MainScene::closeVolume(HANDLE volume) {
-	return CloseHandle(volume);
-}
-
-#define LOCK_TIMEOUT        10000       // 10 Seconds
-#define LOCK_RETRIES        20
-
-BOOL MainScene::lockVolume(HANDLE volume) {
-	DWORD retBytes;
-	DWORD sleepAmount = LOCK_TIMEOUT / LOCK_RETRIES;
-	// Do this in a loop until a timeout period has expired
-	for (int nTryCount = 0; nTryCount < LOCK_RETRIES; nTryCount++) {
-		if (DeviceIoControl(volume, FSCTL_LOCK_VOLUME, NULL, 0,  NULL, 0, &retBytes, NULL)) {
-			return TRUE;
-		}
-		Sleep(sleepAmount);
-	}
-
-	return FALSE;
-}
-
-BOOL MainScene::dismountVolume(HANDLE volume) {
-	DWORD retBytes;
-	return DeviceIoControl(volume, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &retBytes, NULL);
-}
-
-BOOL MainScene::preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval) {
-	DWORD retBytes;
-	PREVENT_MEDIA_REMOVAL pmr;
-	pmr.PreventMediaRemoval = preventRemoval;
-	return DeviceIoControl(volume, IOCTL_STORAGE_MEDIA_REMOVAL, &pmr, sizeof(PREVENT_MEDIA_REMOVAL), NULL, 0, &retBytes,  NULL);
-}
-
-BOOL MainScene::autoEjectVolume(HANDLE volume) {
-	DWORD retBytes;
-	return DeviceIoControl(volume, IOCTL_STORAGE_EJECT_MEDIA, NULL, 0, NULL, 0, &retBytes, NULL);
-}
-
-BOOL MainScene::ejectVolume(const string& driveLetter) {
-	// Open the volume.
-	HANDLE volume = openVolume(driveLetter);
-	if (volume == INVALID_HANDLE_VALUE)
-	return FALSE;
-
-	BOOL removeSafely = FALSE;
-	BOOL autoEject = FALSE;
-	// Lock and dismount the volume.
-	if (lockVolume(volume) && dismountVolume(volume)) {
-		removeSafely = TRUE;
-
-		// Set prevent removal to false and eject the volume.
-		if (preventRemovalOfVolume(volume, FALSE) && autoEjectVolume(volume)) autoEject = TRUE;
-	}
-	if (!closeVolume(volume)) return FALSE;
-
-	if (autoEject) {
-		_log.warning(Poco::format("media in drive %s has been ejected safely.", driveLetter));
-	} else if (removeSafely) {
-		_log.information(Poco::format("media in drive %s can be safely removed.", driveLetter));
-	}
-
-	return TRUE;
-}
-
 
 void MainScene::process() {
 	switch (_keycode) {
@@ -637,6 +550,14 @@ void MainScene::process() {
 			if (_luminance < 100) _luminance++;
 			break;
 	}
+
+	// リムーバブルメディア検出
+	string drive = _renderer.popReadyDrive();
+	if (!drive.empty()) {
+		activeAddRemovableMedia(drive);
+		//_log.information(Poco::format("volume device arrival: %s",drive));
+	}
+
 	if (_running && _removableAlpha > 0) {
 		_removableAlpha += 0.01f;
 		if (_removableAlpha >= 1.0f) _removableAlpha = 1;

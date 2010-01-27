@@ -6,9 +6,10 @@
 
 #include <d3d9.h>
 #include <d3dx9.h>
-#include <String>
+#include <string>
 #include <gdiplus.h>
 #include <vector>
+#include <queue>
 #include <Poco/HashMap.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
@@ -26,6 +27,7 @@
 using std::string;
 using std::wstring;
 using std::vector;
+using std::queue;
 
 
 //=============================================================
@@ -66,6 +68,7 @@ private:
 	Poco::Logger& _log;
 	mutable Poco::FastMutex _lock;
 	Poco::FastMutex _sceneLock;
+	Poco::FastMutex _deviceLock;
 
 	HWND _hwnd;
 
@@ -82,7 +85,7 @@ private:
 
 	LPDIRECTSOUND _sound;
 
-
+	DWORD _current;
 	LPDIRECT3DSURFACE9 _backBuffer;
 	LPDIRECT3DTEXTURE9 _captureTexture;
 
@@ -106,6 +109,10 @@ private:
 	bool _shift;
 	bool _ctrl;
 
+	vector<string> _addDrives;
+	queue<string> _readyDrives;
+	DWORD _lastDeviceChanged;
+
 	bool _viewStatus;
 
 
@@ -119,6 +126,31 @@ private:
 	 * フォントテクスチャの生成
 	 */
 	void createFontTexture(const Gdiplus::FontFamily* fontFamily, const int fontSize);
+
+	/** unitmaskからドライブレターへの変換 */
+	//
+	// この関数は以下のURLよりコピー＆改変
+	// http://support.microsoft.com/kb/163503/ja
+	//
+	const string firstDriveFromMask(ULONG unitmask);
+
+	// ボリュームをオープンしハンドルを取得します
+	HANDLE openVolume(const string& driveLetter);
+
+	// ボリュームハンドルを解放します
+	BOOL closeVolume(HANDLE volume);
+
+	// ボリュームをロックします
+	BOOL lockVolume(HANDLE volume);
+
+	// マウント解除
+	BOOL dismountVolume(HANDLE volume);
+
+	// メディアの強制排出設定
+	BOOL preventRemovalOfVolume(HANDLE volume, BOOL preventRemoval);
+
+	// メディアの排出
+	BOOL autoEjectVolume(HANDLE volume);
 
 
 public:
@@ -250,6 +282,18 @@ public:
 	const LPDIRECT3DTEXTURE9 getCachedTexture(const string& name) const;
 
 	const bool viewStatus() const;
+
+	/** ドライブ追加の通知 */
+	void notifyAddDrive(ULONG unitmask);
+
+	/** デバイス変化の通知 */
+	void notifyDeviceChanged();
+
+	/** 準備ドライブ取得 */
+	string popReadyDrive();
+
+	// ボリュームのイジェクト
+	BOOL ejectVolume(const string& driveLetter);
 
 	/**
 	 * 終了処理
