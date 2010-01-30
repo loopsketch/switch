@@ -82,7 +82,6 @@ technique BasicTech
 {
     pass P0
     {
-//		vertexShader = compile vs_3_0 BasicVS();
-		pixelShader  = compile ps_3_0 BasicPS();
+		pixelShader  = compile ps_2_0 BasicPS();
 	}
 }
