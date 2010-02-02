@@ -208,6 +208,8 @@ public:
 			string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current % fps) / 2);
 			string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, ((_duration - _current) % fps) / 2);
 			set("time", Poco::format("%s %s", t1, t2));
+			set("time_current", t1);
+			set("time_remain", t2);
 		}
 	}
 

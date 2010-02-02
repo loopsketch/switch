@@ -867,6 +867,7 @@ void MainScene::draw2() {
 //				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
 			time = c->get("time");
+			_status["time_remain"] = c->get("time_remain");
 			status2 = Poco::format("%04d/%04d %s %s", current, duration, time, buffers);
 		}
 	}
