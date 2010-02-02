@@ -768,7 +768,7 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_prepareStack.empty()) {
 			_prepareStackTime++;
-			if (_prepareStackTime > 30) {
+			if (_prepareStackTime > 15) {
 				activePrepare(_prepareStack.back());
 				_prepareStack.clear();
 			}
@@ -851,7 +851,6 @@ void MainScene::draw2() {
 	if (_currentContent >= 0) {
 		ContentPtr c = _contents[_currentContent]->get(0);
 		if (c && !c->opened().empty()) {
-//			MediaItemPtr media = _workspace.getMedia(c->opened());
 			int current = c->current();
 			int duration = c->duration();
 			string time;
@@ -862,9 +861,6 @@ void MainScene::draw2() {
 				float avgTime = movie->getAvgTime();
 				status1 = Poco::format("%03lufps(%03.2hfms)", fps, avgTime);
 				buffers = movie->get("buffers");
-			} else {
-//				LPDIRECT3DTEXTURE9 name = _renderer.getCachedTexture(media->id());
-//				_renderer.drawTexture(0, 580, name, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 			}
 			time = c->get("time");
 			_status["time_remain"] = c->get("time_remain");
