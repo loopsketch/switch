@@ -237,6 +237,16 @@ bool MainScene::stackPrepare(string& playlistID, int i) {
 	return true;
 }
 
+bool MainScene::setPlaylistText(string& playlistID, string& text) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+	if (playlist) {
+		playlist->text(text);
+		return true;
+	}
+	return false;
+}
+
 bool MainScene::prepare(const PrepareArgs& args) {
 	ContainerPtr c = new Container(_renderer);
 	if (prepareMedia(c, args.playlistID, args.i)) {

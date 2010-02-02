@@ -156,6 +156,9 @@ public:
 	/** 切替用コンテンツをスタックします */
 	bool stackPrepare(string& playlistID, int i = 0);
 
+	/** プレイリストテキスト設定 */
+	bool setPlaylistText(string& playlistID, string& text);
+
 	/** 切替用コンテンツの準備(アクティブ版) */
 	ActiveMethod<bool, PrepareArgs, MainScene> activePrepare;
 

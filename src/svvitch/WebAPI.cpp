@@ -185,24 +185,21 @@ void SwitchRequestHandler::set(const string& name) {
 			_log.information(Poco::format("playlist: %s", playlistID));
 			bool result = scene->stackPrepare(playlistID, playlistIndex);
 			map<string, string> params;
+			params["playlist"] = result?"true":"false";
 			if (result) {
-				Workspace& workspace = scene->getWorkspace();
-				PlayListPtr playlist = workspace.getPlaylist(playlistID);
-				if (playlist) params["name"] = Poco::format("\"%s\"", playlist->name());
-				params["playlist"] = Poco::format("\"%s\"", playlistID);
-				params["index"] = Poco::format("%d", playlistIndex);
+				//Workspace& workspace = scene->getWorkspace();
+				//PlayListPtr playlist = workspace.getPlaylist(playlistID);
+				//if (playlist) params["name"] = Poco::format("\"%s\"", playlist->name());
+				//params["playlist"] = Poco::format("\"%s\"", playlistID);
+				//params["index"] = Poco::format("%d", playlistIndex);
 			}
 			sendJSONP(form().get("callback", ""), params);
 			return;
 		} else if (name == "text") {
-			map<string, string> params;
 			string playlistID = form().get("pl", "");
-			Workspace& workspace = scene->getWorkspace();
-			PlayListPtr playlist = workspace.getPlaylist(playlistID);
-			if (playlist) {
-				playlist->text(form().get("t", ""));
-				params["text"] = Poco::format("\"%s\"", playlist->text());
-			}
+			string text = form().get("t", "");
+			map<string, string> params;
+			params["text"] = scene->setPlaylistText(playlistID, text)?"true":"false";
 			sendJSONP(form().get("callback", ""), params);
 			return;
 		} else {
