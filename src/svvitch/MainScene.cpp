@@ -227,13 +227,25 @@ bool MainScene::prepareNextMedia() {
 }
 
 bool MainScene::stackPrepare(string& playlistID, int i) {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	PrepareArgs args;
-	args.playlistID = playlistID;
-	args.i = i;
-	_prepareStack.push_back(args);
-	if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
-	_prepareStackTime = 0;
+	ContainerPtr prepared = NULL;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_prepared) {
+			prepared = _prepared;
+			_prepared = NULL;
+			SAFE_RELEASE(_preparedPlaylistName);
+			SAFE_RELEASE(_preparedName);
+		}
+		PrepareArgs args;
+		args.playlistID = playlistID;
+		args.i = i;
+		_prepareStack.push_back(args);
+		if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
+		_prepareStackTime = 0;
+	}
+	_status.erase(_status.find("prepared-playlist"));
+	_status.erase(_status.find("prepared-content"));
+	SAFE_DELETE(prepared);
 	return true;
 }
 
