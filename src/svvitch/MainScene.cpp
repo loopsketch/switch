@@ -29,14 +29,13 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
-	_frame(0), _luminance(100), _preparing(false), _playCount(0), _doSwitchNext(false), _doSwitchPrepared(false),
+	_frame(0), _preparing(false), _playCount(0), _doSwitchNext(false), _doSwitchPrepared(false),
 	_transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false),
 	_removableIcon(NULL), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0)
 {
-	_luminance = config().luminance;
 	initialize();
 }
 
@@ -58,18 +57,6 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_removableIcon);
 
 	SAFE_DELETE(_workspace);
-
-	_log.information("save configuration");
-	try {
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
-		if (xml) {
-			xml->setInt("stage.luminnace", _luminance);
-			xml->save("switch-config.xml");
-			xml->release();
-		}
-	} catch (Poco::Exception& ex) {
-		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
-	}
 	_log.information("*release main-scene");
 }
 
@@ -566,10 +553,10 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 void MainScene::process() {
 	switch (_keycode) {
 		case 'Z':
-			if (_luminance > 0) _luminance--;
+			if (config().luminance > 0) config().luminance--;
 			break;
 		case 'X':
-			if (_luminance < 100) _luminance++;
+			if (config().luminance < 100) config().luminance++;
 			break;
 	}
 
@@ -854,8 +841,8 @@ void MainScene::draw1() {
 		_contents[_currentContent]->draw(_frame);
 	}
 
-	if (_luminance < 100) {
-		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
+	if (config().luminance < 100) {
+		DWORD col = ((DWORD)(0xff * (100 - config().luminance) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	if (_removableCover > 0.0f) {
@@ -898,7 +885,7 @@ void MainScene::draw2() {
 		}
 	}
 
-	if (_renderer.viewStatus()) {
+	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
 		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);

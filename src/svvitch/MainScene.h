@@ -55,7 +55,6 @@ private:
 	WorkspacePtr _updatedWorkspace;
 
 	DWORD _frame;
-	int _luminance;
 	bool _startup;
 	bool _autoStart;
 	string _currentCommand;

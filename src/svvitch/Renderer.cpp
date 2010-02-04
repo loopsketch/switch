@@ -18,7 +18,7 @@
 Renderer::Renderer():
 	_log(Poco::Logger::get("")),
 	_d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL),
-	_current(0), _lastDeviceChanged(0), _viewStatus(false)
+	_current(0), _lastDeviceChanged(0)
 {
 }
 
@@ -492,7 +492,7 @@ void Renderer::renderScene(const DWORD current) {
 		switch (keycode) {
 			case 'S':
 			case 's':
-				_viewStatus = !_viewStatus;
+				config().viewStatus = !(config().viewStatus);
 				break;
 		}
 
@@ -593,7 +593,7 @@ void Renderer::renderScene(const DWORD current) {
 		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
 		int mem = pmc.WorkingSetSize / 1024 / 1024;
 		Uint32 fps = _fpsCounter.getFPS();
-		if (_viewStatus) {
+		if (config().viewStatus) {
 			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
 			Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
 			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
@@ -1201,8 +1201,4 @@ string Renderer::popReadyDrive() {
 		return drive;
 	}
 	return string();
-}
-
-const bool Renderer::viewStatus() const {
-	return _viewStatus;
 }

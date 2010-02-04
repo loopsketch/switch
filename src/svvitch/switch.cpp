@@ -307,8 +307,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	_log.information("shutdown system");
 	SAFE_DELETE(_renderer);
-//	SAFE_DELETE(workspace);
 	SAFE_DELETE(_uim);
+	saveConfiguration();
 	_logFile->release();
 //	_log.shutdown();
 	CoUninitialize();
@@ -527,6 +527,7 @@ bool guiConfiguration()
 
 		_conf.useScenes = xml->getString("scenes", "main,operation");
 		_conf.luminance = xml->getInt("stage.luminance", 100);
+		_conf.viewStatus = xml->getBool("stage.viewStatus", false);
 
 		_conf.imageSplitWidth = xml->getInt("stage.imageSplitWidth", 0);
 		if (xml->hasProperty("stage.text")) {
@@ -580,6 +581,21 @@ bool guiConfiguration()
 
 Configuration& config() {
 	return _conf;
+}
+
+void saveConfiguration() {
+	_log.information("save configuration");
+	try {
+		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
+		if (xml) {
+			xml->setInt("stage.luminnace", _conf.luminance);
+			xml->setBool("stage.viewStatus", _conf.viewStatus);
+			xml->save("switch-config.xml");
+			xml->release();
+		}
+	} catch (Poco::Exception& ex) {
+		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
+	}
 }
 
 // スワップアウト

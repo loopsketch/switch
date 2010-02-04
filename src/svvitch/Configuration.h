@@ -31,6 +31,7 @@ public:
 	string useScenes;
 
 	int luminance;
+	bool viewStatus;
 	int imageSplitWidth;
 	string textFont;
 	Gdiplus::FontStyle textStyle;

@@ -113,8 +113,6 @@ private:
 	queue<string> _readyDrives;
 	DWORD _lastDeviceChanged;
 
-	bool _viewStatus;
-
 
 	/**
 	 * GDI+を使って文字列を描画します
@@ -280,8 +278,6 @@ public:
 	void removeCachedTexture(const string& name);
 
 	const LPDIRECT3DTEXTURE9 getCachedTexture(const string& name) const;
-
-	const bool viewStatus() const;
 
 	/** ドライブ追加の通知 */
 	void notifyAddDrive(ULONG unitmask);

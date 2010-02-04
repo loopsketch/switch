@@ -16,4 +16,9 @@ bool guiConfiguration();
  */
 Configuration& config();
 
+/**
+ * ê›íËï€ë∂
+ */
+void saveConfiguration();
+
 void swapout();
