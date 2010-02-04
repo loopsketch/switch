@@ -230,8 +230,10 @@ bool MainScene::stackPrepare(string& playlistID, int i) {
 		if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
 		_prepareStackTime = 0;
 	}
-	_status.erase(_status.find("prepared-playlist"));
-	_status.erase(_status.find("prepared-content"));
+	std::map<string, string>::iterator it = _status.find("prepared-playlist");
+	if (it != _status.end()) _status.erase(it);
+	it = _status.find("prepared-content");
+	if (it != _status.end()) _status.erase(it);
 	SAFE_DELETE(prepared);
 	return true;
 }
@@ -483,10 +485,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		SAFE_RELEASE(_currentName);
 		SAFE_RELEASE(_nextPlaylistName);
 		SAFE_RELEASE(_nextName);
-		_status.erase(_status.find("current-playlist"));
-		_status.erase(_status.find("current-content"));
-		_status.erase(_status.find("next-playlist"));
-		_status.erase(_status.find("next-content"));
+		_status.clear();
 		_currentCommand.clear();
 		_nextTransition.clear();
 	} else {
@@ -697,6 +696,10 @@ void MainScene::process() {
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					SAFE_DELETE(_transition);
 				}
+				//std::map<string, string>::iterator it = _status.find("prepared-playlist");
+				//if (it != _status.end()) _status.erase(it);
+				//it = _status.find("prepared-content");
+				//if (it != _status.end()) _status.erase(it);
 				_status.erase(_status.find("prepared-playlist"));
 				_status.erase(_status.find("prepared-content"));
 
