@@ -810,9 +810,17 @@ void MainScene::process() {
 				// 10秒前チェック
 				string command = schedule->command();
 				if (command.find("playlist ") == 0) {
-					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-					stackPrepare(command.substr(9));
+					string playlistID = command.substr(9);
+					PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+					if (playlist) {
+						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+						stackPrepare(playlistID);
+					} else {
+						_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
+					}
 					break;
+				} else {
+					_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
 				}
 			} else if (schedule->check(now)) {
 				// 実時間チェック
