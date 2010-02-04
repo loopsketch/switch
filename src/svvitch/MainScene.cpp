@@ -824,6 +824,8 @@ void MainScene::process() {
 			}
 		}
 	}
+
+	_status["luminance"] = Poco::format("%d", config().luminance);
 	_frame++;
 }
 
