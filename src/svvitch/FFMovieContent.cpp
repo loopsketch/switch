@@ -344,15 +344,6 @@ void FFMovieContent::process(const DWORD& frame) {
 					if (_vf) _videoDecoder->pushFrame(_vf);
 					_vf = vf;
 					_current++;
-					int fps = _rate + 0.03f;
-					unsigned long cu = _current / fps;
-					unsigned long re = (_duration - _current) / fps;
-					string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, _current % fps);
-					string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (_duration - _current) % fps);
-					set("time", Poco::format("%s %s", t1, t2));
-					set("time_current", t1);
-					set("time_remain", t2);
-					set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 					int vf = _videoDecoder?(int)_videoDecoder->bufferedFrames():0;
 					int af = _audioDecoder?(int)_audioDecoder->bufferedFrames():0;
 					set("buffers", Poco::format("%d:%d", vf, af));
@@ -367,6 +358,15 @@ void FFMovieContent::process(const DWORD& frame) {
 				if (vf) _prepareVF = vf;
 			}
 		}
+		int fps = _rate + 0.03f;
+		unsigned long cu = _current / fps;
+		unsigned long re = (_duration - _current) / fps;
+		string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, _current % fps);
+		string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (_duration - _current) % fps);
+		set("time", Poco::format("%s %s", t1, t2));
+		set("time_current", t1);
+		set("time_remain", t2);
+		set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 	}
 }
 
