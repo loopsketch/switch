@@ -202,6 +202,16 @@ void SwitchRequestHandler::set(const string& name) {
 			params["text"] = scene->setPlaylistText(playlistID, text)?"true":"false";
 			sendJSONP(form().get("callback", ""), params);
 			return;
+
+		} else if (name == "luminance") {
+			int i = 0;
+			Poco::NumberParser::tryParse(form().get("v"), i);
+			config().luminance = i;
+			map<string, string> params;
+			params["luminance"] = Poco::format("%d", i);
+			sendJSONP(form().get("callback", ""), params);
+			return;
+
 		} else {
 			message = "property not found";
 		}

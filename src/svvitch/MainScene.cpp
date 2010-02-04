@@ -29,7 +29,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
-	_frame(0), _preparing(false), _playCount(0), _doSwitchNext(false), _doSwitchPrepared(false),
+	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doSwitchNext(false), _doSwitchPrepared(false),
 	_transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
@@ -104,7 +104,7 @@ bool MainScene::initialize() {
 	}
 	_timeSecond = -1;
 	_frame = 0;
-	_log.information("*initialized MainScene");
+	_luminance = config().luminance;
 	_running = true;
 	_startup = false;
 	_autoStart = false;
@@ -559,6 +559,11 @@ void MainScene::process() {
 			if (config().luminance < 100) config().luminance++;
 			break;
 	}
+	if (_luminance < config().luminance) {
+		_luminance++;
+	} else if (_luminance > config().luminance) {
+		_luminance--;
+	}
 
 	// リムーバブルメディア検出
 	string drive = _renderer.popReadyDrive();
@@ -843,8 +848,8 @@ void MainScene::draw1() {
 		_contents[_currentContent]->draw(_frame);
 	}
 
-	if (config().luminance < 100) {
-		DWORD col = ((DWORD)(0xff * (100 - config().luminance) / 100) << 24) | 0x000000;
+	if (_luminance < 100) {
+		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	if (_removableCover > 0.0f) {

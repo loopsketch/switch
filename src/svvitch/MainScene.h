@@ -58,6 +58,7 @@ private:
 	bool _startup;
 	bool _autoStart;
 	string _currentCommand;
+	int _luminance;
 
 	string _playlistID;
 	int _playlistItem;
