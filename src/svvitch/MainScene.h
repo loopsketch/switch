@@ -57,7 +57,7 @@ private:
 	DWORD _frame;
 	bool _startup;
 	bool _autoStart;
-	string _currentCommand;
+	string _action;
 	int _luminance;
 
 	string _playlistID;
@@ -76,13 +76,13 @@ private:
 	LPDIRECT3DTEXTURE9 _playlistName;
 	/** 再生中のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _currentName;
-	/** 準備済のプレイリスト名 */
+	/** 次のプレイリスト名 */
 	LPDIRECT3DTEXTURE9 _nextPlaylistName;
-	/** 準備済のコンテンツ名 */
+	/** 次のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _nextName;
-	/** 準備済のコマンド */
-	string _nextCommand;
-	/** 準備済のトランジション */
+	/** 次のアクション */
+	string _nextAction;
+	/** 次のトランジション */
 	string _nextTransition;
 
 	/** 切替準備コンテンツ */

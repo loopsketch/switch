@@ -142,10 +142,10 @@ bool MainScene::prepareNextMedia() {
 
 	// 準備フェーズ
 	int next = (_currentContent + 1) % _contents.size();
-	if (!_currentCommand.empty()) {
-		int jump = _currentCommand.find_first_of("jump");
+	if (!_action.empty()) {
+		int jump = _action.find_first_of("jump");
 		if (jump == 0) {
-			string s = Poco::trim(_currentCommand.substr(4));
+			string s = Poco::trim(_action.substr(4));
 			string playlistID;
 			int i = s.find("-");
 			int j = 0;
@@ -171,7 +171,7 @@ bool MainScene::prepareNextMedia() {
 					_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
 				}
 			}
-		} else if (_currentCommand == "stop") {
+		} else if (_action == "stop") {
 			_contents[next]->initialize();
 			_preparingNext = false;
 			return true;
@@ -190,7 +190,7 @@ bool MainScene::prepareNextMedia() {
 				PlayListItemPtr item = playlist->items()[_playlistItem];
 				if (item) {
 					itemName = item->media()->name();
-					_nextCommand = item->next();
+					_nextAction = item->next();
 					_nextTransition = item->transition();
 				}
 			}
@@ -486,7 +486,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		SAFE_RELEASE(_nextPlaylistName);
 		SAFE_RELEASE(_nextName);
 		_status.clear();
-		_currentCommand.clear();
+		_action.clear();
 		_nextTransition.clear();
 	} else {
 		_running = false;
@@ -596,7 +596,7 @@ void MainScene::process() {
 			SAFE_DELETE(_workspace);
 			_workspace = _updatedWorkspace;
 			_updatedWorkspace = NULL;
-			if (!_status["next-content"].empty() && _currentCommand != "stop") {
+			if (!_status["next-content"].empty() && _action != "stop") {
 				_playlistItem--;
 				activePrepareNextMedia();
 			}
@@ -625,6 +625,8 @@ void MainScene::process() {
 			}
 		}
 	} else if (_startup) {
+		_status["action"] = _action;
+		_status["transition"] = _nextTransition;
 		for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
 			(*it)->process(_frame);
 		}
@@ -633,9 +635,9 @@ void MainScene::process() {
 		if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
 
 		if (currentContent) {
-			if (_currentCommand == "stop") {
+			if (_action == "stop") {
 
-			} else if (_currentCommand == "wait-prepared") {
+			} else if (_action == "wait-prepared") {
 				if (!_status["next-content"].empty()) {
 					// _log.information("wait prepared next content, prepared now.");
 					_doSwitchNext = true;
@@ -678,7 +680,7 @@ void MainScene::process() {
 						_log.information(Poco::format("switch content: %s-%d: %s", _preparedPlaylistID, _preparedItem, item->media()->name()));
 						_playlistID = _preparedPlaylistID;
 						_playlistItem = _preparedItem;
-						_nextCommand = item->next();
+						_nextAction = item->next();
 						_nextTransition = item->transition();
 					}
 				} else {
@@ -740,7 +742,7 @@ void MainScene::process() {
 				_status["current-content"] = _status["next-content"];
 				_status.erase(_status.find("next-playlist"));
 				_status.erase(_status.find("next-content"));
-				_currentCommand = _nextCommand;
+				_action = _nextAction;
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
@@ -899,7 +901,7 @@ void MainScene::draw2() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
 		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
-		if (!_currentCommand.empty()) _renderer.drawFontTextureText(0, 680, 12, 16, 0xccffffff, Poco::format("next>%s", _currentCommand));
+		if (!_action.empty()) _renderer.drawFontTextureText(0, 680, 12, 16, 0xccffffff, Poco::format("action>%s", _action));
 		if (!_nextTransition.empty()) _renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("transition>%s", _nextTransition));
 
 		_renderer.drawTexture(700, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
