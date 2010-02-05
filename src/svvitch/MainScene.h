@@ -159,6 +159,15 @@ public:
 	/** プレイリストテキスト設定 */
 	bool setPlaylistText(string& playlistID, string& text);
 
+	/** 輝度設定 */
+	void setLuminance(int i);
+
+	/** 遷移アクション設定 */
+	void setAction(string& action);
+
+	/** トランジション設定 */
+	void setTransition(string& transition);
+
 	/** 切替用コンテンツの準備(アクティブ版) */
 	ActiveMethod<bool, PrepareArgs, MainScene> activePrepare;
 

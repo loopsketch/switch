@@ -206,9 +206,25 @@ void SwitchRequestHandler::set(const string& name) {
 		} else if (name == "luminance") {
 			int i = 0;
 			Poco::NumberParser::tryParse(form().get("v"), i);
-			config().luminance = i;
+			scene->setLuminance(i);
 			map<string, string> params;
 			params["luminance"] = Poco::format("%d", i);
+			sendJSONP(form().get("callback", ""), params);
+			return;
+
+		} else if (name == "action") {
+			string action = form().get("v");
+			scene->setAction(action);
+			map<string, string> params;
+			params["action"] = action;
+			sendJSONP(form().get("callback", ""), params);
+			return;
+
+		} else if (name == "transition") {
+			string transition = form().get("v");
+			scene->setTransition(transition);
+			map<string, string> params;
+			params["transition"] = transition;
 			sendJSONP(form().get("callback", ""), params);
 			return;
 

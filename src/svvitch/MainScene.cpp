@@ -248,6 +248,18 @@ bool MainScene::setPlaylistText(string& playlistID, string& text) {
 	return false;
 }
 
+void MainScene::setLuminance(int i) {
+	config().luminance = i;
+}
+
+void MainScene::setAction(string& action) {
+	_action = action;
+}
+
+void MainScene::setTransition(string& transition) {
+	_nextTransition = transition;
+}
+
 bool MainScene::prepare(const PrepareArgs& args) {
 	ContainerPtr c = new Container(_renderer);
 	if (prepareMedia(c, args.playlistID, args.i)) {
