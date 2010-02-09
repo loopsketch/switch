@@ -699,12 +699,12 @@ void MainScene::process() {
 
 		if (_doSwitchPrepared) {
 			if (_prepared) {
-				int next = (_currentContent + 1) % _contents.size();
-				ContainerPtr tmp = _contents[next];
-				_contents[next] = _prepared;
-				_prepared = tmp;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					int next = (_currentContent + 1) % _contents.size();
+					ContainerPtr oldNextContainer = _contents[next];
+					_contents[next] = _prepared;
+					_prepared = oldNextContainer;
 					LPDIRECT3DTEXTURE9 tmp = _nextPlaylistName;
 					_nextPlaylistName = _preparedPlaylistName;
 					_preparedPlaylistName = tmp;
@@ -729,15 +729,21 @@ void MainScene::process() {
 				_status["next-playlist"] = _status["prepared-playlist"];
 				_status["next-content"] = _status["prepared-content"];
 				_doSwitchNext = true;
+				LPDIRECT3DTEXTURE9 oldPreparedPlaylistName = NULL;
+				LPDIRECT3DTEXTURE9 oldPreparedName = NULL;
+				TransitionPtr oldTransition = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					SAFE_RELEASE(_preparedPlaylistName);
-					SAFE_RELEASE(_preparedName);
+					oldPreparedPlaylistName = _preparedPlaylistName;
+					_preparedPlaylistName = NULL;
+					oldPreparedName = _preparedName;
+					_preparedName = NULL;
+					oldTransition = _transition;
+					_transition = NULL;
 				}
-				{
-					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					SAFE_DELETE(_transition);
-				}
+				SAFE_RELEASE(oldPreparedPlaylistName);
+				SAFE_RELEASE(oldPreparedName);
+				SAFE_DELETE(oldTransition);
 				//std::map<string, string>::iterator it = _status.find("prepared-playlist");
 				//if (it != _status.end()) _status.erase(it);
 				//it = _status.find("prepared-content");
@@ -751,10 +757,13 @@ void MainScene::process() {
 				ContainerPtr tmp = _contents[next];
 				if (tmp && tmp->size() > 0) {
 					_log.information("switch next contents");
+					TransitionPtr oldTransition = NULL;
 					{
 						Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-						SAFE_DELETE(_transition);
+						oldTransition = _transition;
+						_transition = NULL;
 					}
+					SAFE_DELETE(oldTransition);
 					_doSwitchNext = true;
 				}
 			}
@@ -769,15 +778,19 @@ void MainScene::process() {
 			if (nextContent && !nextContent->opened().empty()) {
 				_currentContent = next;
 				_contents[next]->play();
+				LPDIRECT3DTEXTURE9 oldPlaylistName = NULL;
+				LPDIRECT3DTEXTURE9 oldCurrentName = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					SAFE_RELEASE(_playlistName);
+					oldPlaylistName = _playlistName;
 					_playlistName = _nextPlaylistName;
 					_nextPlaylistName = NULL;
-					SAFE_RELEASE(_currentName);
+					oldCurrentName = _currentName;
 					_currentName = _nextName;
 					_nextName = NULL;
 				}
+				SAFE_RELEASE(oldPlaylistName);
+				SAFE_RELEASE(oldCurrentName);
 				_status["current-playlist"] = _status["next-playlist"];
 				_status["current-content"] = _status["next-content"];
 				_status.erase(_status.find("next-playlist"));
