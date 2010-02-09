@@ -10,13 +10,14 @@ Container::~Container() {
 
 void Container::initialize() {
 	_initialized = true;
+	vector<ContentPtr> list;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		int count = 0;
-		for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) SAFE_DELETE(*it);count++;
-		_list.clear();
-//		_log.information(Poco::format("Container::initialize() %d", count));
+		list.swap(_list);
 	}
+	int count = 0;
+	for (vector<ContentPtr>::iterator it = list.begin(); it != list.end(); it++) SAFE_DELETE(*it);count++;
+	// _log.information(Poco::format("Container::initialize() %d", count));
 }
 
 void Container::add(ContentPtr c) {
