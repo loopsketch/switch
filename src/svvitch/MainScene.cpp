@@ -23,6 +23,8 @@
 #include "DissolveTransition.h"
 #include "Schedule.h"
 
+#include "Utils.h"
+
 
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile):
 	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
@@ -294,8 +296,8 @@ bool MainScene::prepare(const PrepareArgs& args) {
 	return false;
 }
 
-bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int i) {
-	_log.information(Poco::format("prepare: %s-%d", playlistID, i));
+bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int listIndex) {
+	_log.information(Poco::format("prepare: %s-%d", playlistID, listIndex));
 	PlayListPtr playlist = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
@@ -303,7 +305,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 	}
 	container->initialize();
 	if (playlist && playlist->itemCount() > 0) {
-		PlayListItemPtr item = playlist->items()[i % playlist->itemCount()];
+		PlayListItemPtr item = playlist->items()[listIndex % playlist->itemCount()];
 		MediaItemPtr media = item->media();
 		if (media) {
 			_log.information(Poco::format("file: %d", media->fileCount()));
@@ -364,25 +366,51 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 			}
 			if (media->containsFileType(MediaTypeText)) {
 				_log.information("contains text");
-				TextPtr ref = NULL;
-				for (int j = 0; j < media->fileCount(); j++) {
-					MediaItemFile mif = media->files().at(j);
+				vector<TextPtr> ref;
+				int j = 0;
+				int block = -1;
+				for (int i = 0; i < media->fileCount(); i++) {
+					MediaItemFile mif = media->files().at(i);
 					if (mif.type() == MediaTypeText) {
 						TextPtr text = new Text(_renderer);
-						if (text->open(media, j)) {
-							if (ref) {
-								text->setReference(ref);
-							} else {
+						if (text->open(media, i)) {
+							if (block <= 0) {
+								// 実体モード
 								if (mif.file().empty()) {
 									_log.information(Poco::format("tempate text: %s", playlist->text()));
 									text->drawTexture(playlist->text());
-									if (!ref) ref = text;
+								} else if (mif.file().find("$") != string::npos) {
+									int line = 0;
+									if (Poco::NumberParser::tryParse(mif.file().substr(1), line)) {
+										string s = Poco::trim(playlist->text());
+										if (line > 0) {
+											vector<string> texts;
+											svvitch::split(s, '\r', texts);
+											if (texts.size() >= line) {
+												s = texts[line - 1];
+												text->drawTexture(s);
+											} else {
+												_log.warning(Poco::format("not enough lines: %u", texts.size()));
+											}
+										} else {
+											text->drawTexture(s);
+										}
+									} else {
+										_log.warning(Poco::format("failed text URL: %s", mif.file()));
+									}
 								}
+								ref.push_back(text);
+							} else {
+								// 参照モード
+								text->setReference(ref.at(j++ % ref.size()));
 							}
 							container->add(text);
 						} else {
 							SAFE_DELETE(text);
 						}
+					} else {
+						block++;
+						j = 0;
 					}
 				}
 			}

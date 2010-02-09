@@ -46,7 +46,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 	if (offset != -1 && offset < media->fileCount()) {
 		MediaItemFile mif =  media->files().at(offset);
 		if (mif.type() == MediaTypeText) {
-			if (!mif.file().empty()) {
+			if (!mif.file().empty() && mif.file().find("$") == string::npos) {
 				string text;
 				try {
 					Poco::RegularExpression::Match m;
@@ -162,13 +162,17 @@ const bool Text::finished() {
 /** ファイルをクローズします */
 void Text::close() {
 	_mediaID.clear();
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (_referencedText) {
-		_referencedText = NULL;
+	LPDIRECT3DTEXTURE9 old = NULL;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_referencedText) {
+			_referencedText = NULL;
+		} else {
+			old = _texture;
+		}
 		_texture = NULL;
-	} else {
-		SAFE_RELEASE(_texture);
 	}
+	SAFE_RELEASE(old);
 	_iw = 0;
 	_ih = 0;
 	_tw = 0;
@@ -426,9 +430,10 @@ void Text::drawTexture(string text) {
 				ih = th;
 			}
 		}
+		LPDIRECT3DTEXTURE9 old = NULL;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			if (_texture) SAFE_RELEASE(_texture);
+			if (_texture) old = _texture;
 			_texture = texture;
 			// D3DXSaveTextureToFile(L"test_text.png", D3DXIFF_PNG, _texture, NULL);
 			_iw = iw;
@@ -436,6 +441,7 @@ void Text::drawTexture(string text) {
 			_tw = tw;
 			_th = th;
 		}
+		SAFE_RELEASE(old);
 	}
 
 	if (_align == "center") {
