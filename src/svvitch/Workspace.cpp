@@ -129,7 +129,7 @@ bool Workspace::parse() {
 							for (vector<MediaItemPtr>::iterator it = _media.begin(); it != _media.end(); it++) {
 								MediaItemPtr media = *it;
 								if (id == media->id()) {
-									it = _media.erase(it);
+									_media.erase(it);
 									break;
 								}
 							}

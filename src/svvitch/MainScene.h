@@ -39,9 +39,6 @@ struct PrepareArgs
 	int i;
 };
 
-struct RemovableMediaArgs {
-	const string& driveLetter;
-};
 
 class MainScene: public Scene
 {
@@ -124,6 +121,8 @@ private:
 	int _copyProgress;
 	int _currentCopyProgress;
 
+	vector<LPVOID> _lateDeletes;
+	vector<LPDIRECT3DTEXTURE9> _lateRleaseTextures;
 
 	void run();
 
@@ -139,6 +138,12 @@ private:
 	void addRemovableMedia(const string& driveLetter);
 
 	int copyFiles(const string& src, const string& dst);
+
+	/** オブジェクトの解放 */
+	void deleteObjects(vector<LPVOID>& objects);
+
+	/** テクスチャの解放 */
+	void releaseTextures(vector<LPDIRECT3DTEXTURE9>& textures);
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
