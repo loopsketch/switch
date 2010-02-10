@@ -48,9 +48,6 @@ MainScene::~MainScene() {
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
 
-	deleteObjects(_lateDeletes);
-	releaseTextures(_lateRleaseTextures);
-
 	SAFE_DELETE(_prepared);
 	SAFE_DELETE(_transition);
 	SAFE_DELETE(_interruptMedia);
@@ -184,7 +181,8 @@ bool MainScene::prepareNextMedia() {
 		}
 	}
 
-	if (prepareMedia(_contents[next], _playlistID, _playlistItem + 1)) {
+	ContainerPtr c = new Container(_renderer);
+	if (prepareMedia(c, _playlistID, _playlistItem + 1)) {
 		string playlistName = "ready";
 		string itemName = "ready";
 		{
@@ -203,16 +201,26 @@ bool MainScene::prepareNextMedia() {
 		}
 		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlistName);
 		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, itemName);
+		ContainerPtr oldNextContainer = NULL;
+		LPDIRECT3DTEXTURE9 oldNextPlaylistName = NULL;
+		LPDIRECT3DTEXTURE9 oldNextName = NULL;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			SAFE_RELEASE(_nextPlaylistName);
+			next = (_currentContent + 1) % _contents.size();
+			oldNextContainer = _contents[next];
+			_contents[next] = c;
+			oldNextPlaylistName = _nextPlaylistName;
 			_nextPlaylistName = t1;
-			SAFE_RELEASE(_nextName);
+			oldNextName = _nextName;
 			_nextName = t2;
 		}
+		SAFE_DELETE(oldNextContainer);
+		SAFE_RELEASE(oldNextPlaylistName);
+		SAFE_RELEASE(oldNextName);
 		_status["next-playlist"] = playlistName;
 		_status["next-content"] = itemName;
 	} else {
+		SAFE_DELETE(c);
 		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
 	}
 	_preparingNext = false;
@@ -438,8 +446,6 @@ bool MainScene::switchContent() {
 	while (_doSwitchPrepared) {
 		Poco::Thread::sleep(30);
 	}
-	deleteObjects(_lateDeletes);
-	releaseTextures(_lateRleaseTextures);
 //	_log.information("purge prepared next contents");
 //	SAFE_DELETE(_prepared);
 	return true;
@@ -594,20 +600,6 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 	return size;
 }
 
-void MainScene::deleteObjects(vector<LPVOID>& objects) {
-	for (vector<LPVOID>::iterator it = objects.begin(); it != objects.end(); ) {
-		SAFE_DELETE(*it);
-		it = objects.erase(it);
-	}
-}
-
-void MainScene::releaseTextures(vector<LPDIRECT3DTEXTURE9>& textures) {
-	for (vector<LPDIRECT3DTEXTURE9>::iterator it = textures.begin(); it != textures.end(); ) {
-		SAFE_RELEASE(*it);
-		it = textures.erase(it);
-	}
-}
-
 
 void MainScene::process() {
 	switch (_keycode) {
@@ -665,7 +657,7 @@ void MainScene::process() {
 
 	if (!_running) return;
 
-	if (!_startup && _frame > 50) {
+	if (!_startup && _frame > 100) {
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			if (_workspace->getPlaylistCount() > 0) {
@@ -680,7 +672,7 @@ void MainScene::process() {
 					_startup = true;
 				}
 			} else {
-				if (_frame == 51) _log.warning("no playlist, no auto starting");
+				if (_frame == 101) _log.warning("no playlist, no auto starting");
 				// _frame = 0;
 			}
 		}
@@ -710,8 +702,7 @@ void MainScene::process() {
 				}
 			}
 		} else {
-			// 現在再生中のコンテンツ無し
-			if (_autoStart && !_status["next-content"].empty() && _frame > 100) {
+			if (_autoStart && !_status["next-content"].empty() && _frame > 200) {
 				_log.information("auto start content");
 				_doSwitchNext = true;
 				_autoStart = false;
@@ -720,13 +711,12 @@ void MainScene::process() {
 
 		if (_doSwitchPrepared) {
 			if (_prepared) {
-				ContainerPtr oldNextContainer = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					int next = (_currentContent + 1) % _contents.size();
-					oldNextContainer = _contents[next];
+					ContainerPtr oldNextContainer = _contents[next];
 					_contents[next] = _prepared;
-					_prepared = NULL;
+					_prepared = oldNextContainer;
 					LPDIRECT3DTEXTURE9 tmp = _nextPlaylistName;
 					_nextPlaylistName = _preparedPlaylistName;
 					_preparedPlaylistName = tmp;
@@ -734,8 +724,6 @@ void MainScene::process() {
 					_nextName = _preparedName;
 					_preparedName = tmp;
 				}
-				_lateDeletes.push_back(oldNextContainer);
-
 				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 				PlayListPtr playlist = _workspace->getPlaylist(_preparedPlaylistID);
 				if (playlist && playlist->itemCount() > _preparedItem) {
@@ -752,7 +740,6 @@ void MainScene::process() {
 				}
 				_status["next-playlist"] = _status["prepared-playlist"];
 				_status["next-content"] = _status["prepared-content"];
-				_doSwitchNext = true;
 				LPDIRECT3DTEXTURE9 oldPreparedPlaylistName = NULL;
 				LPDIRECT3DTEXTURE9 oldPreparedName = NULL;
 				TransitionPtr oldTransition = NULL;
@@ -765,22 +752,22 @@ void MainScene::process() {
 					oldTransition = _transition;
 					_transition = NULL;
 				}
-				_lateRleaseTextures.push_back(oldPreparedPlaylistName);
-				_lateRleaseTextures.push_back(oldPreparedName);
-				_lateRleaseTextures.push_back(oldPreparedName);
-				_lateDeletes.push_back(oldTransition);
+				SAFE_RELEASE(oldPreparedPlaylistName);
+				SAFE_RELEASE(oldPreparedName);
+				SAFE_DELETE(oldTransition);
 				//std::map<string, string>::iterator it = _status.find("prepared-playlist");
 				//if (it != _status.end()) _status.erase(it);
 				//it = _status.find("prepared-content");
 				//if (it != _status.end()) _status.erase(it);
 				_status.erase(_status.find("prepared-playlist"));
 				_status.erase(_status.find("prepared-content"));
+				_doSwitchNext = true;
 
 			} else {
 				// 準備済みコンテンツが無い場合は次のコンテンツへ切替
 				int next = (_currentContent + 1) % _contents.size();
-				ContainerPtr nextContent = _contents[next];
-				if (nextContent && nextContent->size() > 0) {
+				ContainerPtr tmp = _contents[next];
+				if (tmp && tmp->size() > 0) {
 					_log.information("switch next contents");
 					TransitionPtr oldTransition = NULL;
 					{
@@ -788,7 +775,7 @@ void MainScene::process() {
 						oldTransition = _transition;
 						_transition = NULL;
 					}
-					_lateDeletes.push_back(oldTransition);
+					SAFE_DELETE(oldTransition);
 					_doSwitchNext = true;
 				}
 			}
@@ -865,7 +852,7 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_prepareStack.empty()) {
 			_prepareStackTime++;
-			if (_prepareStackTime > 20) {
+			if (_prepareStackTime > 15) {
 				activePrepare(_prepareStack.back());
 				_prepareStack.clear();
 			}
