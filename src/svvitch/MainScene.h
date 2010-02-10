@@ -33,7 +33,7 @@ using Poco::ActiveMethod;
 using Poco::ActiveResult;
 
 
-struct PrepareArgs
+struct PlaylistItem
 {
 	string playlistID;
 	int i;
@@ -69,7 +69,10 @@ private:
 	int _currentContent;
 	bool _preparing;
 
-	vector<PrepareArgs> _prepareStack;
+	vector<PlaylistItem> _nextStack;
+	int _nextStackTime;
+
+	vector<PlaylistItem> _prepareStack;
 	int _prepareStackTime;
 
 	/** プレイリスト名 */
@@ -98,6 +101,7 @@ private:
 
 	/** 再生回数 */
 	int _playCount;
+	bool _doPrepareNext;
 	bool _preparingNext;
 	/** 切替フラグ */
 	bool _doSwitchNext;
@@ -124,14 +128,16 @@ private:
 	int _copyProgress;
 	int _currentCopyProgress;
 
+	vector<ContainerPtr> _delayReleases;
+
 
 	void run();
 
 	/** 切替用コンテンツの準備 */
-	bool prepare(const PrepareArgs& args);
+	bool prepare(const PlaylistItem& args);
 
 	/** 次再生コンテンツを準備します */
-	bool prepareNextMedia();
+	bool prepareNextMedia(const PlaylistItem& args);
 
 	/** Containerに指定されたプレイリストのコンテンツを準備します */
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
@@ -144,6 +150,8 @@ public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
 
 	virtual ~MainScene();
+
+	void delayedReleaseContainer();
 
 	/** 初期化 */
 	bool initialize();
@@ -169,7 +177,7 @@ public:
 	void setTransition(string& transition);
 
 	/** 切替用コンテンツの準備(アクティブ版) */
-	ActiveMethod<bool, PrepareArgs, MainScene> activePrepare;
+	ActiveMethod<bool, PlaylistItem, MainScene> activePrepare;
 
 	/** 手動で切替を行います */
 	bool switchContent();
@@ -178,7 +186,7 @@ public:
 	bool updateWorkspace();
 
 	/** 次再生コンテンツを準備(アクティブ版) */
-	ActiveMethod<bool, void, MainScene> activePrepareNextMedia;
+	ActiveMethod<bool, PlaylistItem, MainScene> activePrepareNextMedia;
 
 	/** リムーバブルメディアの追加(アクティブ版) */
 	ActiveMethod<void, string, MainScene> activeAddRemovableMedia;

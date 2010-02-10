@@ -32,7 +32,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	activePrepare(this, &MainScene::prepare),
 	activePrepareNextMedia(this, &MainScene::prepareNextMedia),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
-	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doSwitchNext(false), _doSwitchPrepared(false),
+	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
 	_transition(NULL), _interruptMedia(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
@@ -48,6 +48,7 @@ MainScene::~MainScene() {
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
 	_contents.clear();
 
+	delayedReleaseContainer();
 	SAFE_DELETE(_prepared);
 	SAFE_DELETE(_transition);
 	SAFE_DELETE(_interruptMedia);
@@ -63,6 +64,15 @@ MainScene::~MainScene() {
 	_log.information("*release main-scene");
 }
 
+void MainScene::delayedReleaseContainer() {
+	int count = 0;
+	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end(); ) {
+		SAFE_DELETE(*it);
+		it = _delayReleases.erase(it);
+		count++;
+	}
+	_log.information(Poco::format("delayed release: %d", count));
+}
 
 bool MainScene::initialize() {
 	_contents.clear();
@@ -130,51 +140,24 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 	}
 }
 
-bool MainScene::prepareNextMedia() {
+bool MainScene::prepareNextMedia(const PlaylistItem& args) {
 	_preparingNext = true;
-	// 初期化フェーズ
-	int count = 15;
-	while (_transition || count-- > 0) {
-		// トランジション中は解放しないようにする。更に初期化まで0.5秒くらいウェイトする
-		if (_contents.empty()) {
-			_preparingNext = false;
-			return false;
-		}
-		Poco::Thread::sleep(30);
-	}
-
-	// 準備フェーズ
-	int next = (_currentContent + 1) % _contents.size();
+	string playlistID = args.playlistID;
+	int i = args.i;
 	if (!_action.empty()) {
 		int jump = _action.find_first_of("jump");
 		if (jump == 0) {
 			string s = Poco::trim(_action.substr(4));
-			string playlistID;
-			int i = s.find("-");
-			int j = 0;
-			if (i != string::npos) {
-				playlistID = s.substr(0, i);
-				j = Poco::NumberParser::parse(s.substr(i + 1));
+			int j = s.find("-");
+			if (j != string::npos) {
+				playlistID = s.substr(0, j);
+				i = Poco::NumberParser::parse(s.substr(j + 1));
 			} else {
 				playlistID = s;
-			}
-			{
-				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-				PlayListPtr playlist = _workspace->getPlaylist(playlistID);
-				if (playlist) {
-					if (playlist->itemCount() > j) {
-						_playlistID = playlist->id();
-						_playlistItem = j;
-						_log.information(Poco::format("jump playlist <%s>:%d", playlist->name(), _playlistItem));
-						_playlistItem--; // 準備時に++されるので引いておく
-					} else {
-						_log.warning(Poco::format("failed jump index %d-<%d>", i, j));
-					}
-				} else {
-					_log.warning(Poco::format("failed jump index <%d>-%d", i, j));
-				}
+				i = 0;
 			}
 		} else if (_action == "stop") {
+			int next = (_currentContent + 1) % _contents.size();
 			_contents[next]->initialize();
 			_preparingNext = false;
 			return true;
@@ -182,17 +165,20 @@ bool MainScene::prepareNextMedia() {
 	}
 
 	ContainerPtr c = new Container(_renderer);
-	if (prepareMedia(c, _playlistID, _playlistItem + 1)) {
+	if (prepareMedia(c, playlistID, i)) {
 		string playlistName = "ready";
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			PlayListPtr playlist = _workspace->getPlaylist(_playlistID);
+			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 			if (playlist && playlist->itemCount() > 0) {
 				playlistName = playlist->name();
-				_playlistItem = (_playlistItem + 1) % playlist->itemCount();
-				PlayListItemPtr item = playlist->items()[_playlistItem];
+				i = i % playlist->itemCount();
+				PlayListItemPtr item = playlist->items().at(i);
 				if (item) {
+					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					_playlistID = playlistID;
+					_playlistItem = i;
 					itemName = item->media()->name();
 					_nextAction = item->next();
 					_nextTransition = item->transition();
@@ -206,7 +192,7 @@ bool MainScene::prepareNextMedia() {
 		LPDIRECT3DTEXTURE9 oldNextName = NULL;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			next = (_currentContent + 1) % _contents.size();
+			int next = (_currentContent + 1) % _contents.size();
 			oldNextContainer = _contents[next];
 			_contents[next] = c;
 			oldNextPlaylistName = _nextPlaylistName;
@@ -221,7 +207,7 @@ bool MainScene::prepareNextMedia() {
 		_status["next-content"] = itemName;
 	} else {
 		SAFE_DELETE(c);
-		_log.warning(Poco::format("failed prepare: %s-%d", _playlistID, _playlistItem + 1));
+		_log.warning(Poco::format("failed prepare: %s-%d", playlistID, i));
 	}
 	_preparingNext = false;
 	return true;
@@ -229,15 +215,19 @@ bool MainScene::prepareNextMedia() {
 
 bool MainScene::stackPrepare(string& playlistID, int i) {
 	ContainerPtr prepared = NULL;
+	LPDIRECT3DTEXTURE9 oldPreparedPlaylistName = NULL;
+	LPDIRECT3DTEXTURE9 oldPreparedName = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_prepared) {
 			prepared = _prepared;
 			_prepared = NULL;
-			SAFE_RELEASE(_preparedPlaylistName);
-			SAFE_RELEASE(_preparedName);
+			oldPreparedPlaylistName = _preparedPlaylistName;
+			_preparedPlaylistName = NULL;
+			oldPreparedName = _preparedName;
+			_preparedName = NULL;
 		}
-		PrepareArgs args;
+		PlaylistItem args;
 		args.playlistID = playlistID;
 		args.i = i;
 		_prepareStack.push_back(args);
@@ -249,6 +239,8 @@ bool MainScene::stackPrepare(string& playlistID, int i) {
 	it = _status.find("prepared-content");
 	if (it != _status.end()) _status.erase(it);
 	SAFE_DELETE(prepared);
+	SAFE_RELEASE(oldPreparedPlaylistName);
+	SAFE_RELEASE(oldPreparedName);
 	return true;
 }
 
@@ -274,7 +266,7 @@ void MainScene::setTransition(string& transition) {
 	_nextTransition = transition;
 }
 
-bool MainScene::prepare(const PrepareArgs& args) {
+bool MainScene::prepare(const PlaylistItem& args) {
 	ContainerPtr c = new Container(_renderer);
 	if (prepareMedia(c, args.playlistID, args.i)) {
 		string playlistName = "ready";
@@ -446,6 +438,7 @@ bool MainScene::switchContent() {
 	while (_doSwitchPrepared) {
 		Poco::Thread::sleep(30);
 	}
+	delayedReleaseContainer();
 //	_log.information("purge prepared next contents");
 //	SAFE_DELETE(_prepared);
 	return true;
@@ -649,8 +642,13 @@ void MainScene::process() {
 			_workspace = _updatedWorkspace;
 			_updatedWorkspace = NULL;
 			if (!_status["next-content"].empty() && _action != "stop") {
-				_playlistItem--;
-				activePrepareNextMedia();
+				PlaylistItem args;
+				{
+					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					args.playlistID = _playlistID;
+					args.i = _playlistItem;
+				}
+				activePrepareNextMedia(args);
 			}
 		}
 	}
@@ -664,9 +662,11 @@ void MainScene::process() {
 				// playlistがある場合は最初のplaylistを自動スタートする
 				PlayListPtr playlist = _workspace->getPlaylist(0);
 				if (playlist) {
-					_playlistID = playlist->id();
-					_playlistItem = -1;
-					activePrepareNextMedia();
+					PlaylistItem args;
+					args.playlistID = playlist->id();
+					args.i = 0;
+					_log.information(Poco::format("auto preparing: %s", playlist->id()));
+					activePrepareNextMedia(args);
 					_autoStart = true;
 					_frame = 0;
 					_startup = true;
@@ -711,12 +711,13 @@ void MainScene::process() {
 
 		if (_doSwitchPrepared) {
 			if (_prepared) {
+				ContainerPtr oldNextContainer = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					int next = (_currentContent + 1) % _contents.size();
-					ContainerPtr oldNextContainer = _contents[next];
+					oldNextContainer = _contents[next];
 					_contents[next] = _prepared;
-					_prepared = oldNextContainer;
+					_prepared = NULL;
 					LPDIRECT3DTEXTURE9 tmp = _nextPlaylistName;
 					_nextPlaylistName = _preparedPlaylistName;
 					_preparedPlaylistName = tmp;
@@ -724,16 +725,20 @@ void MainScene::process() {
 					_nextName = _preparedName;
 					_preparedName = tmp;
 				}
+				if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 				PlayListPtr playlist = _workspace->getPlaylist(_preparedPlaylistID);
 				if (playlist && playlist->itemCount() > _preparedItem) {
 					PlayListItemPtr item = playlist->items()[_preparedItem];
 					if (item) {
 						_log.information(Poco::format("switch content: %s-%d: %s", _preparedPlaylistID, _preparedItem, item->media()->name()));
-						_playlistID = _preparedPlaylistID;
-						_playlistItem = _preparedItem;
-						_nextAction = item->next();
-						_nextTransition = item->transition();
+						{
+							Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+							_playlistID = _preparedPlaylistID;
+							_playlistItem = _preparedItem;
+							_nextAction = item->next();
+							_nextTransition = item->transition();
+						}
 					}
 				} else {
 					_log.warning(Poco::format("not find playlist: %s", _preparedPlaylistID));
@@ -779,10 +784,11 @@ void MainScene::process() {
 					_doSwitchNext = true;
 				}
 			}
+			_nextStack.clear();
 			_doSwitchPrepared = false;
 		}
 
-		bool prepareNext = false;
+		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
 			_doSwitchNext = false;
 			int next = (_currentContent + 1) % _contents.size();
@@ -823,10 +829,9 @@ void MainScene::process() {
 					if (_transition) _transition->initialize(_frame);
 				}
 				if (!_transition) {
-					prepareNext = true;
+					_doPrepareNext = true;
 				}
 				} else {
-				//
 			}
 		}
 
@@ -836,13 +841,31 @@ void MainScene::process() {
 				// トランジション終了
 				SAFE_DELETE(_transition);
 				// 次のコンテンツ準備
-				prepareNext = true;
+				_doPrepareNext = true;
 			}
 		}
-		if (prepareNext) {
-			try {
-				activePrepareNextMedia();
-			} catch (Poco::NoThreadAvailableException ex) {
+
+		if (_doPrepareNext && !_preparingNext) {
+			_doPrepareNext = false;
+			PlaylistItem args;
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				args.playlistID = _playlistID;
+				args.i = _playlistItem + 1;
+			}
+			_nextStack.push_back(args);
+			_nextStackTime = 0;
+		}
+	}
+
+	{
+		// 次コンテンツのスタック処理
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (!_nextStack.empty()) {
+			_nextStackTime++;
+			if (_nextStackTime > 30) {
+				activePrepareNextMedia(_nextStack.back());
+				_nextStack.clear();
 			}
 		}
 	}
@@ -852,7 +875,7 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_prepareStack.empty()) {
 			_prepareStackTime++;
-			if (_prepareStackTime > 15) {
+			if (_prepareStackTime > 20) {
 				activePrepare(_prepareStack.back());
 				_prepareStack.clear();
 			}
