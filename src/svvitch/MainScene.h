@@ -83,10 +83,6 @@ private:
 	LPDIRECT3DTEXTURE9 _nextPlaylistName;
 	/** 次のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _nextName;
-	/** 次のアクション */
-	string _nextAction;
-	/** 次のトランジション */
-	string _nextTransition;
 
 	vector<PlayParameters> _prepareStack;
 	int _prepareStackTime;
@@ -167,8 +163,11 @@ public:
 	/** 切替用コンテンツをスタックします */
 	bool stackPrepareContent(string& playlistID, int i = 0);
 
+	/** プレイリストテキスト取得 */
+	const string getPlaylistText(const string& playlistID);
+
 	/** プレイリストテキスト設定 */
-	bool setPlaylistText(string& playlistID, string& text);
+	bool setPlaylistText(const string& playlistID, const string& text);
 
 	/** 輝度設定 */
 	void setLuminance(int i);

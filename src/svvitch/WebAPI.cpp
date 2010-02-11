@@ -257,6 +257,14 @@ void SwitchRequestHandler::get(const string& name) {
 			}
 			return;
 
+		} else if (name == "text") {
+			string playlistID = form().get("pl", "");
+			string text = scene->getPlaylistText(playlistID);
+			map<string, string> params;
+			params["text"] = text;
+			sendJSONP(form().get("callback", ""), params);
+			return;
+
 		} else if (name == "status") {
 			map<string, string> status = scene->getStatus();
 			map<string, string> params;
@@ -272,7 +280,7 @@ void SwitchRequestHandler::get(const string& name) {
 	} else {
 		message = "scene not found";
 	}
-	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 }
 
 void SwitchRequestHandler::files() {

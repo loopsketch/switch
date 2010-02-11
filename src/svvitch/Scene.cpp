@@ -19,6 +19,10 @@ void Scene::notifyKey(const int keycode, const bool shift, const bool ctrl) {
 	_ctrl = ctrl;
 }
 
+void Scene::setStatus(const string& key, const string& value) {
+	_status[key] = value;
+}
+
 const map<string, string>& Scene::getStatus() {
 	return _status;
 }

@@ -237,11 +237,20 @@ bool MainScene::stackPrepareContent(string& playlistID, int i) {
 	return true;
 }
 
-bool MainScene::setPlaylistText(string& playlistID, string& text) {
+const string MainScene::getPlaylistText(const string& playlistID) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+	if (playlist) {
+		return playlist->text();
+	}
+}
+
+bool MainScene::setPlaylistText(const string& playlistID, const string& text) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 	if (playlist) {
 		playlist->text(text);
+		_status["set-text"] = Poco::format("%s:%s", playlistID, text);
 		return true;
 	}
 	return false;
@@ -256,7 +265,7 @@ void MainScene::setAction(string& action) {
 }
 
 void MainScene::setTransition(string& transition) {
-	_nextTransition = transition;
+	_playNext.transition = transition;
 }
 
 bool MainScene::prepareContent(const PlayParameters& params) {
@@ -655,7 +664,7 @@ void MainScene::process() {
 			SAFE_DELETE(_workspace);
 			_workspace = _updatedWorkspace;
 			_updatedWorkspace = NULL;
-			if (!_status["next-content"].empty() && _playCurrent.action != "stop") {
+			if (!_status["next-content"].empty() && _playCurrent.action.find("stop") == 0) {
 				activePrepareNextContent(_playNext);
 			}
 		}
@@ -695,9 +704,11 @@ void MainScene::process() {
 		if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
 
 		if (currentContent) {
-			if (_playCurrent.action == "stop") {
+			if (_playCurrent.action == "stop" || _playCurrent.action == "stop-prepared") {
+				// ’â~Œn
 
 			} else if (_playCurrent.action == "wait-prepared") {
+				// Ÿ‚ÌƒRƒ“ƒeƒ“ƒc‚ª€”õ‚Å‚«Ÿ‘æØ‘Ö
 				if (!_status["next-content"].empty()) {
 					// _log.information("wait prepared next content, prepared now.");
 					_doSwitchNext = true;

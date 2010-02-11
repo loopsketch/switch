@@ -30,6 +30,9 @@ public:
 
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
+	/** ステータス情報の設定 */
+	virtual void setStatus(const string& key, const string& value);
+
 	/** ステータス情報の取得 */
 	virtual const map<string, string>& getStatus();
 
