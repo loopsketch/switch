@@ -33,10 +33,12 @@ using Poco::ActiveMethod;
 using Poco::ActiveResult;
 
 
-struct PlaylistItem
+struct PlayParameters
 {
 	string playlistID;
 	int i;
+	string action;
+	string transition;
 };
 
 struct RemovableMediaArgs {
@@ -57,28 +59,26 @@ private:
 	DWORD _frame;
 	bool _startup;
 	bool _autoStart;
-	string _action;
 	int _luminance;
-
-	string _playlistID;
-	int _playlistItem;
-
-	MediaItemPtr _interruptMedia;
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
 	bool _preparing;
 
-	vector<PlaylistItem> _nextStack;
-	int _nextStackTime;
-
-	vector<PlaylistItem> _prepareStack;
-	int _prepareStackTime;
+	/** 再生コンテンツ情報 */
+	PlayParameters _playCurrent;
 
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
 	/** 再生中のコンテンツ名 */
 	LPDIRECT3DTEXTURE9 _currentName;
+
+	vector<PlayParameters> _nextStack;
+	int _nextStackTime;
+
+	/** 次再生コンテンツ情報 */
+	PlayParameters _playNext;
+
 	/** 次のプレイリスト名 */
 	LPDIRECT3DTEXTURE9 _nextPlaylistName;
 	/** 次のコンテンツ名 */
@@ -88,12 +88,15 @@ private:
 	/** 次のトランジション */
 	string _nextTransition;
 
+	vector<PlayParameters> _prepareStack;
+	int _prepareStackTime;
+
 	/** 切替準備コンテンツ */
+	PlayParameters _playPrepared;
+
+	/** 切替準備コンテンツ情報 */
 	ContainerPtr _prepared;
-	/** 切替準備プレイリスト */
-	string _preparedPlaylistID;
-	/** 切替準備プレイリストアイテム */
-	int _preparedItem;
+
 	/** 切替準備のプレイリスト名 */
 	LPDIRECT3DTEXTURE9 _preparedPlaylistName;
 	/** 切替準備のコンテンツ名 */
@@ -134,10 +137,10 @@ private:
 	void run();
 
 	/** 切替用コンテンツの準備 */
-	bool prepare(const PlaylistItem& args);
+	bool prepareContent(const PlayParameters& args);
 
 	/** 次再生コンテンツを準備します */
-	bool prepareNextMedia(const PlaylistItem& args);
+	bool prepareNextContent(const PlayParameters& args);
 
 	/** Containerに指定されたプレイリストのコンテンツを準備します */
 	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
@@ -162,7 +165,7 @@ public:
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** 切替用コンテンツをスタックします */
-	bool stackPrepare(string& playlistID, int i = 0);
+	bool stackPrepareContent(string& playlistID, int i = 0);
 
 	/** プレイリストテキスト設定 */
 	bool setPlaylistText(string& playlistID, string& text);
@@ -177,7 +180,7 @@ public:
 	void setTransition(string& transition);
 
 	/** 切替用コンテンツの準備(アクティブ版) */
-	ActiveMethod<bool, PlaylistItem, MainScene> activePrepare;
+	ActiveMethod<bool, PlayParameters, MainScene> activePrepareContent;
 
 	/** 手動で切替を行います */
 	bool switchContent();
@@ -186,7 +189,7 @@ public:
 	bool updateWorkspace();
 
 	/** 次再生コンテンツを準備(アクティブ版) */
-	ActiveMethod<bool, PlaylistItem, MainScene> activePrepareNextMedia;
+	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;
 
 	/** リムーバブルメディアの追加(アクティブ版) */
 	ActiveMethod<void, string, MainScene> activeAddRemovableMedia;

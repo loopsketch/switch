@@ -183,7 +183,7 @@ void SwitchRequestHandler::set(const string& name) {
 			if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
 			_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
 			_log.information(Poco::format("playlist: %s", playlistID));
-			bool result = scene->stackPrepare(playlistID, playlistIndex);
+			bool result = scene->stackPrepareContent(playlistID, playlistIndex);
 			map<string, string> params;
 			params["playlist"] = result?"true":"false";
 			if (result) {
@@ -241,7 +241,6 @@ void SwitchRequestHandler::get(const string& name) {
 	string message;
 	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 	if (scene) {
-		Workspace& workspace = scene->getWorkspace();
 		if (name == "workspace") {
 			response().sendFile("workspace.xml", "text/xml");
 			return;
@@ -256,28 +255,6 @@ void SwitchRequestHandler::get(const string& name) {
 					_log.warning("failed snapshot");
 				}
 			}
-			return;
-
-		} else if (name == "playlist") {
-			string playlistID = form().get("pl", "");
-			vector<string> playlists;
-			for (int i = 0; i < workspace.getPlaylistCount();i ++) {
-				PlayListPtr playlist = workspace.getPlaylist(i);
-				if (!playlistID.empty() && playlistID != playlist->id()) continue;
-				map<string, string> params;
-				params["id"] = Poco::format("\"%s\"", playlist->id());
-				params["name"] = Poco::format("\"%s\"", playlist->name());
-				vector<string> ids;
-				const vector<PlayListItemPtr> items = playlist->items();
-				for (vector<PlayListItemPtr>::const_iterator it = items.begin(); it != items.end(); it++) {
-					ids.push_back(Poco::format("\"%s\"", (*it)->media()->id()));
-				}
-				params["items"] = svvitch::formatJSONArray(ids);
-				playlists.push_back(svvitch::formatJSON(params));
-			}
-			map<string, string> result;
-			result["playlists"] = svvitch::formatJSONArray(playlists);
-			sendJSONP(form().get("callback", ""), result);
 			return;
 
 		} else if (name == "status") {
