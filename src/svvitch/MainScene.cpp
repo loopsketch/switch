@@ -250,7 +250,7 @@ bool MainScene::setPlaylistText(const string& playlistID, const string& text) {
 	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 	if (playlist) {
 		playlist->text(text);
-		_status["set-text"] = Poco::format("%s:%s", playlistID, text);
+		// _status["set-text"] = Poco::format("%s:%s", playlistID, text);
 		return true;
 	}
 	return false;
@@ -1005,13 +1005,21 @@ void MainScene::draw2() {
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
-		_renderer.drawFontTextureText(0, 660, 12, 16, 0xccffffff, status2);
-		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(0, 680, 12, 16, 0xccffffff, Poco::format("action>%s", _playCurrent.action));
-		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(0, 700, 12, 16, 0xccffffff, Poco::format("transition>%s", _playNext.transition));
+		_renderer.drawFontTextureText(0, 655, 12, 16, 0xccccccff, "frame");
+		_renderer.drawFontTextureText(120, 655, 12, 16, 0xccccccff, "time");
+		_renderer.drawFontTextureText(264, 655, 12, 16, 0xccccccff, "remain");
+		_renderer.drawFontTextureText(0, 670, 12, 16, 0xccffffff, status2);
+		_renderer.drawFontTextureText(0, 685, 12, 16, 0xccccccff, "    action");
+		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, 685, 12, 16, 0xccffffff, _playCurrent.action);
+		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccccccff, "transition");
+		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, 700, 12, 16, 0xccffffff, _playNext.transition);
 
+		_renderer.drawFontTextureText(600, 640, 12, 16, 0xccccccff, " current");
 		_renderer.drawTexture(700, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		_renderer.drawTexture(700, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, 670, 12, 16, 0xccccccff, "    next");
 		_renderer.drawTexture(700, 670, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, 685, 12, 16, 0xccccccff, "prepared");
 		_renderer.drawTexture(700, 685, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		_renderer.drawTexture(700, 700, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 
