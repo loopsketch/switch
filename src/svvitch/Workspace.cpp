@@ -195,10 +195,10 @@ bool Workspace::parse() {
 			if (nodes) {
 				Poco::RegularExpression re("[\\s:/]+");
 				for (int i = 0; i < nodes->length(); i++) {
-					Element* e = (Element*)nodes->item(i);
-					NodeList* nodesPlaylist = e->getElementsByTagName("item");
-					for (int j = 0; j < nodesPlaylist->length(); j++) {
-						e = (Element*)nodesPlaylist->item(j);
+					Element* schedule = (Element*)nodes->item(i);
+					NodeList* items = schedule->getElementsByTagName("item");
+					for (int j = 0; j < items->length(); j++) {
+						Element* e = (Element*)items->item(j);
 						string id = e->getAttribute("id");
 						string t = e->getAttribute("time");
 						string command = e->innerText();
@@ -225,7 +225,30 @@ bool Workspace::parse() {
 							_schedule.push_back(schedule);
 						}
 					}
-					nodesPlaylist->release();
+					items->release();
+				}
+				nodes->release();
+			}
+			nodes = doc->documentElement()->getElementsByTagName("deletes");
+			if (nodes) {
+				for (int i = 0; i < nodes->length(); i++) {
+					Element* deletes = (Element*)nodes->item(i);
+					NodeList* files = deletes->getElementsByTagName("file");
+					for (int j = 0; j < files->length(); j++) {
+						Element* e = (Element*)files->item(j);
+						string path = e->innerText();
+						if (path.find("switch-data:/") == 0) {
+							path = Path(config().dataRoot, path.substr(13)).toString();
+						}
+						try {
+							File file(path);
+							file.remove();
+							deletes->removeChild(e);
+						} catch (Poco::FileException ex) {
+							_log.warning(ex.displayText());
+						}
+					}
+					files->release();
 				}
 				nodes->release();
 			}

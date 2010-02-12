@@ -243,6 +243,7 @@ const string MainScene::getPlaylistText(const string& playlistID) {
 	if (playlist) {
 		return playlist->text();
 	}
+	return "";
 }
 
 bool MainScene::setPlaylistText(const string& playlistID, const string& text) {
