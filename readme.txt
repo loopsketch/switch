@@ -34,8 +34,6 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
 ※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
 
-<AdobeAIR1.5.2>
-
 ■ ビルド方法
 のちほど。
 
@@ -47,9 +45,14 @@ defactica.ttf       フォントファイル
 switch.exe          実行ファイル
 switch-config.dtd   基本設定ファイルのDTD
 switch-config.xml   基本設定ファイル
-airSvvitch.air      操作用Airアプリのパッケージ
 
 ■ 更新履歴
+0.3
+・試験的に音声トラックのサポート
+・テロップ機能のサポート
+・スケジュール機能のサポート
+・USBストレージによるワークスペース更新機能
+
 0.2
 ・AdobeAIR版オペレーション機能の追加
 ・送出画面側はUI機能の削除
