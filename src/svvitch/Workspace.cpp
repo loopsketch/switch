@@ -3,7 +3,14 @@
 #include <Poco/DOM/Document.h>
 #include <Poco/DOM/Element.h>
 #include <Poco/DOM/NodeList.h>
+#include <Poco/DOM/DOMWriter.h>
+#include <Poco/XML/XMLWriter.h>
+#include <Poco/DateTime.h>
+#include <Poco/DateTimeFormat.h>
+#include <Poco/DateTimeParser.h>
+#include <Poco/Timezone.h>
 #include <Poco/Exception.h>
+#include <Poco/FileStream.h>
 #include <Poco/NumberParser.h>
 #include <Poco/format.h>
 #include <Poco/hash.h>
@@ -231,6 +238,13 @@ bool Workspace::parse() {
 			}
 			nodes = doc->documentElement()->getElementsByTagName("deletes");
 			if (nodes) {
+				int tzd = Poco::Timezone::tzd();
+				//Poco::LocalDateTime now;
+				Poco::DateTime now;
+				now.makeLocal(tzd);
+				Poco::Timespan span(7, 0, 0, 0, 0); // 7days
+				Poco::DateTime validateTime = now - span;
+				bool update = false;
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* deletes = (Element*)nodes->item(i);
 					NodeList* files = deletes->getElementsByTagName("file");
@@ -242,15 +256,41 @@ bool Workspace::parse() {
 						}
 						try {
 							File file(path);
-							file.remove();
-							deletes->removeChild(e);
+							if (file.exists()) {
+								file.remove();
+								_log.information(Poco::format("file delete: %s", file.path()));
+							}
 						} catch (Poco::FileException ex) {
 							_log.warning(ex.displayText());
+						}
+
+						string date = e->getAttribute("date");
+						Poco::DateTime deleteDate;
+						Poco::DateTimeParser::tryParse(Poco::DateTimeFormat::ISO8601_FORMAT, date, deleteDate, tzd);
+						if (validateTime > deleteDate) {
+							_log.information(Poco::format("purge element: %s", e->innerText()));
+							deletes->removeChild(e);
+							update = true;
 						}
 					}
 					files->release();
 				}
 				nodes->release();
+				if (update) {
+					try {
+						Poco::FileOutputStream os(_file.toString());
+						if (os.good()) {
+							Poco::XML::DOMWriter writer;
+							writer.setNewLine("\r\n");
+							writer.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION | Poco::XML::XMLWriter::PRETTY_PRINT);
+							writer.writeNode(os, doc);
+							_log.information(Poco::format("update: %s", _file.toString()));
+						}
+					} catch (Poco::Exception& ex) {
+						_log.warning(ex.displayText());
+					}
+					signature = svvitch::md5(_file);
+				}
 			}
 			doc->release();
 			_signature = signature;
