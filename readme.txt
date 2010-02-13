@@ -20,7 +20,7 @@ PC上で作成できる動画ファイル、静止画ファイルの送出の他、テキストファイルをテロッ
 
 
 ■ 開発環境
-OS: Windows XP SP3
+OS: Windows7
 IDE: Microsoft Visual C++ 2008 Express Edition
      FlashDevelop3.0.6RTM
 
@@ -30,6 +30,7 @@ IDE: Microsoft Visual C++ 2008 Express Edition
 <OpenSSL>※pocoにてSSL関連を扱う場合
 <Microsoft DirectX 9.0 SDK (August 2009)>
 <Windows Software Development Kit (SDK) for Windows 7 and .NET Framework 3.5 Service Pack 1>
+<AdobeAIR1.5.3>※airSwitchの実行に必要
 ※DirectShowを使うためbaseclassesが必要
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
 ※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
@@ -45,6 +46,8 @@ defactica.ttf       フォントファイル
 switch.exe          実行ファイル
 switch-config.dtd   基本設定ファイルのDTD
 switch-config.xml   基本設定ファイル
+
+airSvvitch.air      ユーザインターフェースのAIRアプリです。
 
 ■ 更新履歴
 0.3
