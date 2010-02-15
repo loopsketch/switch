@@ -60,7 +60,9 @@ void svvitch::utf8_sjis(const string& str, string& out) {
 
 
 string svvitch::md5(const Path& path) {
-	std::ifstream is(path.toString().c_str(), std::ios::binary);
+	std::wstring wfile;
+	Poco::UnicodeConverter::toUTF16(path.toString(), wfile);
+	std::ifstream is(wfile.c_str(), std::ios::binary);
 	if (is.good()) {
 		MD5Engine md5;
 		DigestOutputStream dos(md5);
