@@ -543,7 +543,7 @@ private:
 				_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
 				if (vf) {
-					while (_worker != NULL && _frames.size() >= 40) {
+					while (_worker != NULL && _frames.size() >= 50) {
 						// ƒLƒ…[‹ó‚«‘Ò‚¿
 						//timeBeginPeriod(1);
 						Poco::Thread::sleep(10);
