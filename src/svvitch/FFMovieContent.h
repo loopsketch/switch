@@ -10,7 +10,7 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libswscale/swscale.h>
 }
-#pragma comment(lib, "dxva2.lib")
+//#pragma comment(lib, "dxva2.lib")
 
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>

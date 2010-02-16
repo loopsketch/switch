@@ -94,23 +94,23 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 			continue;
 		}
 		if (avctx->codec_type == CODEC_TYPE_VIDEO) {
-			IDirectXVideoDecoderService* service = NULL;
-			DXVA2CreateVideoService(_renderer.get3DDevice(), IID_PPV_ARGS(&service));
-			UINT resetToken = 0;
-		    IDirect3DDeviceManager9* d3dManager = NULL;
-		    HRESULT hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &d3dManager);
-			if SUCCEEDED(hr) {
-				hr = d3dManager->ResetDevice(_renderer.get3DDevice(), resetToken);
-				if SUCCEEDED(hr) {
-				} else {
-					_log.warning("failed ResetDevice()");
-				}
-			} else {
-				_log.warning("failed DXVA2CreateDirect3DDeviceManager9()");
-			}
-			SAFE_RELEASE(d3dManager);
+			//IDirectXVideoDecoderService* service = NULL;
+			//DXVA2CreateVideoService(_renderer.get3DDevice(), IID_PPV_ARGS(&service));
+			//UINT resetToken = 0;
+		    //IDirect3DDeviceManager9* d3dManager = NULL;
+		    //HRESULT hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &d3dManager);
+			//if SUCCEEDED(hr) {
+			//	hr = d3dManager->ResetDevice(_renderer.get3DDevice(), resetToken);
+			//	if SUCCEEDED(hr) {
+			//	} else {
+			//		_log.warning("failed ResetDevice()");
+			//	}
+			//} else {
+			//	_log.warning("failed DXVA2CreateDirect3DDeviceManager9()");
+			//}
+			//SAFE_RELEASE(d3dManager);
 
-			dxva_context* dxva = (dxva_context*)av_malloc(sizeof(dxva_context));
+			//dxva_context* dxva = (dxva_context*)av_malloc(sizeof(dxva_context));
 		//	AVHWAccel* hwaccel = av_hwaccel_next(NULL);
 		//	if (hwaccel) {
 		//		avctx->hwaccel_context = hwaccel;

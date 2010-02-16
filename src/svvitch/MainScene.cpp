@@ -607,6 +607,8 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 						Poco::StreamCopier::copyStream(is, os);
 						_currentCopySize += it->getSize();
 					}
+					is.close();
+					os.close();
 				} catch (Poco::FileException ex) {
 					_log.warning(ex.displayText());
 				}

@@ -290,6 +290,7 @@ void SwitchRequestHandler::files() {
 		if (!path.empty()) dir = dir.append(path);
 		_log.information(Poco::format("files: %s", dir.toString()));
 		map<string, string> result;
+		result["path"] = "\"" + path + "\"";
 		result["files"] = fileToJSON(dir);
 		sendJSONP(form().get("callback", ""), result);
 	} catch (Poco::FileException ex) {
