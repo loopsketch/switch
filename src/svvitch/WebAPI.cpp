@@ -313,9 +313,14 @@ string SwitchRequestHandler::fileToJSON(const Path path) {
 		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
 //			string json = fileToJSON(*it);
 //			files.push_back(json);
-			string subName = Path((*it).path()).getFileName();
+			File f = *it;
+			string subName = Path(f.path()).getFileName();
 			if (subName.length() > 1 && subName.at(0) != '.' && subName.at(0) != '$') {
-				files.push_back(Poco::format("\"%s\"", subName));
+				if (f.isDirectory()) {
+					files.push_back(Poco::format("\"%s/\"", subName));
+				} else {
+					files.push_back(Poco::format("\"%s\"", subName));
+				}
 			}
 		}
 		return svvitch::formatJSONArray(files);
