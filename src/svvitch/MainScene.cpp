@@ -692,6 +692,11 @@ void MainScene::process() {
 							if (command.find("playlist ") == 0) {
 								string playlistID = command.substr(9);
 								playlist = _workspace->getPlaylist(playlistID);
+							} else if (command.find("luminance ") == 0) {
+								int luminance = -1;
+								if (Poco::NumberParser::tryParse(command.substr(10), luminance) && luminance >= 0 && luminance <= 100) {
+									setLuminance(luminance);
+								}
 							}
 						}
 					}
