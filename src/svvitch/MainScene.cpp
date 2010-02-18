@@ -489,14 +489,23 @@ bool MainScene::updateWorkspace() {
 
 /** リモートコピー */
 bool MainScene::copyRemote(const string& remote) {
+	_log.information(Poco::format("remote copy: %s", remote));
 	try {
-		Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, string("")));
+		Poco::URI uri(Poco::format("http://%s/files?path=/", remote));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
-		Poco::FileOutputStream os("");
-		Poco::StreamCopier::copyStream(*is.get(), os);
-	} catch (Poco::FileException ex) {
+		_log.information(Poco::format("uri: %s", uri.toString()));
+		string result;
+		Poco::StreamCopier::copyToString(*is.get(), result);
+		_log.information(Poco::format("result: %s", result));
+		map<string, string> m;
+		svvitch::parseJSON(result, m);
+		for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
+			_log.information(Poco::format("[%s]=%s", it->first, it->second));
+		}
+	} catch (Poco::Exception ex) {
 		_log.warning(ex.displayText());
 	}
+	return true;
 }
 
 void MainScene::addRemovableMedia(const string& driveLetter) {

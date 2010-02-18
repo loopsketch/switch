@@ -124,7 +124,7 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 	int inArray = 0;
 	int inMap = 0;
 	string::size_type pos = 0;
-	while (json.length() > pos) {
+	for (; json.length() > pos; pos++) {
 		char c = json.at(pos);
 		switch (c) {
 		case '{':
@@ -148,7 +148,7 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 			inArray--;
 			break;
 		case '\"':
-			if (inArray == 0) {
+			if (inMap <= 1 && inArray == 0) {
 				if (inText != -1) {
 					// Textブロック終了
 				} else {
@@ -161,9 +161,10 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 			break;
 		case ':':
 			// キーブロック終了
-			if (inArray == 0) {
+			if (inMap <= 1 && inArray == 0) {
 				if (inText != -1) {
-					key = json.substr(inText, pos);
+					key = json.substr(inText, pos - inText);
+					inText = -1;
 				}
 			} else {
 				// arrayブロック内はスルー
@@ -171,12 +172,13 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 			break;
 		case ',':
 			// 値ブロック終了
-			if (inArray == 0) {
+			if (inMap <= 1 && inArray == 0) {
 				if (inMap > 0 && !key.empty()) {
-					string value = json.substr(inText, pos);
+					string value = json.substr(inText, pos - inText);
 					map[key] = value;
 					key.clear();
 				}
+				inText = -1;
 			} else {
 				// arrayブロック内はスルー
 			}
@@ -184,6 +186,10 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 		}
 	}
 	// 最後の要素終了
+	if (!key.empty()) {
+		string value = json.substr(inText, pos - inText);
+		map[key] = value;
+	}
 }
 
 void svvitch::parseJSONArray(const string& json, vector<string>& v) {

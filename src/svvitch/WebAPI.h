@@ -93,6 +93,9 @@ private:
 	/** アップロード */
 	void upload();
 
+	/** コピー */
+	void copy();
+
 	/** mapをJSONP形式で送信します */
 	void sendJSONP(const string& functionName, const map<string, string>& json);
 

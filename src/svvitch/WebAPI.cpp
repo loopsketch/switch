@@ -143,6 +143,8 @@ void SwitchRequestHandler::doRequest() {
 			upload();
 		} else if (urls[0] == "download") {
 			download();
+		} else if (urls[0] == "copy") {
+			copy();
 		}
 	}
 
@@ -419,6 +421,19 @@ void SwitchRequestHandler::upload() {
 		} catch (Poco::PathSyntaxException ex) {
 			_log.warning(ex.displayText());
 			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+		}
+	}
+}
+
+void SwitchRequestHandler::copy() {
+	string remote = form().get("remote", "");
+	if (!remote.empty()) {
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			bool result = scene->copyRemote(remote);
+			map<string, string> params;
+			params["copy"] = result?"true":"false";
+			sendJSONP(form().get("callback", ""), params);
 		}
 	}
 }
