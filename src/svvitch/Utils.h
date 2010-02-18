@@ -40,6 +40,10 @@ namespace svvitch {
 	/** JSON”z—ñ•¶š—ñ¶¬ */
 	string formatJSONArray(const vector<string>& list);
 
+	void parseJSON(const string& json, map<string, string>& map);
+
+	void parseJSONArray(const string& json, vector<string>& v);
+
 	/** src‚Ì’†‚ÌÅŒã‚ÌfindˆÈ~‚Ì•¶š—ñ‚ğæ“¾‚µ‚Ü‚· */
 	string findLastOfText(const string& src, const string& find);
 }

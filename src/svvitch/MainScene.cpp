@@ -12,7 +12,8 @@
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
 #include <Poco/FileStream.h>
-#include <Poco/StreamCopier.h>
+#include "Poco/URIStreamOpener.h"
+#include "Poco/URI.h"
 
 #include "Image.h"
 #include "FFMovieContent.h"
@@ -75,6 +76,7 @@ void MainScene::delayedReleaseContainer() {
 }
 
 bool MainScene::initialize() {
+	Poco::Net::HTTPStreamFactory::registerFactory();
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
 	_contents.push_back(new Container(_renderer)); // 2個のContainer
@@ -483,6 +485,18 @@ bool MainScene::updateWorkspace() {
 		return true;
 	}
 	return false;
+}
+
+/** リモートコピー */
+bool MainScene::copyRemote(const string& remote) {
+	try {
+		Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, string("")));
+		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
+		Poco::FileOutputStream os("");
+		Poco::StreamCopier::copyStream(*is.get(), os);
+	} catch (Poco::FileException ex) {
+		_log.warning(ex.displayText());
+	}
 }
 
 void MainScene::addRemovableMedia(const string& driveLetter) {

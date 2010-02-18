@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Poco/Net/HTTPStreamFactory.h>
+#include <Poco/StreamCopier.h>
 #include <d3d9.h>
 #include <d3dx9.h>
 #define DIRECTINPUT_VERSION 0x0800
@@ -186,6 +188,9 @@ public:
 
 	/** workspace更新 */
 	bool updateWorkspace();
+
+	/** リモートコピー */
+	bool copyRemote(const string& remote);
 
 	/** 次再生コンテンツを準備(アクティブ版) */
 	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;

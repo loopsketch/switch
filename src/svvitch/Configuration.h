@@ -47,6 +47,10 @@ public:
 	Path dataRoot;
 	Path workspaceFile;
 	string newsURL;
+
+	int serverPort;
+	int maxQueued;
+	int maxThreads;
 };
 
 typedef Configuration* ConfigurationPtr;

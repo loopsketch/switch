@@ -242,9 +242,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	Poco::ThreadPool::defaultPool().addCapacity(8);
 	Poco::Net::HTTPServerParams* params = new Poco::Net::HTTPServerParams;
-	params->setMaxQueued(50);
-	params->setMaxThreads(8);
-	Poco::Net::ServerSocket socket(9090);
+	params->setMaxQueued(_conf.maxQueued);
+	params->setMaxThreads(_conf.maxThreads);
+	Poco::Net::ServerSocket socket(_conf.serverPort);
 	Poco::Net::HTTPServer* server = new Poco::Net::HTTPServer(new SwitchRequestHandlerFactory(*_renderer), socket, params);
 	server->start();
 
@@ -566,6 +566,11 @@ bool guiConfiguration()
 		_conf.workspaceFile = Path(_conf.dataRoot, xml->getString("workspace", "workspace.xml"));
 		_log.information(Poco::format("workspace: %s", _conf.workspaceFile.toString()));
 		_conf.newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
+
+		_conf.serverPort = xml->getInt("server.port", 9090);
+		_conf.maxQueued = xml->getInt("server.max-queued", 50);
+		_conf.maxThreads = xml->getInt("server.max-threads", 8);
+
 		xml->release();
 		return true;
 	} catch (Poco::Exception& ex) {

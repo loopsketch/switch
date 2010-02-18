@@ -118,6 +118,77 @@ string svvitch::formatJSONArray(const vector<string>& list) {
 	return Poco::format("[%s]", svvitch::join(params, ","));
 }
 
+void svvitch::parseJSON(const string& json, map<string, string>& map) {
+	string key;
+	int inText = -1;
+	int inArray = 0;
+	int inMap = 0;
+	string::size_type pos = 0;
+	while (json.length() > pos) {
+		char c = json.at(pos);
+		switch (c) {
+		case '{':
+			// Mapブロック開始
+			inMap++;
+			break;
+		case '}':
+			// Mapブロック終了
+			inMap--;
+			break;
+		case '[':
+			// arrayブロック開始
+			if (inArray == 0) {
+				// Textブロック開始
+				inText = pos;
+			}
+			inArray++;
+			break;
+		case ']':
+			// arrayブロック終了
+			inArray--;
+			break;
+		case '\"':
+			if (inArray == 0) {
+				if (inText != -1) {
+					// Textブロック終了
+				} else {
+					// Textブロック開始
+					inText = pos;
+				}
+			} else {
+				// arrayブロック内はスルー
+			}
+			break;
+		case ':':
+			// キーブロック終了
+			if (inArray == 0) {
+				if (inText != -1) {
+					key = json.substr(inText, pos);
+				}
+			} else {
+				// arrayブロック内はスルー
+			}
+			break;
+		case ',':
+			// 値ブロック終了
+			if (inArray == 0) {
+				if (inMap > 0 && !key.empty()) {
+					string value = json.substr(inText, pos);
+					map[key] = value;
+					key.clear();
+				}
+			} else {
+				// arrayブロック内はスルー
+			}
+			break;
+		}
+	}
+	// 最後の要素終了
+}
+
+void svvitch::parseJSONArray(const string& json, vector<string>& v) {
+}
+
 string svvitch::findLastOfText(const string& src, const string& find) {
 	string s;
 	int i = src.find_last_of(find);
