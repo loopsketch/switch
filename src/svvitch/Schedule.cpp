@@ -14,15 +14,32 @@ Schedule::Schedule(const string id, const int year, const int month, const int d
 Schedule::~Schedule() {
 }
 
-bool Schedule::check(LocalDateTime time) {
+bool Schedule::matchDate(LocalDateTime time) {
 	if (_year >= 0 && _year != time.year()) return false;
 	if (_month >= 0 && _month != time.month()) return false;
 	if (_week >= 0 && _week != time.dayOfWeek()) return false;
 	if (_day >= 0 && _day != time.day()) return false;
-	if (_hour >= 0 && _hour != time.hour()) return false;
-	if (_minute >= 0 && _minute != time.minute()) return false;
-	if (_second >= 0 && _second != time.second()) return false;
 	return true;
+}
+
+bool Schedule::match(LocalDateTime time) {
+	if (matchDate(time)) {
+		if (_hour >= 0 && _hour != time.hour()) return false;
+		if (_minute >= 0 && _minute != time.minute()) return false;
+		if (_second >= 0 && _second != time.second()) return false;
+		return true;
+	}
+	return false;
+}
+
+bool Schedule::matchPast(LocalDateTime time) {
+	if (matchDate(time)) {
+		if (_hour >= 0 && _hour >= time.hour()) return false;
+		if (_minute >= 0 && _minute >= time.minute()) return false;
+		if (_second >= 0 && _second >= time.second()) return false;
+		return true;
+	}
+	return false;
 }
 
 const string& Schedule::command() const {

@@ -681,6 +681,22 @@ void MainScene::process() {
 			if (_workspace->getPlaylistCount() > 0) {
 				// playlistがある場合は最初のplaylistを自動スタートする
 				PlayListPtr playlist = _workspace->getPlaylist(0);
+
+				if (_workspace->getScheduleCount() > 0) {
+					Poco::LocalDateTime now;
+					Poco::Timespan span(0, 0, 0, 10, 0);
+					for (int i = 0; i < _workspace->getScheduleCount(); i++) {
+						SchedulePtr schedule = _workspace->getSchedule(i);
+						if (schedule->matchPast(now + span)) {
+							string command = schedule->command();
+							if (command.find("playlist ") == 0) {
+								string playlistID = command.substr(9);
+								playlist = _workspace->getPlaylist(playlistID);
+							}
+						}
+					}
+				}
+
 				if (playlist) {
 					PlayParameters args;
 					args.playlistID = playlist->id();
@@ -911,7 +927,7 @@ void MainScene::process() {
 		Poco::Timespan span(0, 0, 0, 10, 0);
 		for (int i = 0; i < _workspace->getScheduleCount(); i++) {
 			SchedulePtr schedule = _workspace->getSchedule(i);
-			if (schedule->check(now + span)) {
+			if (schedule->match(now + span)) {
 				// 10秒前チェック
 				string command = schedule->command();
 				if (command.find("playlist ") == 0) {
@@ -927,7 +943,7 @@ void MainScene::process() {
 				} else {
 					_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
 				}
-			} else if (schedule->check(now)) {
+			} else if (schedule->match(now)) {
 				// 実時間チェック
 				string command = schedule->command();
 				if (command.find("playlist ") == 0) {
@@ -938,6 +954,11 @@ void MainScene::process() {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
 					}
 					break;
+				} else if (command.find("luminance ") == 0) {
+					int luminance = -1;
+					if (Poco::NumberParser::tryParse(command.substr(10), luminance) && luminance >= 0 && luminance <= 100) {
+						setLuminance(luminance);
+					}
 				}
 			}
 		}

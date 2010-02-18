@@ -25,8 +25,14 @@ public:
 	Schedule(const string id, const int year, const int month, const int day, const int hour, const int minute, const int second, const int week, const string command);
 	~Schedule();
 
-	/** 実行タイミングかどうか */
-	bool check(LocalDateTime time);
+	/** 日付系の指定がマッチしているか */
+	bool Schedule::matchDate(LocalDateTime time);
+
+	/** 実行タイミングにjustマッチしているか */
+	bool match(LocalDateTime time);
+
+	/** 日付系がマッチしており実行タイミングを経過しているか */
+	bool matchPast(LocalDateTime time);
 
 	/** コマンド */
 	const string& command() const;
