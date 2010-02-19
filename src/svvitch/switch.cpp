@@ -430,9 +430,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					}
 					break;
 				case DBT_DEVNODES_CHANGED:
-					_renderer->notifyDeviceChanged();
 					break;
 				}
+				_renderer->notifyDeviceChanged();
 			}
 			break;
 

@@ -3,6 +3,8 @@
 #include <Psapi.h>
 #include <Poco/format.h>
 #include <Poco/DirectoryIterator.h>
+#include <Poco/DateTimeFormat.h>
+#include <Poco/DateTimeParser.h>
 #include <Poco/Exception.h>
 #include <Poco/string.h>
 #include <Poco/NumberFormatter.h>
@@ -11,6 +13,7 @@
 #include <Poco/LocalDateTime.h>
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/Timespan.h>
+#include <Poco/Timezone.h>
 #include <Poco/FileStream.h>
 #include "Poco/URIStreamOpener.h"
 #include "Poco/URI.h"
@@ -32,13 +35,15 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepareContent(this, &MainScene::prepareContent),
 	activePrepareNextContent(this, &MainScene::prepareNextContent),
+	activeCopyRemote(this, &MainScene::copyRemote),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
 	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
 	_transition(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false),
-	_removableIcon(NULL), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0)
+	_removableIcon(NULL), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
+	_copyRemoteFiles(0)
 {
 	initialize();
 }
@@ -488,25 +493,96 @@ bool MainScene::updateWorkspace() {
 }
 
 /** リモートコピー */
-bool MainScene::copyRemote(const string& remote) {
+void MainScene::copyRemote(const string& remote) {
 	_log.information(Poco::format("remote copy: %s", remote));
+	File copyDir("copys");
+	if (copyDir.exists()) copyDir.remove(true);
+	bool result = copyRemoteDir(remote, "/");
+}
+
+bool MainScene::copyRemoteDir(const string& remote, const string& root) {
+	_log.information(Poco::format("remote copy directory: %s", root));
 	try {
-		Poco::URI uri(Poco::format("http://%s/files?path=/", remote));
+		Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, root));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
-		_log.information(Poco::format("uri: %s", uri.toString()));
 		string result;
 		Poco::StreamCopier::copyToString(*is.get(), result);
-		_log.information(Poco::format("result: %s", result));
+		//_log.information(Poco::format("result: %s", result));
 		map<string, string> m;
 		svvitch::parseJSON(result, m);
-		for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
-			_log.information(Poco::format("[%s]=%s", it->first, it->second));
+		//for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
+		//	_log.information(Poco::format("[%s]=%s", it->first, it->second));
+		//}
+		if (root == "/") {
+			Poco::NumberParser::tryParse(m["count"], _copyRemoteFiles);
+			_log.information(Poco::format("copy files: %d", _copyRemoteFiles));
+		}
+		vector<string> v;
+		svvitch::parseJSONArray(m["files"], v);
+		File dataDir("datas");
+		File copyDir("copys");
+		if (!copyDir.exists()) copyDir.createDirectories();
+		for (vector<string>::iterator it = v.begin(); it != v.end(); it++) {
+			string remotePath = root + *it;
+			if (remotePath.at(remotePath.length() - 1) == '/') {
+				copyRemoteDir(remote, remotePath);
+
+			} else {
+				Poco::DateTime modified;
+				int tzd = Poco::Timezone::tzd();
+				modified.makeLocal(tzd);
+				try {
+					Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, remotePath));
+					std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
+					string result;
+					Poco::StreamCopier::copyToString(*is.get(), result);
+					_log.information(Poco::format("result: %s", result));
+					map<string, string> m;
+					svvitch::parseJSON(result, m);
+					svvitch::parseJSON(m["files"], m);
+					for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
+						_log.information(Poco::format("[%s]=%s", it->first, it->second));
+					}
+					int tz = 0;
+					Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tz);
+					modified.makeUTC(tzd);
+					_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
+
+				} catch (Poco::FileException& ex) {
+					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
+				} catch (Poco::Exception ex) {
+					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
+				}
+
+				//_log.information(Poco::format("files: %s", path));
+				File f(copyDir.path() + remotePath + ".part");
+				File parent(Path(f.path()).parent());
+				if (!parent.exists()) parent.createDirectories();
+				try {
+					Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, remotePath));
+					std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
+					Poco::FileOutputStream os(f.path());
+					int size = Poco::StreamCopier::copyStream(*is.get(), os, 512 * 1024);
+					os.close();
+					File rename(copyDir.path() + remotePath);
+					if (rename.exists()) rename.remove();
+					f.renameTo(rename.path());
+					f.setLastModified(modified.timestamp());
+					_log.information(Poco::format("remote file copy %s %d", remotePath, size));
+					_copyRemoteFiles--;
+				} catch (Poco::FileException& ex) {
+					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
+				} catch (Poco::Exception ex) {
+					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
+				}
+			}
 		}
 	} catch (Poco::Exception ex) {
-		_log.warning(ex.displayText());
+		_log.warning(Poco::format("failed files: %s", ex.displayText()));
 	}
 	return true;
 }
+
 
 void MainScene::addRemovableMedia(const string& driveLetter) {
 	{
@@ -518,7 +594,6 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		_addRemovable = driveLetter;
 	}
 	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
-	Sleep(2000);
 
 	if (!_removableIcon) {
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
@@ -532,6 +607,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	_currentCopyProgress = 0;
 	_removableAlpha = 0.01f;
 	_removableCover = 0;
+	Sleep(3000);
 
 	Path dst = Path(config().dataRoot.parent(), "removable-copys\\");
 	File dir(dst);
@@ -586,6 +662,7 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 			Sleep(100);
 		}
 	}
+	_removableAlpha = 0;
 	_running = true;
 	_copySize = 0;
 	_removableCover = 0.0f;
@@ -1079,7 +1156,7 @@ void MainScene::draw2() {
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, 730, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d playing no<%d> next:%s", _nowTime, _playCount, _currentContent, wait));
+		_renderer.drawFontTextureText(0, 730, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
 	}
 
 	{

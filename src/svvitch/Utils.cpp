@@ -6,12 +6,14 @@
 #include <vector>
 #include <Poco/MD5Engine.h>
 #include <Poco/DigestStream.h>
+#include <Poco/File.h>
 #include <Poco/format.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/UnicodeConverter.h>
 
 using std::vector;
 using Poco::DigestEngine;
+using Poco::File;
 using Poco::MD5Engine;
 using Poco::DigestOutputStream;
 using Poco::StreamCopier;
@@ -58,6 +60,26 @@ void svvitch::utf8_sjis(const string& str, string& out) {
 	utf16_sjis(wstr, out); // UTF-16をシフトJISに変換
 }
 
+
+int svvitch::fileCount(const Path& path) {
+	int count = 0;
+	File dir(path);
+	if (dir.isDirectory()) {
+		vector<File> list;
+		dir.list(list);
+		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+			File f = *it;
+			if (f.isDirectory()) {
+				count += fileCount(Path(f.path()));
+			} else {
+				count++;
+			}
+		}
+	} else if (!dir.exists()) {
+		count++;
+	}
+	return count;
+}
 
 string svvitch::md5(const Path& path) {
 	std::wstring wfile;
@@ -120,7 +142,8 @@ string svvitch::formatJSONArray(const vector<string>& list) {
 
 void svvitch::parseJSON(const string& json, map<string, string>& map) {
 	string key;
-	int inText = -1;
+	bool inText = false;
+	int start = -1;
 	int inArray = 0;
 	int inMap = 0;
 	string::size_type pos = 0;
@@ -128,71 +151,144 @@ void svvitch::parseJSON(const string& json, map<string, string>& map) {
 		char c = json.at(pos);
 		switch (c) {
 		case '{':
-			// Mapブロック開始
-			inMap++;
+			if (!inText) {
+				// Mapブロック開始
+				if (inMap == 1 && start == -1) {
+					start = pos;
+				}
+				inMap++;
+			}
 			break;
 		case '}':
-			// Mapブロック終了
-			inMap--;
+			if (!inText) {
+				// Mapブロック終了
+				inMap--;
+				if (inMap == 0 && start != -1) {
+					if (!key.empty()) {
+						string value = json.substr(start, pos - start);
+						map[trimQuotationMark(key)] = trimQuotationMark(value);
+					}
+				}
+			}
 			break;
 		case '[':
-			// arrayブロック開始
-			if (inArray == 0) {
-				// Textブロック開始
-				inText = pos;
+			if (!inText) {
+				// arrayブロック開始
+				if (inArray == 0 && start == -1) {
+					// Textブロック開始
+					start = pos;
+				}
+				inArray++;
 			}
-			inArray++;
 			break;
 		case ']':
-			// arrayブロック終了
-			inArray--;
+			if (!inText) {
+				// arrayブロック終了
+				inArray--;
+			}
 			break;
 		case '\"':
 			if (inMap <= 1 && inArray == 0) {
-				if (inText != -1) {
+				if (start != -1) {
 					// Textブロック終了
+					inText = false;
 				} else {
 					// Textブロック開始
-					inText = pos;
+					start = pos;
+					inText = true;
 				}
 			} else {
 				// arrayブロック内はスルー
 			}
 			break;
 		case ':':
-			// キーブロック終了
-			if (inMap <= 1 && inArray == 0) {
-				if (inText != -1) {
-					key = json.substr(inText, pos - inText);
-					inText = -1;
+			if (!inText) {
+				// キーブロック終了
+				if (inMap <= 1 && inArray == 0) {
+					if (start != -1) {
+						key = json.substr(start, pos - start);
+						start = -1;
+					}
+				} else {
+					// arrayブロック内はスルー
 				}
-			} else {
-				// arrayブロック内はスルー
 			}
 			break;
 		case ',':
-			// 値ブロック終了
-			if (inMap <= 1 && inArray == 0) {
-				if (inMap > 0 && !key.empty()) {
-					string value = json.substr(inText, pos - inText);
-					map[key] = value;
-					key.clear();
+			if (!inText) {
+				// 値ブロック終了
+				if (inMap <= 1 && inArray == 0) {
+					if (inMap > 0 && !key.empty()) {
+						string value = json.substr(start, pos - start);
+						map[trimQuotationMark(key)] = trimQuotationMark(value);
+						key.clear();
+					}
+					start = -1;
+				} else {
+					// arrayブロック内はスルー
 				}
-				inText = -1;
-			} else {
-				// arrayブロック内はスルー
 			}
 			break;
+		case ' ':
+			// 空白はスルー
+			break;
+		default:
+			if (start == -1) {
+				start = pos;
+			}
 		}
-	}
-	// 最後の要素終了
-	if (!key.empty()) {
-		string value = json.substr(inText, pos - inText);
-		map[key] = value;
 	}
 }
 
 void svvitch::parseJSONArray(const string& json, vector<string>& v) {
+	string key;
+	int start = -1;
+	int inArray = 0;
+	string::size_type pos = 0;
+	for (; json.length() > pos; pos++) {
+		char c = json.at(pos);
+		switch (c) {
+		case '[':
+			// arrayブロック開始
+			inArray++;
+			break;
+		case ']':
+			// arrayブロック終了
+			inArray--;
+			if (inArray == 0 && start != -1) {
+				string value = json.substr(start, pos - start);
+				v.push_back(trimQuotationMark(value));
+			}
+			break;
+		case '\"':
+			if (start != -1) {
+				// Textブロック終了
+			} else {
+				// Textブロック開始
+				start = pos;
+			}
+			break;
+		case ',':
+			// 値ブロック終了
+			string value = json.substr(start, pos - start);
+			v.push_back(trimQuotationMark(value));
+			start = -1;
+			break;
+		}
+	}
+}
+
+string svvitch::trimQuotationMark(const string& s) {
+	char q = s.at(0);
+	switch (q) {
+	case '\"':
+	//case '[':
+	//case '}':
+		if (s.at(s.length() - 1) == q) {
+			return s.substr(1, s.length() - 2);
+		}
+	}
+	return s;
 }
 
 string svvitch::findLastOfText(const string& src, const string& find) {

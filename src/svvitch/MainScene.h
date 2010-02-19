@@ -129,6 +129,8 @@ private:
 	int _copyProgress;
 	int _currentCopyProgress;
 
+	int _copyRemoteFiles;
+
 	vector<ContainerPtr> _delayReleases;
 
 
@@ -146,6 +148,12 @@ private:
 	void addRemovableMedia(const string& driveLetter);
 
 	int copyFiles(const string& src, const string& dst);
+
+	/** リモートコピー */
+	void copyRemote(const string& remote);
+
+	/** リモートディレクトリのコピー */
+	bool copyRemoteDir(const string& remote, const string& root);
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
@@ -189,8 +197,8 @@ public:
 	/** workspace更新 */
 	bool updateWorkspace();
 
-	/** リモートコピー */
-	bool copyRemote(const string& remote);
+	/** リモートコピー (アクティブ版) */
+	ActiveMethod<void, string, MainScene> activeCopyRemote;
 
 	/** 次再生コンテンツを準備(アクティブ版) */
 	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;

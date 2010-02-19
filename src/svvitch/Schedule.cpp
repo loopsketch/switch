@@ -34,7 +34,9 @@ bool Schedule::match(LocalDateTime time) {
 
 bool Schedule::matchPast(LocalDateTime time) {
 	if (matchDate(time)) {
+		if (_hour >= 0 && _hour < time.hour()) return true;
 		if (_hour >= 0 && _hour > time.hour()) return false;
+		if (_minute >= 0 && _minute < time.minute()) return true;
 		if (_minute >= 0 && _minute > time.minute()) return false;
 		if (_second >= 0 && _second > time.second()) return false;
 		return true;

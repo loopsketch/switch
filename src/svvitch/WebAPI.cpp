@@ -292,6 +292,7 @@ void SwitchRequestHandler::files() {
 		if (!path.empty()) dir = dir.append(path);
 		_log.information(Poco::format("files: %s", dir.toString()));
 		map<string, string> result;
+		result["count"] = Poco::format("%d", svvitch::fileCount(dir));
 		result["path"] = "\"" + path + "\"";
 		result["files"] = fileToJSON(dir);
 		sendJSONP(form().get("callback", ""), result);
@@ -334,7 +335,7 @@ string SwitchRequestHandler::fileToJSON(const Path path) {
 	modified.makeLocal(Poco::Timezone::tzd());
 	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
 	params["size"] = Poco::NumberFormatter::format(static_cast<int>(f.getSize()));
-	params["md5"] = "\"" + svvitch::md5(path) + "\"";
+	//params["md5"] = "\"" + svvitch::md5(path) + "\"";
 	return svvitch::formatJSON(params);
 }
 
@@ -375,6 +376,7 @@ void SwitchRequestHandler::download() {
 			}
 			response().setChunkedTransferEncoding(false);
 			Poco::StreamCopier::copyStream(is, response().send());
+			is.close();
 		} else {
 			throw Poco::OpenFileException(src.toString());
 		}
@@ -430,9 +432,10 @@ void SwitchRequestHandler::copy() {
 	if (!remote.empty()) {
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
-			bool result = scene->copyRemote(remote);
+			scene->activeCopyRemote(remote);
+
 			map<string, string> params;
-			params["copy"] = result?"true":"false";
+			params["copy"] = "true";
 			sendJSONP(form().get("callback", ""), params);
 		}
 	}

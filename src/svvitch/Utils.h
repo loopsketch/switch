@@ -25,6 +25,9 @@ namespace svvitch {
 	/** UTF-8->SJISに変換 */
 	void utf8_sjis(const string& str, string& out);
 
+	/** サブフォルダを含むファイル数を返します */
+	int fileCount(const Path& path);
+
 	/** ファイルのMD5シグネイチャを取得 */
 	string md5(const Path& path);
 
@@ -39,6 +42,8 @@ namespace svvitch {
 
 	/** JSON配列文字列生成 */
 	string formatJSONArray(const vector<string>& list);
+
+	string trimQuotationMark(const string& s);
 
 	void parseJSON(const string& json, map<string, string>& map);
 

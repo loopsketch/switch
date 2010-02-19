@@ -467,7 +467,7 @@ void Renderer::removeScene(const string& name) {
  */
 void Renderer::renderScene(const DWORD current) {
 	_current = current;
-	if (_lastDeviceChanged - _current > 3000) {
+	if (!_addDrives.empty() && _lastDeviceChanged - _current > 3000) {
 		// 最後のデバイス変化から規定時間経過
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
