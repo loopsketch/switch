@@ -712,6 +712,8 @@ void MainScene::process() {
 						SchedulePtr schedule = _workspace->getSchedule(i);
 						if (schedule->matchPast(now + span)) {
 							string command = schedule->command();
+							string t = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
+							_log.information(Poco::format("%s %s", t, command));
 							if (command.find("playlist ") == 0) {
 								string playlistID = command.substr(9);
 								playlist = _workspace->getPlaylist(playlistID);
