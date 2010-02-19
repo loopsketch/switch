@@ -262,8 +262,10 @@ void SwitchRequestHandler::get(const string& name) {
 		} else if (name == "text") {
 			string playlistID = form().get("pl", "");
 			string text = scene->getPlaylistText(playlistID);
+			Poco::RegularExpression re("\\r|\\n");
+			re.subst(text, "\\n", Poco::RegularExpression::RE_GLOBAL);
 			map<string, string> params;
-			params["text"] = text;
+			params["text"] = "\"" + text + "\"";
 			sendJSONP(form().get("callback", ""), params);
 			return;
 
