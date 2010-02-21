@@ -147,7 +147,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
 
-					_log.information(Poco::format("open decoder: %s %.3hf %.3hf", string(avcodec->long_name), _rate, _intervals));
+					_log.information(Poco::format("open decoder: %s %.3hf %.3hf %dkbps", string(avcodec->long_name), _rate, _intervals, avctx->bit_rate / 1024));
 					_video = i;
 					_videoDecoder = new VideoDecoder(_renderer, _ic, _video);
 					_videoDecoder->start();
@@ -161,7 +161,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
-					_log.information(Poco::format("open decoder: %s", string(avcodec->long_name)));
+					_log.information(Poco::format("open decoder: %s %dkbps", string(avcodec->long_name), avctx->bit_rate / 1024));
 					_audio = i;
 					_audioDecoder = new AudioDecoder(_renderer, _ic, _audio);
 					_audioDecoder->start();
