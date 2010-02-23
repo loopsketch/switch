@@ -260,6 +260,11 @@ public:
 	void drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
 
 	/**
+	 * フォントファミリーの取得
+	 */
+	void getPrivateFontFamily(string fontName, Gdiplus::FontFamily** ff);
+
+	/**
 	 * GDIを使った文字列描画の開始
 	 */
 	bool beginFont(const wstring& fontFace, const Sint32 size);

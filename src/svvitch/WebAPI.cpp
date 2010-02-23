@@ -154,137 +154,149 @@ void SwitchRequestHandler::doRequest() {
 }
 
 void SwitchRequestHandler::switchContent() {
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-	if (scene) {
-		map<string, string> params;
-		params["switched"] = scene->switchContent()?"true":"false";
-		sendJSONP(form().get("callback", ""), params);
-	} else {
-		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+	try {
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			map<string, string> params;
+			params["switched"] = scene->switchContent()?"true":"false";
+			sendJSONP(form().get("callback", ""), params);
+		} else {
+			sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+		}
+	} catch (...) {
 	}
 }
 
 void SwitchRequestHandler::updateWorkspace() {
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-	if (scene) {
-		map<string, string> params;
-		params["update"] = scene->updateWorkspace()?"true":"false";
-		sendJSONP(form().get("callback", ""), params);
-	} else {
-		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+	try {
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			map<string, string> params;
+			params["update"] = scene->updateWorkspace()?"true":"false";
+			sendJSONP(form().get("callback", ""), params);
+		} else {
+			sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+		}
+	} catch (...) {
 	}
 }
 
 void SwitchRequestHandler::set(const string& name) {
-	string message;
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-	if (scene) {
-		if (name == "playlist") {
-			string playlistID = form().get("pl", "");
-			int playlistIndex = 0;
-			if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
-			_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
-			_log.information(Poco::format("playlist: %s", playlistID));
-			bool result = scene->stackPrepareContent(playlistID, playlistIndex);
-			map<string, string> params;
-			params["playlist"] = result?"true":"false";
-			if (result) {
-				//Workspace& workspace = scene->getWorkspace();
-				//PlayListPtr playlist = workspace.getPlaylist(playlistID);
-				//if (playlist) params["name"] = Poco::format("\"%s\"", playlist->name());
-				//params["playlist"] = Poco::format("\"%s\"", playlistID);
-				//params["index"] = Poco::format("%d", playlistIndex);
+	try {
+		string message;
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			if (name == "playlist") {
+				string playlistID = form().get("pl", "");
+				int playlistIndex = 0;
+				if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
+				_log.information(Poco::format("set playlist: [%s]-%d", playlistID, playlistIndex));
+				_log.information(Poco::format("playlist: %s", playlistID));
+				bool result = scene->stackPrepareContent(playlistID, playlistIndex);
+				map<string, string> params;
+				params["playlist"] = result?"true":"false";
+				if (result) {
+					//Workspace& workspace = scene->getWorkspace();
+					//PlayListPtr playlist = workspace.getPlaylist(playlistID);
+					//if (playlist) params["name"] = Poco::format("\"%s\"", playlist->name());
+					//params["playlist"] = Poco::format("\"%s\"", playlistID);
+					//params["index"] = Poco::format("%d", playlistIndex);
+				}
+				sendJSONP(form().get("callback", ""), params);
+				return;
+			} else if (name == "text") {
+				string playlistID = form().get("pl", "");
+				string text = form().get("t", "");
+				map<string, string> params;
+				params["text"] = scene->setPlaylistText(playlistID, text)?"true":"false";
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (name == "luminance") {
+				int i = 0;
+				Poco::NumberParser::tryParse(form().get("v"), i);
+				scene->setLuminance(i);
+				map<string, string> params;
+				params["luminance"] = Poco::format("%d", i);
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (name == "action") {
+				string action = form().get("v");
+				scene->setAction(action);
+				map<string, string> params;
+				params["action"] = action;
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (name == "transition") {
+				string transition = form().get("v");
+				scene->setTransition(transition);
+				map<string, string> params;
+				params["transition"] = transition;
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else {
+				message = "property not found";
 			}
-			sendJSONP(form().get("callback", ""), params);
-			return;
-		} else if (name == "text") {
-			string playlistID = form().get("pl", "");
-			string text = form().get("t", "");
-			map<string, string> params;
-			params["text"] = scene->setPlaylistText(playlistID, text)?"true":"false";
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
-		} else if (name == "luminance") {
-			int i = 0;
-			Poco::NumberParser::tryParse(form().get("v"), i);
-			scene->setLuminance(i);
-			map<string, string> params;
-			params["luminance"] = Poco::format("%d", i);
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
-		} else if (name == "action") {
-			string action = form().get("v");
-			scene->setAction(action);
-			map<string, string> params;
-			params["action"] = action;
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
-		} else if (name == "transition") {
-			string transition = form().get("v");
-			scene->setTransition(transition);
-			map<string, string> params;
-			params["transition"] = transition;
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
 		} else {
-			message = "property not found";
+			message = "scene not found";
 		}
-	} else {
-		message = "scene not found";
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
+	} catch (...) {
 	}
-	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 }
 
 void SwitchRequestHandler::get(const string& name) {
-	string message;
-	MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-	if (scene) {
-		if (name == "workspace") {
-			response().sendFile("workspace.xml", "text/xml");
-			return;
+	try {
+		string message;
+		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (scene) {
+			if (name == "workspace") {
+				response().sendFile("workspace.xml", "text/xml");
+				return;
 
-		} else if (name == "snapshot") {
-			LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-			if (capture) {
-				// capture-lock
-				if SUCCEEDED(D3DXSaveTextureToFile(L"snapshot.png", D3DXIFF_PNG, capture, NULL)) {
-					response().sendFile("snapshot.png", "image/png");
-				} else {
-					_log.warning("failed snapshot");
+			} else if (name == "snapshot") {
+				LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
+				if (capture) {
+					// capture-lock
+					if SUCCEEDED(D3DXSaveTextureToFile(L"snapshot.png", D3DXIFF_PNG, capture, NULL)) {
+						response().sendFile("snapshot.png", "image/png");
+					} else {
+						_log.warning("failed snapshot");
+					}
 				}
+				return;
+
+			} else if (name == "text") {
+				string playlistID = form().get("pl", "");
+				string text = scene->getPlaylistText(playlistID);
+				Poco::RegularExpression re("\\r|\\n");
+				re.subst(text, "\\n", Poco::RegularExpression::RE_GLOBAL);
+				map<string, string> params;
+				params["text"] = "\"" + text + "\"";
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (name == "status") {
+				map<string, string> status = scene->getStatus();
+				map<string, string> params;
+				for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
+					params[it->first] = Poco::format("\"%s\"", it->second);
+				}
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else {
+				message = "property not found";
 			}
-			return;
-
-		} else if (name == "text") {
-			string playlistID = form().get("pl", "");
-			string text = scene->getPlaylistText(playlistID);
-			Poco::RegularExpression re("\\r|\\n");
-			re.subst(text, "\\n", Poco::RegularExpression::RE_GLOBAL);
-			map<string, string> params;
-			params["text"] = "\"" + text + "\"";
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
-		} else if (name == "status") {
-			map<string, string> status = scene->getStatus();
-			map<string, string> params;
-			for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
-				params[it->first] = Poco::format("\"%s\"", it->second);
-			}
-			sendJSONP(form().get("callback", ""), params);
-			return;
-
 		} else {
-			message = "property not found";
+			message = "scene not found";
 		}
-	} else {
-		message = "scene not found";
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
+	} catch (...) {
 	}
-	sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 }
 
 void SwitchRequestHandler::files() {
@@ -292,7 +304,7 @@ void SwitchRequestHandler::files() {
 	Path dir = config().dataRoot;
 	try {
 		if (!path.empty()) dir = dir.append(path);
-		_log.information(Poco::format("files: %s", dir.toString()));
+		// _log.information(Poco::format("files: %s", dir.toString()));
 		map<string, string> result;
 		result["count"] = Poco::format("%d", svvitch::fileCount(dir));
 		result["path"] = "\"" + path + "\"";

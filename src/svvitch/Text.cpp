@@ -16,14 +16,6 @@ using namespace Gdiplus;
 
 Text::Text(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL), _referencedText(NULL)
 {
-//	PrivateFontCollection fc;
-//	fc.AddFontFile(L"dfhsg9.ttc");
-//	int num = 0;
-//	fc.GetFamilies(16, _ff, &num);
-//	if (num == 0) {
-//		Font f(L"ＭＳ ゴシック", 16);
-//		f.GetFamily(&_ff[0]);
-//	}
 	initialize();
 }
 
@@ -470,15 +462,25 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	g.SetSmoothingMode(SmoothingModeHighQuality);
 	g.SetTextRenderingHint(TextRenderingHintAntiAlias);
 
-	std::wstring wfontFamily;
-	Poco::UnicodeConverter::toUTF16(_textFont, wfontFamily);
-	Font f(wfontFamily.c_str(), _textHeight);
-	Gdiplus::FontFamily ff;
-	f.GetFamily(&ff);
-//	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &_ff[0], FontStyleRegular, 30, Point(x, y), StringFormat::GenericDefault());
+	Gdiplus::FontFamily* ff = NULL;
+	_renderer.getPrivateFontFamily(_textFont, &ff);
+	if (!ff) {
+		// アプリのフォントが利用できない場合システムから取得してみる
+		std::wstring wfontFamily;
+		Poco::UnicodeConverter::toUTF16(_textFont, wfontFamily);
+		Font f(wfontFamily.c_str(), _textHeight);
+		Gdiplus::FontFamily fontFamily;
+		f.GetFamily(&fontFamily);
+		ff = fontFamily.Clone();
+		WCHAR wname[64] = L"";
+		ff->GetFamilyName(wname);
+		string name;
+		Poco::UnicodeConverter::toUTF8(wname, name);
+		_log.information(Poco::format("installed font: %s", name));
+	}
+	size_t len = wcslen(wtext.c_str());
 	GraphicsPath path;
-
-	path.AddString(wtext.c_str(), wcslen(wtext.c_str()), &ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
+	path.AddString(wtext.c_str(), len, ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
 	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), Color(0xff, 0xff, 0xff), Color(0xcc, 0xcc, 0xcc), LinearGradientModeVertical);
 	SolidBrush borderBrush1(Color(0, 0xcc, 0xcc, 0xcc));
 	SolidBrush borderBrush2(Color::Black);
@@ -494,6 +496,7 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	path.Widen(&pen2);
 	path.GetBounds(&rect);
 	g.Flush();
+	SAFE_DELETE(ff);
 
 //	{
 //		UINT num;        // number of image encoders

@@ -193,17 +193,18 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 			_fc->AddFontFile(wfile.c_str());
 		}
 	}
-	Gdiplus::FontFamily ff[16];
-	int num = 0;
-	_fc->GetFamilies(16, ff, &num);
-	for (int i = 0; i < num; i++) {
-		WCHAR s[32] = L"";
+
+	int count = 0;
+	Gdiplus::FontFamily ff[32];
+	_fc->GetFamilies(32, ff, &count);
+	for (int i = 0; i < 32 && i < count; i++) {
+		WCHAR s[64] = L"";
 		ff[i].GetFamilyName(s);
-		string ffName;
-		Poco::UnicodeConverter::toUTF8(s, ffName);
-		_log.information(Poco::format("private font family: %s", ffName));
-		if (ffName == config().asciiFont) createFontTexture(&ff[i], 32);
-//		if (ffName == _conf->multiByteFont) _multiByteFont = ff[i].Clone();
+		string name;
+		Poco::UnicodeConverter::toUTF8(s, name);
+		_log.information(Poco::format("private font family: %s", name));
+		if (name == config().asciiFont) createFontTexture(&ff[i], 32);
+//		if (name == _conf->multiByteFont) _multiByteFont = ff[i].Clone();
 	}
 
 	_keycode = 0;
@@ -836,6 +837,26 @@ void Renderer::drawTexture(const float dx, const float dy, const float dw, const
 		};
 	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
 	_device->SetTexture(0, NULL);
+}
+
+void Renderer::getPrivateFontFamily(string fontName, Gdiplus::FontFamily** result) {
+	std::wstring wfontName;
+	Poco::UnicodeConverter::toUTF16(fontName, wfontName);
+	//int count = _fc->GetFamilyCount();
+	int count = 0;
+	Gdiplus::FontFamily ff[32];
+	_fc->GetFamilies(32, ff, &count);
+	for (int i = 0; i < 32 && i < count; i++) {
+		WCHAR name[64] = L"";
+		ff[i].GetFamilyName(name);
+		if (wfontName == name) {
+			string ffName;
+			Poco::UnicodeConverter::toUTF8(name, ffName);
+			_log.information(Poco::format("%d:[%s]", i, ffName));
+			*result = ff[i].Clone();
+			return;
+		}
+	}
 }
 
 /**
