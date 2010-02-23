@@ -1,0 +1,2 @@
+# switch‚Åg‚Á‚Ä‚¢‚éFFmpegƒ‰ƒCƒuƒ‰ƒŠ‚Ìconfigure
+./configure --enable-static --disable-shared --enable-memalign-hack --enable-libmp3lame --enable-avisynth --enable-w32threads --extra-cflags="-I/local/include -mtune=pentium4 -mfpmath=sse -msse" --extra-ldflags="-static -L/local/lib" --disable-debug
