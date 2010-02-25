@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <Poco/ActiveMethod.h>
 #include <Poco/format.h>
 #include <Poco/Logger.h>
 #include <Poco/HashMap.h>
@@ -13,6 +14,7 @@ using std::string;
 using std::vector;
 using std::wstring;
 using Poco::HashMap;
+using Poco::ActiveMethod;
 
 
 class Content
@@ -59,6 +61,8 @@ public:
 
 	/** ファイルをクローズします */
 	virtual void close();
+
+	ActiveMethod<void, void, Content> activeClose;
 
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 

@@ -389,7 +389,7 @@ void SwitchRequestHandler::download() {
 				response().setContentType("application/octet-stream");
 			}
 			response().setChunkedTransferEncoding(false);
-			Poco::StreamCopier::copyStream(is, response().send());
+			Poco::StreamCopier::copyStream(is, response().send(), 1024 * 1024);
 			is.close();
 		} else {
 			throw Poco::OpenFileException(src.toString());

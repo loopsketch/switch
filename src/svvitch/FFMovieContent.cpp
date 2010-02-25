@@ -297,20 +297,22 @@ void FFMovieContent::close() {
 			Poco::ScopedLock<Poco::FastMutex> lock(_frameLock);
 			SAFE_DELETE(_vf);
 		}
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (_worker) {
 			_worker = NULL;
 			_thread.join();
+		}
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			SAFE_DELETE(_audioDecoder);
 			SAFE_DELETE(_videoDecoder);
-//				SAFE_DELETE(_vf); // 本来はここが良さそうだがフレーム描画だと落ちるので_videoDecoderが無くなったらdraw()の方でdelete
+			// SAFE_DELETE(_vf); // 本来はここが良さそうだがフレーム描画だと落ちるので_videoDecoderが無くなったらdraw()の方でdelete
 		}
 		for (int i = 0; i < _ic->nb_streams; i++) {
 			AVCodecContext* avctx = _ic->streams[i]->codec;
 			if (avctx) {
 				if (avctx->codec) {
 					avcodec_flush_buffers(avctx);
-//					avcodec_default_free_buffers(avctx);
+					// avcodec_default_free_buffers(avctx);
 					_log.information(Poco::format("release codec: %s", string(avctx->codec->long_name)));
 					avcodec_close(avctx);
 				}

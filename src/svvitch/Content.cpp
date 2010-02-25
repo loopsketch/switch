@@ -5,7 +5,8 @@
 
 
 Content::Content(Renderer& renderer, float x, float y, float w, float h):
-	_log(Poco::Logger::get("")), _renderer(renderer), _duration(0), _current(0), _x(x), _y(y), _w(w), _h(h), _playing(false)
+	_log(Poco::Logger::get("")), _renderer(renderer), _duration(0), _current(0), _x(x), _y(y), _w(w), _h(h), _playing(false),
+	activeClose(this, &Content::close)
 {
 }
 

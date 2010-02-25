@@ -149,6 +149,16 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 
 bool MainScene::prepareNextContent(const PlayParameters& params) {
 	_preparingNext = true;
+	ContainerPtr c = new Container(_renderer);
+	ContainerPtr oldNextContainer = NULL;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		int next = (_currentContent + 1) % _contents.size();
+		oldNextContainer = _contents[next];
+		_contents[next] = c;
+	}
+	SAFE_DELETE(oldNextContainer);
+
 	string playlistID = params.playlistID;
 	int i = params.i;
 
@@ -166,8 +176,8 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 				i = 0;
 			}
 		} else if (params.action == "stop") {
-			int next = (_currentContent + 1) % _contents.size();
-			_contents[next]->initialize();
+			//int next = (_currentContent + 1) % _contents.size();
+			//_contents[next]->initialize();
 			_preparingNext = false;
 			LPDIRECT3DTEXTURE9 oldNextPlaylistName = NULL;
 			LPDIRECT3DTEXTURE9 oldNextName = NULL;
@@ -186,7 +196,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		}
 	}
 
-	ContainerPtr c = new Container(_renderer);
+	c = new Container(_renderer);
 	if (prepareMedia(c, playlistID, i)) {
 		string playlistName = "ready";
 		string itemName = "ready";
@@ -562,7 +572,7 @@ bool MainScene::copyRemoteDir(const string& remote, const string& root) {
 					Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, remotePath));
 					std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 					Poco::FileOutputStream os(f.path());
-					int size = Poco::StreamCopier::copyStream(*is.get(), os, 512 * 1024);
+					int size = Poco::StreamCopier::copyStream(*is.get(), os, 1024 * 1024);
 					os.close();
 					File rename(copyDir.path() + remotePath);
 					if (rename.exists()) rename.remove();
@@ -841,6 +851,8 @@ void MainScene::process() {
 				}
 			} else {
 				// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ
+				int next = (_currentContent + 1) % _contents.size();
+				ContainerPtr nextContainer = _contents[next];
 				if (_contents[_currentContent]->finished()) {
 					// _log.information(Poco::format("content[%d] finished: ", _currentContent));
 					_doSwitchNext = true;
@@ -932,11 +944,12 @@ void MainScene::process() {
 
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
-			_doSwitchNext = false;
+			//_doSwitchNext = false;
 			_playCurrent = _playNext;
 			int next = (_currentContent + 1) % _contents.size();
 			ContentPtr nextContent = _contents[next]->get(0);
 			if (nextContent && !nextContent->opened().empty()) {
+				_doSwitchNext = false;
 				_currentContent = next;
 				_contents[next]->play();
 				LPDIRECT3DTEXTURE9 oldPlaylistName = NULL;
@@ -973,7 +986,7 @@ void MainScene::process() {
 				if (!_transition) {
 					_doPrepareNext = true;
 				}
-				} else {
+			} else {
 			}
 		}
 
