@@ -649,28 +649,28 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 		}
 		_log.information("stop current playing");
 		_running = false;
-		Sleep(2000);
+		Sleep(1000);
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
 				(*it)->initialize();
 			}
+			_log.information("purge all contents");
+			SAFE_RELEASE(_playlistName);
+			SAFE_RELEASE(_currentName);
+			SAFE_RELEASE(_nextPlaylistName);
+			SAFE_RELEASE(_nextName);
+			SAFE_RELEASE(_preparedPlaylistName);
+			SAFE_RELEASE(_preparedName);
 		}
-		_log.information("purge all contents");
-		SAFE_RELEASE(_playlistName);
-		SAFE_RELEASE(_currentName);
-		SAFE_RELEASE(_nextPlaylistName);
-		SAFE_RELEASE(_nextName);
-		SAFE_RELEASE(_preparedPlaylistName);
-		SAFE_RELEASE(_preparedName);
 		_status.clear();
 		_playCurrent.action.clear();
 		_playCurrent.transition.clear();
 	} else {
 		_running = false;
-		while (_removableAlpha > 0.0f) {
-			Sleep(100);
-		}
+	}
+	while (_removableAlpha > 0.0f) {
+		Sleep(100);
 	}
 	_removableAlpha = 0;
 	_running = true;
