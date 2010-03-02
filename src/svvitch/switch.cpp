@@ -453,28 +453,28 @@ bool guiConfiguration()
 
 	try {
 		XMLConfiguration* xml = new XMLConfiguration("switch-config.xml");
-		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log[@pattern]", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
+		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log.pattern", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
 		pat->setProperty(Poco::PatternFormatter::PROP_TIMES, "local");
 		Poco::FormattingChannel* fc = new Poco::FormattingChannel(pat);
 //		_logFile = new Poco::ConsoleChannel();
-		_logFile = new Poco::FileChannel(xml->getString("log", "switch.log"));
+		_logFile = new Poco::FileChannel(xml->getString("log.file", "switch.log"));
 		fc->setChannel(_logFile);
 		_log.setChannel(fc);
 		// ローカル時刻指定
 		fc->setProperty(Poco::FileChannel::PROP_TIMES, "local");
 		// アーカイブファイル名への付加文字列[number/timestamp] (日付)
-		fc->setProperty(Poco::FileChannel::PROP_ARCHIVE, xml->getString("log[@archive]", "timestamp"));
+		fc->setProperty(Poco::FileChannel::PROP_ARCHIVE, xml->getString("log.archive", "timestamp"));
 		// 圧縮[true/false] (あり)
-		fc->setProperty(Poco::FileChannel::PROP_COMPRESS, xml->getString("log[@compress]", "true"));
+		fc->setProperty(Poco::FileChannel::PROP_COMPRESS, xml->getString("log.compress", "true"));
 		// ローテーション単位[never/[day,][hh]:mm/daily/weekly/monthly/<n>minutes/hours/days/weeks/months/<n>/<n>K/<n>M] (日)
-		fc->setProperty(Poco::FileChannel::PROP_ROTATION, xml->getString("log[@rotation]", "daily"));
+		fc->setProperty(Poco::FileChannel::PROP_ROTATION, xml->getString("log.rotation", "daily"));
 		// 保持期間[<n>seconds/<n>minutes/<n>hours/<n>days/<n>weeks/<n>months] (5日間)
-		fc->setProperty(Poco::FileChannel::PROP_PURGEAGE, xml->getString("log[@purgeage]", "5days"));
+		fc->setProperty(Poco::FileChannel::PROP_PURGEAGE, xml->getString("log.purgeage", "5days"));
 		fc->release();
 		pat->release();
 		_log.information("*** configuration");
 
-		_conf.title = xml->getString("title", "switch");
+		_conf.title = xml->getString("display.title", "switch");
 		_conf.mainRect.left = xml->getInt("display.x", 0);
 		_conf.mainRect.top = xml->getInt("display.y", 0);
 		int w = xml->getInt("display.width", 1024);
@@ -502,9 +502,9 @@ bool guiConfiguration()
 		string useClip(_conf.useClip?"use":"not use");
 		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
-		int cw = xml->getInt("display.split.width", w);
-		int ch = xml->getInt("display.split.height", h);
-		int cycles = xml->getInt("display.split.cycles", h / ch);
+		int cw = xml->getInt("stage.split.width", w);
+		int ch = xml->getInt("stage.split.height", h);
+		int cycles = xml->getInt("stage.split.cycles", h / ch);
 		_conf.splitSize.cx = cw;
 		_conf.splitSize.cy = ch;
 		_conf.stageRect.left = xml->getInt("stage.x", 0);
@@ -512,7 +512,7 @@ bool guiConfiguration()
 		_conf.stageRect.right = xml->getInt("stage.width", w * cycles);
 		_conf.stageRect.bottom = xml->getInt("stage.height", ch);
 		_conf.splitCycles = cycles;
-		string splitType = xml->getString("display.split.type", "none");
+		string splitType = xml->getString("stage.split.type", "none");
 		if (splitType == "vertical" || splitType == "vertical-down") {
 			_conf.splitType = 1;
 		} else if (splitType == "vertical-up") {
@@ -525,7 +525,7 @@ bool guiConfiguration()
 		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", _conf.stageRect.left, _conf.stageRect.top, _conf.stageRect.right, _conf.stageRect.bottom));
 		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
 
-		_conf.useScenes = xml->getString("scenes", "main,operation");
+		_conf.useScenes = xml->getString("scenes", "main");
 		_conf.luminance = xml->getInt("stage.luminance", 100);
 		_conf.viewStatus = xml->getBool("stage.viewStatus", false);
 
@@ -534,7 +534,7 @@ bool guiConfiguration()
 			string s;
 			Poco::UnicodeConverter::toUTF8(L"ＭＳ ゴシック", s);
 			_conf.textFont = xml->getString("stage.text.font", s);
-			string style = xml->getString("stage.text.style");
+			string style = xml->getString("stage.text.style", "");
 			if (style == "bold") {
 				_conf.textStyle = Gdiplus::FontStyleBold;
 			} else if (style == "italic") {
