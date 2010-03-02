@@ -187,7 +187,7 @@ public:
 			device->SetTexture(1, texture[1]);
 			device->SetTexture(2, texture[2]);
 			if (_fx) {
-				_fx->SetTechnique("BasicTech");
+				_fx->SetTechnique("conversionTech");
 				_fx->SetTexture("stage0", texture[0]);
 				_fx->SetTexture("stage1", texture[1]);
 				_fx->SetTexture("stage2", texture[2]);
@@ -396,7 +396,7 @@ private:
 
 	const bool createEffect() {
 		std::wstring wfile;
-		Poco::UnicodeConverter::toUTF16(string("basic.fx"), wfile);
+		Poco::UnicodeConverter::toUTF16(string("conversion_yuv2rgb.fx"), wfile);
 		LPD3DXBUFFER errors = NULL;
 		HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
 		if (errors) {

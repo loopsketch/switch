@@ -49,7 +49,7 @@ sampler sampler2 = sampler_state
 //------------------------------------------------
 // 頂点シェーダ
 //------------------------------------------------
-void BasicVS(float3 in_pos: POSITION, out float4 out_pos: POSITION, out float4 out_color: COLOR0)
+void conversionVS(float3 in_pos: POSITION, out float4 out_pos: POSITION, out float4 out_color: COLOR0)
 {
 	// 座標変換
 	out_pos = mul(float4(in_pos, 1.0f), g_wvp);
@@ -60,7 +60,7 @@ void BasicVS(float3 in_pos: POSITION, out float4 out_pos: POSITION, out float4 o
 //------------------------------------------------
 // ピクセルシェーダ
 //------------------------------------------------
-void BasicPS(float4 in_color: COLOR0, float2 tex: TEXCOORD0, out float4 out_color: COLOR0)
+void conversionPS(float4 in_color: COLOR0, float2 tex: TEXCOORD0, out float4 out_color: COLOR0)
 {
 	const float4x4 YUV4HD =    {1,  0,      1.575,  0,
 								1, -0.187, -0.4678, 0,
@@ -78,10 +78,11 @@ void BasicPS(float4 in_color: COLOR0, float2 tex: TEXCOORD0, out float4 out_colo
 //------------------------------------------------
 // テクニック宣言
 //------------------------------------------------
-technique BasicTech
+technique conversionTech
 {
     pass P0
     {
-		pixelShader  = compile ps_2_0 BasicPS();
+//		vertexShader = compile vs_2_0 conversionVS();
+		pixelShader  = compile ps_2_0 conversionPS();
 	}
 }
