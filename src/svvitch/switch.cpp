@@ -253,10 +253,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER freq;
 	LARGE_INTEGER start;
 	LARGE_INTEGER current;
+	DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
 	::QueryPerformanceFrequency(&freq);
 	::QueryPerformanceCounter(&start);
 
 //	DWORD lastSwapout = 0;
+	timeBeginPeriod(1);
+	DWORD last = 0;
 	for (;;) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			if (msg.message == WM_QUIT) {
@@ -269,11 +272,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 		} else {
+			::QueryPerformanceCounter(&current);
+			DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+			last = time;
+
 			// 処理するメッセージが無いときは描画を行う
-			if (_interruptFile.length() > 0) {
-//				scene->prepareInterruptFile(_interruptFile);
-				_interruptFile.clear();
-			}
+			//if (_interruptFile.length() > 0) {
+			//	scene->prepareInterruptFile(_interruptFile);
+			//	_interruptFile.clear();
+			//}
 
 			// ウィンドウが見えている時だけ描画するための処理
 			WINDOWPLACEMENT wndpl;
@@ -284,8 +291,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				(wndpl.showCmd != SW_SHOWMINNOACTIVE)) {
 
 				// 描画処理の実行
-				::QueryPerformanceCounter(&current);
-				DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
 				_renderer->renderScene(time);
 //				if (lastSwapout == 0 || time - lastSwapout > 3600000) {
 //					swapout();
@@ -293,11 +298,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //				}
 			}
 
-			timeBeginPeriod(1);
-			Sleep(3);
-			timeEndPeriod(1);
+			Sleep(_conf.frameIntervals);
 		}
 	}
+	timeEndPeriod(1);
 
 	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
 	server->stop();

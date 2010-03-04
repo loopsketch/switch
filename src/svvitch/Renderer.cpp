@@ -80,10 +80,10 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	}
 	_presentParams[0].BackBufferWidth = config().mainRect.right;
 	_presentParams[0].BackBufferHeight = config().mainRect.bottom;
-	_presentParams[0].BackBufferCount = 1;
+	_presentParams[0].BackBufferCount = 2;
 	_presentParams[0].SwapEffect = D3DSWAPEFFECT_DISCARD;
-//	_presentParams[0].SwapEffect = D3DSWAPEFFECT_FLIP;
-//	_presentParams[0].SwapEffect = D3DSWAPEFFECT_COPY;
+	//_presentParams[0].SwapEffect = D3DSWAPEFFECT_FLIP;
+	//_presentParams[0].SwapEffect = D3DSWAPEFFECT_COPY;
 	_presentParams[0].MultiSampleType = D3DMULTISAMPLE_NONE;
 	_presentParams[0].MultiSampleQuality = 0;
 	_presentParams[0].hDeviceWindow = hWnd;
@@ -91,6 +91,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	_presentParams[0].AutoDepthStencilFormat = D3DFMT_D16;
 	_presentParams[0].Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
 	_presentParams[0].PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+	//_presentParams[0].PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
 	HWND hWnd2 = hWnd;
 	for (int i = 1; i < _displayAdpters; i++) {
