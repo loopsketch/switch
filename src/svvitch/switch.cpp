@@ -253,7 +253,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER freq;
 	LARGE_INTEGER start;
 	LARGE_INTEGER current;
-	DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
+	//DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
 	::QueryPerformanceFrequency(&freq);
 	::QueryPerformanceCounter(&start);
 

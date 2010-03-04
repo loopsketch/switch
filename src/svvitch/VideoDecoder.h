@@ -415,6 +415,7 @@ private:
 
 	void run() {
 		_log.information("video decoder thread start");
+		//DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
 		PerformanceTimer timer;
 
 		AVFrame* frame = avcodec_alloc_frame();
@@ -426,7 +427,7 @@ private:
 		while (_worker) {
 			packetList = popPacket();
 			if (!packetList) {
-				Poco::Thread::sleep(10);
+				Poco::Thread::sleep(5);
 				continue;
 			}
 			timer.start();
@@ -546,7 +547,7 @@ private:
 					while (_worker != NULL && _frames.size() >= 50) {
 						// ƒLƒ…[‹ó‚«‘Ò‚¿
 						//timeBeginPeriod(1);
-						Poco::Thread::sleep(10);
+						Poco::Thread::sleep(5);
 						//timeEndPeriod(1);
 					}
 					{

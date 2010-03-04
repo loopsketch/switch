@@ -125,6 +125,7 @@ private:
 
 	void run() {
 		_log.information("audio decoder thread start");
+		//DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
 		PerformanceTimer timer;
 
 		const int BUFFER_SIZE = AVCODEC_MAX_AUDIO_FRAME_SIZE * 3;
@@ -137,7 +138,7 @@ private:
 		while (_worker) {
 			packetList = popPacket();
 			if (!packetList) {
-				Poco::Thread::sleep(20);
+				Poco::Thread::sleep(10);
 				continue;
 			}
 			AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
@@ -225,7 +226,7 @@ private:
 							// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
 							if (SUCCEEDED(hr) && playCursor > _bufferSize / 2) break;
 						}
-						Poco::Thread::sleep(20);
+						Poco::Thread::sleep(10);
 					}
 					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
 					if (SUCCEEDED(hr)) {

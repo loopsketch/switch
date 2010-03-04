@@ -184,7 +184,6 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 void FFMovieContent::run() {
 	_log.information("movie thread start");
 	long count = 0;
-	int priority = GetThreadPriority(GetCurrentThread());
 	AVPacket packet;
 	while (_worker) {
 		if (_videoDecoder && _videoDecoder->bufferedPackets() > 100) {
@@ -199,15 +198,6 @@ void FFMovieContent::run() {
 			// シーク中
 			Poco::Thread::sleep(10);
 			continue;
-		}
-		if (!_playing) {
-			// 停止中はウェイトを増やし負荷を下げる
-			int p = GetThreadPriority(GetCurrentThread());
-			if (p != THREAD_PRIORITY_LOWEST) SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-			Poco::Thread::sleep(50);
-		} else {
-			int p = GetThreadPriority(GetCurrentThread());
-			if (p != priority) SetThreadPriority(GetCurrentThread(), priority);
 		}
 
 		if (av_read_frame(_ic, &packet) < 0) {
@@ -230,8 +220,6 @@ void FFMovieContent::run() {
 		}
 		count++;
 	}
-	int p = GetThreadPriority(GetCurrentThread());
-	if (p != priority) SetThreadPriority(GetCurrentThread(), priority);
 	_log.information(Poco::format("movie thread end %ldpackets", count));
 }
 

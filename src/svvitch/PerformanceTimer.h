@@ -8,14 +8,12 @@
 class PerformanceTimer
 {
 private:
-	DWORD _threadAffinityMask;
 	LARGE_INTEGER _freq;
 	LARGE_INTEGER _start;
 	LARGE_INTEGER _current;
 
 public:
 	PerformanceTimer() {
-		_threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
 		::QueryPerformanceFrequency(&_freq);
 	}
 
