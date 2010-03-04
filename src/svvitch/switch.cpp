@@ -126,7 +126,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// ウィンドウの作成
 	std::wstring wtitle;
-	Poco::UnicodeConverter::toUTF16(_conf.title, wtitle);
+	Poco::UnicodeConverter::toUTF16(_conf.windowTitle, wtitle);
 	if (_conf.fullsceen) {
 		// フルスクリーン
 		// 画面全体の幅と高さを取得
@@ -474,7 +474,7 @@ bool guiConfiguration()
 		pat->release();
 		_log.information("*** configuration");
 
-		_conf.title = xml->getString("display.title", "switch");
+		_conf.windowTitle = xml->getString("display.title", "switch");
 		_conf.mainRect.left = xml->getInt("display.x", 0);
 		_conf.mainRect.top = xml->getInt("display.y", 0);
 		int w = xml->getInt("display.width", 1024);
@@ -502,6 +502,7 @@ bool guiConfiguration()
 		string useClip(_conf.useClip?"use":"not use");
 		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
+		_conf.name = xml->getString("stage.name", "");
 		int cw = xml->getInt("stage.split.width", w);
 		int ch = xml->getInt("stage.split.height", h);
 		int cycles = xml->getInt("stage.split.cycles", h / ch);

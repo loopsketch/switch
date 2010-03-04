@@ -99,7 +99,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 		WNDCLASSEX wc = {sizeof(WNDCLASSEX), CS_CLASSDC, WindowProc, 0, 0, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"multihead", NULL};
 		RegisterClassEx(&wc);
 		std::wstring wtitle;
-		Poco::UnicodeConverter::toUTF16(config().title, wtitle);
+		Poco::UnicodeConverter::toUTF16(config().windowTitle, wtitle);
 		if (SUCCEEDED(_d3d->GetAdapterDisplayMode(i, &d3ddm))) {
 			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, d3ddm.Width, d3ddm.Height, NULL, NULL, wc.hInstance, NULL);
 			_presentParams[i].BackBufferWidth = d3ddm.Width;
@@ -468,7 +468,7 @@ void Renderer::removeScene(const string& name) {
  */
 void Renderer::renderScene(const DWORD current) {
 	_current = current;
-	if (!_addDrives.empty() && _lastDeviceChanged - _current > 3000) {
+	if (hasAddDrives() && _current - _lastDeviceChanged > 45000) {
 		// 最後のデバイス変化から規定時間経過
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
@@ -1208,6 +1208,11 @@ void Renderer::notifyAddDrive(ULONG unitmask) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
 	string drive = firstDriveFromMask(unitmask);
 	_addDrives.push_back(drive);
+}
+
+bool Renderer::hasAddDrives() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
+	return !_addDrives.empty();
 }
 
 void Renderer::notifyDeviceChanged() {

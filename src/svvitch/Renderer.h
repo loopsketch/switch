@@ -287,6 +287,9 @@ public:
 	/** ドライブ追加の通知 */
 	void notifyAddDrive(ULONG unitmask);
 
+	/** 追加ドライブの有無 */
+	bool hasAddDrives();
+
 	/** デバイス変化の通知 */
 	void notifyDeviceChanged();
 

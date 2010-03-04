@@ -121,6 +121,7 @@ private:
 
 	/** USBÉAÉCÉRÉì */
 	LPDIRECT3DTEXTURE9 _removableIcon;
+	float _removableIconAlpha;
 	string _addRemovable;
 	float _removableAlpha;
 	float _removableCover;

@@ -42,7 +42,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false),
-	_removableIcon(NULL), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
+	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
 	_copyRemoteFiles(0)
 {
 	initialize();
@@ -116,6 +116,12 @@ bool MainScene::initialize() {
 		device->SetRenderState(D3DRS_BLENDOP,   D3DBLENDOP_ADD);
 		device->SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_ONE);
 		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
+	}
+
+	LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
+	if (texture) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		_removableIcon = texture;
 	}
 
 	_workspace = new Workspace(_workspaceFile);
@@ -605,19 +611,13 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	}
 	_log.information(Poco::format("addRemovableMedia: %s", driveLetter));
 
-	if (!_removableIcon) {
-		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
-		if (texture) {
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			_removableIcon = texture;
-		}
-	}
 	_copySize = 0;
 	_copyProgress = 0;
 	_currentCopyProgress = 0;
 	_removableAlpha = 0.01f;
 	_removableCover = 0;
-	Sleep(3000);
+	// Sleep(3000);
+	// Sleep(60000);
 
 	Path dst = Path(config().dataRoot.parent(), "removable-copys\\");
 	File dir(dst);
@@ -746,6 +746,14 @@ void MainScene::process() {
 	}
 
 	// リムーバブルメディア検出
+	if (_renderer.hasAddDrives()) {
+		_removableIconAlpha += 0.01f;
+		if (_removableIconAlpha >= 1.0f) _removableIconAlpha = 1;
+	} else if (_addRemovable.empty()) {
+		_removableIconAlpha -= 0.01f;
+		if (_removableIconAlpha < 0.0f) _removableIconAlpha = 0.0f;
+	}
+
 	string drive = _renderer.popReadyDrive();
 	if (!drive.empty()) {
 		activeAddRemovableMedia(drive);
@@ -1148,40 +1156,43 @@ void MainScene::draw2() {
 
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		_renderer.drawFontTextureText(0, 640, 12, 16, 0xccffffff, status1);
-		_renderer.drawFontTextureText(0, 655, 12, 16, 0xccccccff, "frame");
-		_renderer.drawFontTextureText(120, 655, 12, 16, 0xccccccff, "time");
-		_renderer.drawFontTextureText(264, 655, 12, 16, 0xccccccff, "remain");
-		_renderer.drawFontTextureText(0, 670, 12, 16, 0xccffffff, status2);
-		_renderer.drawFontTextureText(0, 685, 12, 16, 0xccccccff, "    action");
-		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, 685, 12, 16, 0xccffffff, _playCurrent.action);
-		_renderer.drawFontTextureText(0, 700, 12, 16, 0xccccccff, "transition");
-		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, 700, 12, 16, 0xccffffff, _playNext.transition);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 170, 24, 32, 0xcc6699ff, config().name);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 140, 12, 16, 0xccffffff, status1);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 120, 12, 16, 0xccccccff, "frame");
+		_renderer.drawFontTextureText(120, config().subRect.bottom - 120, 12, 16, 0xccccccff, "time");
+		_renderer.drawFontTextureText(264, config().subRect.bottom - 120, 12, 16, 0xccccccff, "remain");
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 100, 12, 16, 0xccffffff, status2);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0xccccccff, "    action");
+		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 80, 12, 16, 0xccffffff, _playCurrent.action);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 60, 12, 16, 0xccccccff, "transition");
+		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 60, 12, 16, 0xccffffff, _playNext.transition);
 
-		_renderer.drawFontTextureText(600, 640, 12, 16, 0xccccccff, " current");
-		_renderer.drawTexture(700, 640, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(700, 655, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawFontTextureText(600, 670, 12, 16, 0xccccccff, "    next");
-		_renderer.drawTexture(700, 670, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawFontTextureText(600, 685, 12, 16, 0xccccccff, "prepared");
-		_renderer.drawTexture(700, 685, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(700, 700, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 140, 12, 16, 0xccccccff, " current");
+		_renderer.drawTexture(700, config().subRect.bottom - 140, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 120, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 100, 12, 16, 0xccccccff, "    next");
+		_renderer.drawTexture(700, config().subRect.bottom - 100, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0xccccccff, "prepared");
+		_renderer.drawTexture(700, config().subRect.bottom - 80, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 60, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, 730, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 40, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
 	}
 
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		if (_removableIcon && _removableAlpha > 0) {
-			D3DSURFACE_DESC desc;
-			HRESULT hr = _removableIcon->GetLevelDesc(0, &desc);
-			int tw = desc.Width / 2;
-			int th = desc.Height / 2;
-			DWORD col = ((DWORD)(0xff * _removableAlpha) << 24) | 0xffffff;
+		D3DSURFACE_DESC desc;
+		HRESULT hr = _removableIcon->GetLevelDesc(0, &desc);
+		int tw = desc.Width / 2;
+		int th = desc.Height / 2;
+		if (_removableIcon && _removableIconAlpha > 0) {
+			DWORD col = ((DWORD)(0xff * _removableIconAlpha) << 24) | 0xffffff;
 			_renderer.drawTexture(0, config().subRect.bottom - th, tw, th, _removableIcon, 0, col, col, col, col);
-			col = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x333333;
+		}
+		if (_removableAlpha > 0) {
+			DWORD col = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x333333;
 			_renderer.drawTexture(tw + 1, config().subRect.bottom - th / 2, config().subRect.right - tw - 1, 10, NULL, 0, col, col, col, col);
 			DWORD col1 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x33ccff;
 			DWORD col2 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x3399cc;
