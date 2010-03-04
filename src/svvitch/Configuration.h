@@ -12,7 +12,8 @@ using Poco::Path;
 class Configuration
 {
 public:
-	string title;
+	string windowTitle;
+	string name;
 	RECT mainRect;
 	int mainRate;
 	RECT subRect;
