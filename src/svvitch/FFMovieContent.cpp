@@ -186,18 +186,22 @@ void FFMovieContent::run() {
 	long count = 0;
 	AVPacket packet;
 	while (_worker) {
-		if (_videoDecoder && _videoDecoder->bufferedPackets() > 100) {
-			Poco::Thread::sleep(30);
-			continue;
-		}
-		// if (_audioDecoder && _audioDecoder->bufferedPackets() > 40) {
-		//	Poco::Thread::sleep(10);
-		//	continue;
-		// }
 		if (_seeking) {
 			// シーク中
 			Poco::Thread::sleep(10);
 			continue;
+		}
+		if (_audioDecoder) {
+			// audioデコード処理
+			_audioDecoder->decode();
+			_audioDecoder->writeData();
+		}
+		if (_videoDecoder) {
+			// videoデコード処理
+			if (_videoDecoder->bufferedPackets() > 100) {
+				Poco::Thread::sleep(30);
+				continue;
+			}
 		}
 
 		if (av_read_frame(_ic, &packet) < 0) {

@@ -10,8 +10,7 @@
 #include <string>
 #include <mmsystem.h>
 
-#include "BaseDecoder.h"
-#include "Renderer.h"
+#include "FFBaseDecoder.h"
 #include "PerformanceTimer.h"
 
 #ifndef _DEBUG
@@ -222,15 +221,14 @@ public:
 };
 
 
-class VideoDecoder: public BaseDecoder, Poco::Runnable
+class VideoDecoder: public FFBaseDecoder, Poco::Runnable
 {
 friend class FFMovieContent;
 private:
 	Poco::FastMutex _startLock;
 
-	Renderer& _renderer;
-	AVFormatContext* _ic;
-	int _video;
+	Poco::Thread _thread;
+	Poco::Runnable* _worker;
 
 	SwsContext* _swsCtx;
 	AVFrame* _outFrame;
@@ -247,8 +245,8 @@ private:
 	int _dw;
 	int _dh;
 
-	VideoDecoder(Renderer& renderer, AVFormatContext* ic, const int video): BaseDecoder(),
-		_renderer(renderer), _ic(ic), _video(video), _outFrame(NULL), _buffer(NULL), _diFrame(NULL), _diBuffer(NULL), _fx(NULL), _swsCtx(NULL)
+	VideoDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): FFBaseDecoder(renderer, ic, streamNo),
+		_outFrame(NULL), _buffer(NULL), _diFrame(NULL), _diBuffer(NULL), _fx(NULL), _swsCtx(NULL)
 	{
 	}
 
@@ -286,7 +284,7 @@ private:
 
 	void start() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
-		AVCodecContext* avctx = _ic->streams[_video]->codec;
+		AVCodecContext* avctx = _ic->streams[_streamNo]->codec;
 //		avctx->thread_count = 4;
 //		int res = avcodec_thread_init(avctx, 4);
 //		_log.information(Poco::format("thread: %d", res));
@@ -425,9 +423,10 @@ private:
 
 		AVPacketList* packetList = NULL;
 		while (_worker) {
+			Poco::Thread::sleep(0);
 			packetList = popPacket();
 			if (!packetList) {
-				Poco::Thread::sleep(5);
+				Poco::Thread::sleep(11);
 				continue;
 			}
 			timer.start();
@@ -546,9 +545,7 @@ private:
 				if (vf) {
 					while (_worker != NULL && _frames.size() >= 50) {
 						// ÉLÉÖÅ[ãÛÇ´ë“Çø
-						//timeBeginPeriod(1);
-						Poco::Thread::sleep(5);
-						//timeEndPeriod(1);
+						Poco::Thread::sleep(11);
 					}
 					{
 						Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -562,9 +559,6 @@ private:
 				} else {
 					_log.warning("failed not created video frame");
 				}
-				timeBeginPeriod(1);
-				Poco::Thread::sleep(1);
-				timeEndPeriod(1);
 
 			} else {
 //				_log.information(Poco::format("video decode not finished: %d", bytes));

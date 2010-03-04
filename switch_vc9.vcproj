@@ -258,10 +258,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\UserInterfaceScene.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\Utils.cpp"
 				>
 			</File>
@@ -281,10 +277,6 @@
 			>
 			<File
 				RelativePath=".\src\svvitch\AudioDecoder.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\BaseDecoder.h"
 				>
 			</File>
 			<File
@@ -325,6 +317,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\DSVideoRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\FFBaseDecoder.h"
 				>
 			</File>
 			<File
@@ -389,6 +385,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\Transition.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\UserInterfaceScene.cpp"
 				>
 			</File>
 			<File

@@ -12,10 +12,12 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#include "Renderer.h"
+
 using std::queue;
 
 
-class BaseDecoder
+class FFBaseDecoder
 {
 private:
 	queue<AVPacketList*> _packets;
@@ -24,18 +26,19 @@ protected:
 	Poco::FastMutex _lock;
 	Poco::Logger& _log;
 
-	Poco::Thread _thread;
-	Poco::Runnable* _worker;
+	Renderer& _renderer;
+	AVFormatContext* _ic;
+	int _streamNo;
 
 	DWORD _readTime;
 	int _readCount;
 	float _avgTime;
 
 public:
-	BaseDecoder(): _log(Poco::Logger::get("")), _worker(NULL), _avgTime(0) {
+	FFBaseDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): _log(Poco::Logger::get("")), _renderer(renderer), _ic(ic), _streamNo(streamNo), _readTime(0), _readCount(0), _avgTime(0) {
 	}
 
-	virtual ~BaseDecoder() {
+	virtual ~FFBaseDecoder() {
 		clearAllPackets();
 	}
 

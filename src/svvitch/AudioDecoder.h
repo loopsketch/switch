@@ -10,47 +10,42 @@
 #include <string>
 #include <mmsystem.h>
 
-#include "BaseDecoder.h"
-#include "Renderer.h"
+#include "FFBaseDecoder.h"
 #include "PerformanceTimer.h"
 
 
-class AudioDecoder: public BaseDecoder, Poco::Runnable
+class AudioDecoder: public FFBaseDecoder
 {
 friend class FFMovieContent;
 private:
-	Renderer& _renderer;
-	AVFormatContext* _ic;
-	int _audio;
+	static const int BUFFER_SIZE = AVCODEC_MAX_AUDIO_FRAME_SIZE * 3;
 
 	LPDIRECTSOUNDBUFFER	_buffer;
 	DWORD _bufferOffset;
 	DWORD _bufferSize;
-	bool _bufferReady;
 
 	bool _running;
 
-	DWORD _readTime;
-	int _readCount;
+	uint8_t* _data;
+	int _dataOffset;
+	int _len;
 
 
-	AudioDecoder(Renderer& renderer, AVFormatContext* ic, const int audio): BaseDecoder(),
-		_renderer(renderer), _ic(ic), _audio(audio), _buffer(NULL), _bufferOffset(0), _bufferSize(0), _bufferReady(false), _running(false)
+	AudioDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): FFBaseDecoder(renderer, ic, streamNo),
+		_buffer(NULL), _bufferOffset(0), _bufferSize(0), _running(false), _data(NULL), _dataOffset(0), _len(0)
 	{
 	}
 
 	virtual ~AudioDecoder() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		_worker = NULL;
-		_thread.join();
-
+		SAFE_DELETE(_data);
 		SAFE_RELEASE(_buffer);
 	}
 
 
 	void start() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		AVCodecContext* avctx = _ic->streams[_audio]->codec;
+		AVCodecContext* avctx = _ic->streams[_streamNo]->codec;
 		WORD sampleBit;
 		string type;
 		switch (avctx->sample_fmt) {
@@ -114,8 +109,8 @@ private:
 //			DWORD frq;
 //			_buffer->GetFrequency(&frq);
 //			_buffer->SetFrequency(frq * 1.25);
-			_worker = this;
-			_thread.start(*_worker);
+			_data = new uint8_t[BUFFER_SIZE];
+			ZeroMemory(_data, sizeof(uint8_t) * BUFFER_SIZE);
 		}
 	}
 
@@ -123,135 +118,105 @@ private:
 		return bufferedPackets();
 	}
 
-	void run() {
-		_log.information("audio decoder thread start");
+	void decode() {
+		if (!_data) return;
+		//_log.information("audio decoder thread start");
 		//DWORD threadAffinityMask = ::SetThreadAffinityMask(GetCurrentThread(), 1);
+		if (_len > 0) return;
+		if (_dataOffset > 0) return;
+		AVPacketList* packetList = popPacket();
+		if (!packetList) return;
+
 		PerformanceTimer timer;
-
-		const int BUFFER_SIZE = AVCODEC_MAX_AUDIO_FRAME_SIZE * 3;
-		uint8_t* data = new uint8_t[BUFFER_SIZE];
-		ZeroMemory(data, sizeof(uint8_t) * BUFFER_SIZE);
-		_readCount = 0;
-		_avgTime = 0;
-
-		AVPacketList* packetList = NULL;
-		while (_worker) {
-			packetList = popPacket();
-			if (!packetList) {
-				Poco::Thread::sleep(10);
-				continue;
-			}
-			AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
-			timer.start();
-
-			AVPacket* packet = &packetList->pkt;
-			AVPacket tmp;
-			av_init_packet(&tmp);
-			tmp.data = packet->data;
-			tmp.size = packet->size;
-			int len = 0;
-			while (_worker && tmp.data && tmp.size > 0) {
-				int frameSize = sizeof(uint8_t) * BUFFER_SIZE;
-				int bytes = avcodec_decode_audio3(avctx, (int16_t*)(&data[len]), &frameSize, &tmp);
-				if (bytes >= 0) {
-					tmp.data += bytes;
-					tmp.size -= bytes;
-					if (frameSize > 0) {
-						len += frameSize;
-					}
-					_readTime = timer.getTime();
-					_readCount++;
-					_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
-
-				} else {
-					// throw error or something?
-					_log.warning(Poco::format("failed avcodec_decode_audio3: %d %d", bytes, frameSize));
-					len = 0;
-					break;
+		timer.start();
+		AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
+		AVPacket* packet = &packetList->pkt;
+		AVPacket tmp;
+		av_init_packet(&tmp);
+		tmp.data = packet->data;
+		tmp.size = packet->size;
+		while (tmp.data && tmp.size > 0) {
+			int frameSize = sizeof(uint8_t) * BUFFER_SIZE;
+			int bytes = avcodec_decode_audio3(avctx, (int16_t*)(&_data[_len]), &frameSize, &tmp);
+			if (bytes >= 0) {
+				tmp.data += bytes;
+				tmp.size -= bytes;
+				if (frameSize > 0) {
+					_len += frameSize;
 				}
-			}
-			if (packet->data) av_free_packet(packet);
-			av_freep(&packetList);
+				_readTime = timer.getTime();
+				_readCount++;
+				_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
-			if (len > 0) {
-				LPVOID lockedBuf = NULL;
-				DWORD lockedLen = 0;
-				HRESULT hr;
-				DWORD playCursor = 0;
-				DWORD writeCursor = 0;
-				while (_worker) {
-					// 書込みカーソル以降か、再生カーソルのデータx2個分余裕ができるまで待ち
-					hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
-					if SUCCEEDED(hr) {
-						if (writeCursor <= _bufferOffset) break;
-						if (playCursor > _bufferOffset + len * 2) break;
-					}
-					Poco::Thread::sleep(20);
-				}
-				if (_bufferOffset + len <= _bufferSize) {
-					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
-					if (SUCCEEDED(hr)) {
-						CopyMemory(lockedBuf, data, lockedLen);
-						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
-						if (FAILED(hr)) {
-							_log.warning("failed unlocked sound buffer");
-						} else {
-							_bufferOffset = (_bufferOffset + len) % _bufferSize;
-							_bufferReady = true;
-						}
-					} else {
-						_log.warning(Poco::format("sound buffer not locked: %d", len));
-					}
-				} else {
-					_log.information("round sound buffer");
-					int lenRound = _bufferSize - _bufferOffset;
-					hr = _buffer->Lock(_bufferOffset, lenRound, &lockedBuf, &lockedLen, NULL, 0, 0);
-					if (SUCCEEDED(hr)) {
-						CopyMemory(lockedBuf, data, lockedLen);
-						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
-						if (FAILED(hr)) {
-							_log.warning("failed unlocked sound buffer");
-						} else {
-							_bufferOffset = 0;
-							len -= lenRound;
-							_bufferReady = true;
-						}
-					} else {
-						_log.warning(Poco::format("SoundBuffer not locked: %d", lenRound));
-					}
-					while (_worker) {
-						if (_running) {
-							// 再生中で再生カーソルがバッファの半分以降になるまで待ち
-							hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
-							// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
-							if (SUCCEEDED(hr) && playCursor > _bufferSize / 2) break;
-						}
-						Poco::Thread::sleep(10);
-					}
-					hr = _buffer->Lock(_bufferOffset, len, &lockedBuf, &lockedLen, NULL, 0, 0);
-					if (SUCCEEDED(hr)) {
-						CopyMemory(lockedBuf, &data[lenRound], lockedLen);
-						hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
-						if (FAILED(hr)) {
-							_log.warning("failed unlocked sound buffer");
-						} else {
-							_bufferOffset = len; //(_bufferOffset + len) % _bufferSize;
-							_bufferReady = true;
-						}
-					} else {
-						_log.warning(Poco::format("sound buffer not locked: %d", len));
-					}
-				}
+			} else {
+				// throw error or something?
+				_log.warning(Poco::format("failed avcodec_decode_audio3: %d %d", bytes, frameSize));
+				_len = 0;
+				break;
 			}
+		}
+		if (packet->data) av_free_packet(packet);
+		av_freep(&packetList);
+	}
 
-			timeBeginPeriod(1);
-			Poco::Thread::sleep(2);
-			timeEndPeriod(1);
+	void writeData() {
+		if (_len <= 0) return;
+
+		DWORD playCursor = 0;
+		DWORD writeCursor = 0;
+		HRESULT hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
+		if FAILED(hr) {
+			_log.warning("failed get current position");
+			return;
+		}
+		if (_dataOffset > 0) {
+			if (_running) {
+				// 再生中で再生カーソルがバッファの半分以降になるまで待ち
+				// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
+				if (playCursor < _bufferSize / 2) return;
+			}
+		} else {
+			// 書込みカーソル以降の場合、再生カーソルのデータx2個分余裕ができるまで待ち
+			if (writeCursor > _bufferOffset && playCursor < _bufferOffset + _len * 2) return;
 		}
 
-		delete data;
-		_worker = NULL;
-		_log.information("audio decoder thread end");
+		LPVOID lockedBuf = NULL;
+		DWORD lockedLen = 0;
+		if (_bufferOffset + _len <= _bufferSize) {
+			// オフセット+データサイズがバッファ以下の場合はそのまますべて書込む
+			hr = _buffer->Lock(_bufferOffset, _len, &lockedBuf, &lockedLen, NULL, 0, 0);
+			if (SUCCEEDED(hr)) {
+				CopyMemory(lockedBuf, &_data[_dataOffset], lockedLen);
+				hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
+				if (FAILED(hr)) {
+					_log.warning("failed unlocked sound buffer");
+				} else {
+					_bufferOffset = (_bufferOffset + _len) % _bufferSize;
+					_len = 0;
+					_dataOffset = 0;
+				}
+			} else {
+				_log.warning(Poco::format("sound buffer not locked: %d", _len));
+			}
+		} else {
+			// 残りバッファに書込みむ。残りは次回呼出し時に書込む
+			//_log.information("round sound buffer");
+			int lenRound = _bufferSize - _bufferOffset;
+			hr = _buffer->Lock(_bufferOffset, lenRound, &lockedBuf, &lockedLen, NULL, 0, 0);
+			if (SUCCEEDED(hr)) {
+				CopyMemory(lockedBuf, _data, lockedLen);
+				hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
+				if (FAILED(hr)) {
+					_log.warning("failed unlocked sound buffer");
+				} else {
+					_bufferOffset = 0;
+					_len -= lenRound;
+					_dataOffset = lenRound;
+				}
+			} else {
+				_log.warning(Poco::format("SoundBuffer not locked: %d", lenRound));
+			}
+		}
 	}
 
 	bool playing() {
@@ -260,16 +225,12 @@ private:
 
 	void play() {
 		if (_buffer && !_running) {
-//			if (_bufferReady) {
-				HRESULT hr = _buffer->Play(0, 0, DSBPLAY_LOOPING);
-				if (SUCCEEDED(hr)) {
-					_running = true;
-				} else {
-					_log.warning("failed play sound buffer");
-				}
-//			} else {
-//				_log.warning("buffer not ready!");
-//			}
+			HRESULT hr = _buffer->Play(0, 0, DSBPLAY_LOOPING);
+			if (SUCCEEDED(hr)) {
+				_running = true;
+			} else {
+				_log.warning("failed play sound buffer");
+			}
 		}
 	}
 
