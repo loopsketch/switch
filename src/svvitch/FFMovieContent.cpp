@@ -184,6 +184,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 void FFMovieContent::run() {
 	_log.information("movie thread start");
 	long count = 0;
+	int priority = GetThreadPriority(GetCurrentThread());
 	AVPacket packet;
 	while (_worker) {
 		if (_videoDecoder && _videoDecoder->bufferedPackets() > 100) {
@@ -199,6 +200,16 @@ void FFMovieContent::run() {
 			Poco::Thread::sleep(10);
 			continue;
 		}
+		if (!_playing) {
+			// 停止中はウェイトを増やし負荷を下げる
+			int p = GetThreadPriority(GetCurrentThread());
+			if (p != THREAD_PRIORITY_LOWEST) SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+			Poco::Thread::sleep(50);
+		} else {
+			int p = GetThreadPriority(GetCurrentThread());
+			if (p != priority) SetThreadPriority(GetCurrentThread(), priority);
+		}
+
 		if (av_read_frame(_ic, &packet) < 0) {
 			// パケット終了 or 異常
 			_finished = true;
@@ -217,12 +228,10 @@ void FFMovieContent::run() {
 		} else {
 			av_free_packet(&packet);
 		}
-		if (!_playing) {
-			// 停止中はウェイトを増やし負荷を下げる
-			Poco::Thread::sleep(50);
-		}
 		count++;
 	}
+	int p = GetThreadPriority(GetCurrentThread());
+	if (p != priority) SetThreadPriority(GetCurrentThread(), priority);
 	_log.information(Poco::format("movie thread end %ldpackets", count));
 }
 
@@ -475,7 +484,6 @@ void FFMovieContent::draw(const DWORD& frame) {
 						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 						_vf->draw(L(_x), L(_y), L(_w), L(_h), 0, col);
-//						_vf->draw(rect.left, rect.top, rect.right, rect.bottom, 0, col);
 						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 

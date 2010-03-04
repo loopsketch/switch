@@ -600,7 +600,7 @@ void Renderer::renderScene(const DWORD current) {
 			Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
 			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0xffcccccc, Poco::format("FPS:%03lu %s %s", fps, time, memory));
+			drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0x99ffffff, Poco::format("FPS:%03lu %s %s", fps, time, memory));
 		}
 		_device->EndScene();
 	}

@@ -1156,29 +1156,29 @@ void MainScene::draw2() {
 
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 170, 24, 32, 0xcc6699ff, config().name);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 140, 12, 16, 0xccffffff, status1);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 120, 12, 16, 0xccccccff, "frame");
-		_renderer.drawFontTextureText(120, config().subRect.bottom - 120, 12, 16, 0xccccccff, "time");
-		_renderer.drawFontTextureText(264, config().subRect.bottom - 120, 12, 16, 0xccccccff, "remain");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 100, 12, 16, 0xccffffff, status2);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0xccccccff, "    action");
-		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 80, 12, 16, 0xccffffff, _playCurrent.action);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 60, 12, 16, 0xccccccff, "transition");
-		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 60, 12, 16, 0xccffffff, _playNext.transition);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 170, 24, 32, 0x996699ff, config().name);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 140, 12, 16, 0x99ffffff, status1);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "frame");
+		_renderer.drawFontTextureText(120, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "time");
+		_renderer.drawFontTextureText(264, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "remain");
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 100, 12, 16, 0x99ffffff, status2);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "    action");
+		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 80, 12, 16, 0x99ffffff, _playCurrent.action);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 60, 12, 16, 0x99ccccff, "transition");
+		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 60, 12, 16, 0x99ffffff, _playNext.transition);
 
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 140, 12, 16, 0xccccccff, " current");
-		_renderer.drawTexture(700, config().subRect.bottom - 140, _playlistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 120, _currentName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 100, 12, 16, 0xccccccff, "    next");
-		_renderer.drawTexture(700, config().subRect.bottom - 100, _nextName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0xccccccff, "prepared");
-		_renderer.drawTexture(700, config().subRect.bottom - 80, _preparedPlaylistName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 60, _preparedName, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 140, 12, 16, 0x99ccccff, " current");
+		_renderer.drawTexture(700, config().subRect.bottom - 140, _playlistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 120, _currentName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 100, 12, 16, 0x99ccccff, "    next");
+		_renderer.drawTexture(700, config().subRect.bottom - 100, _nextName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "prepared");
+		_renderer.drawTexture(700, config().subRect.bottom - 80, _preparedPlaylistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 60, _preparedName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 40, 12, 16, 0xccffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 40, 12, 16, 0x99ffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
 	}
 
 	{

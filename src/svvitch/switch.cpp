@@ -258,7 +258,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	::QueryPerformanceCounter(&start);
 
 //	DWORD lastSwapout = 0;
-	timeBeginPeriod(1);
 	DWORD last = 0;
 	for (;;) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -298,10 +297,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //				}
 			}
 
+			timeBeginPeriod(1);
 			Sleep(_conf.frameIntervals);
+			timeEndPeriod(1);
 		}
 	}
-	timeEndPeriod(1);
 
 	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
 	server->stop();
