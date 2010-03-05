@@ -149,7 +149,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 					_log.information(Poco::format("open decoder: %s %.3hf %.3hf %dkbps", string(avcodec->long_name), _rate, _intervals, avctx->bit_rate / 1024));
 					_video = i;
-					_videoDecoder = new VideoDecoder(_renderer, _ic, _video);
+					_videoDecoder = new FFVideoDecoder(_renderer, _ic, _video);
 					_videoDecoder->start();
 					_w = avctx->width;
 					_h = avctx->height;
@@ -163,7 +163,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					// codecがopenできた
 					_log.information(Poco::format("open decoder: %s %dkbps", string(avcodec->long_name), avctx->bit_rate / 1024));
 					_audio = i;
-					_audioDecoder = new AudioDecoder(_renderer, _ic, _audio);
+					_audioDecoder = new FFAudioDecoder(_renderer, _ic, _audio);
 					_audioDecoder->start();
 				}
 				break;
@@ -186,6 +186,11 @@ void FFMovieContent::run() {
 	long count = 0;
 	AVPacket packet;
 	while (_worker) {
+		Poco::Thread::sleep(0);
+		if (!_playing) {
+			// 停止中はウェイトを増やし負荷を下げる
+			Poco::Thread::sleep(50);
+		}
 		if (_seeking) {
 			// シーク中
 			Poco::Thread::sleep(10);
@@ -261,7 +266,7 @@ const bool FFMovieContent::seek(const int64_t timestamp) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_seeking = true;
 	Poco::Thread::sleep(10);
-//		if (!_ic || av_seek_frame(_ic, _video, timestamp, 0) < 0) {
+	// if (!_ic || av_seek_frame(_ic, _video, timestamp, 0) < 0) {
 	if (!_ic || av_seek_frame(_ic, -1, timestamp, 0) < 0) {
 		_log.warning("failed seek frame");
 		return false;

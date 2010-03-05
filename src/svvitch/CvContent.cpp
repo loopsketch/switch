@@ -5,6 +5,7 @@
 #include <Poco/Runnable.h>
 #include <Poco/Stringtokenizer.h>
 #include <Poco/Util/XMLConfiguration.h>
+#include <Poco/UnicodeConverter.h>
 
 #include "CvContent.h"
 

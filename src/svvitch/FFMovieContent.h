@@ -15,8 +15,8 @@ extern "C" {
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>
 #include <Poco/Runnable.h>
-#include "AudioDecoder.h"
-#include "VideoDecoder.h"
+#include "FFAudioDecoder.h"
+#include "FFVideoDecoder.h"
 
 #include "Content.h"
 #include "FPSCounter.h"
@@ -44,8 +44,8 @@ private:
 	double _lastIntervals;
 	int _video;
 	int _audio;
-	AudioDecoder* _audioDecoder;
-	VideoDecoder* _videoDecoder;
+	FFAudioDecoder* _audioDecoder;
+	FFVideoDecoder* _videoDecoder;
 	VideoFrame* _vf;
 	VideoFrame* _prepareVF;
 

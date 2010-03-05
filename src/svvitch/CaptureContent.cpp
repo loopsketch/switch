@@ -4,6 +4,7 @@
 #include <Poco/Thread.h>
 #include <Poco/Runnable.h>
 #include <Poco/Util/XMLConfiguration.h>
+#include <Poco/UnicodeConverter.h>
 
 #include "CaptureContent.h"
 
