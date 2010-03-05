@@ -8,7 +8,7 @@
 
 
 FFAudioDecoder::FFAudioDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): FFBaseDecoder(renderer, ic, streamNo),
-	_buffer(NULL), _bufferOffset(0), _bufferSize(0), _running(false), _data(NULL), _dataOffset(0), _len(0)
+	_buffer(NULL), _bufferOffset(0), _bufferSize(0), _running(false), _data(NULL), _dataOffset(0), _len(0), _playCursor(0), _writeCursor(0)
 {
 }
 
@@ -136,24 +136,23 @@ void FFAudioDecoder::decode() {
 }
 
 void FFAudioDecoder::writeData() {
-	if (_len <= 0) return;
+	if (!_buffer) return;
 
-	DWORD playCursor = 0;
-	DWORD writeCursor = 0;
-	HRESULT hr = _buffer->GetCurrentPosition(&playCursor, &writeCursor);
+	HRESULT hr = _buffer->GetCurrentPosition(&_playCursor, &_writeCursor);
 	if FAILED(hr) {
 		_log.warning("failed get current position");
 		return;
 	}
+	if (_len <= 0) return;
+
 	if (_dataOffset > 0) {
-		if (_running) {
-			// 再生中で再生カーソルがバッファの半分以降になるまで待ち
-			// _log.information(Poco::format("buffer cursor: %lu %lu", playCursor, (_bufferSize / 2)));
-			if (playCursor < _bufferSize / 2) return;
-		}
+		// 再生中で再生カーソルがバッファの半分以降になるまで書込み待ち
+		// _log.information(Poco::format("buffer cursor: %lu %lu", _playCursor, (_bufferSize / 2)));
+		if (!_running || _playCursor < _bufferSize / 2) return;
+
 	} else {
-		// 書込みカーソル以降の場合、再生カーソルのデータx2個分余裕ができるまで待ち
-		if (writeCursor > _bufferOffset && playCursor < _bufferOffset + _len * 2) return;
+		// 書込みカーソル以降の場合、再生カーソルのデータx2個分余裕ができるまで書込み待ち
+		if (_writeCursor > _bufferOffset && _playCursor < _bufferOffset + _len * 2) return;
 	}
 
 	LPVOID lockedBuf = NULL;
@@ -192,6 +191,17 @@ void FFAudioDecoder::writeData() {
 		} else {
 			_log.warning(Poco::format("SoundBuffer not locked: %d", lenRound));
 		}
+	}
+}
+
+void FFAudioDecoder::finishedPacket() {
+	int size = _bufferSize - _bufferOffset;
+	LPVOID lockedBuf = NULL;
+	DWORD lockedLen = 0;
+	HRESULT hr = _buffer->Lock(_bufferOffset, size, &lockedBuf, &lockedLen, NULL, 0, 0);
+	if (SUCCEEDED(hr)) {
+		ZeroMemory(lockedBuf, lockedLen);
+		hr = _buffer->Unlock(lockedBuf, lockedLen, NULL, 0);
 	}
 }
 

@@ -19,6 +19,9 @@ private:
 	int _dataOffset;
 	int _len;
 
+	DWORD _playCursor;
+	DWORD _writeCursor;
+
 
 	FFAudioDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo);
 
@@ -32,6 +35,8 @@ private:
 	void decode();
 
 	void writeData();
+
+	void finishedPacket();
 
 	bool playing();
 

@@ -80,7 +80,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	}
 	_presentParams[0].BackBufferWidth = config().mainRect.right;
 	_presentParams[0].BackBufferHeight = config().mainRect.bottom;
-	_presentParams[0].BackBufferCount = 2;
+	_presentParams[0].BackBufferCount = 1;
 	_presentParams[0].SwapEffect = D3DSWAPEFFECT_DISCARD;
 	//_presentParams[0].SwapEffect = D3DSWAPEFFECT_FLIP;
 	//_presentParams[0].SwapEffect = D3DSWAPEFFECT_COPY;

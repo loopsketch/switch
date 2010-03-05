@@ -211,6 +211,7 @@ void FFMovieContent::run() {
 
 		if (av_read_frame(_ic, &packet) < 0) {
 			// パケット終了 or 異常
+			if (!_finished && _audioDecoder) _audioDecoder->finishedPacket();
 			_finished = true;
 			Poco::Thread::sleep(10);
 			continue;
@@ -361,6 +362,7 @@ void FFMovieContent::process(const DWORD& frame) {
 			_avgTime = _videoDecoder->getAvgTime();
 
 		} else {
+			_fpsCounter.start();
 			if (get("prepare") == "true") {
 				VideoFrame* vf = _videoDecoder->viewFrame();
 				if (vf) _prepareVF = vf;

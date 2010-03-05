@@ -32,10 +32,10 @@
 #include "Renderer.h"
 #include "CaptureScene.h"
 #include "MainScene.h"
-#include "UserInterfaceScene.h"
+//#include "UserInterfaceScene.h"
 #include "Workspace.h"
 #include "WebAPI.h"
-#include "ui/UserInterfaceManager.h"
+//#include "ui/UserInterfaceManager.h"
 
 extern "C" {
 #define inline _inline
@@ -46,9 +46,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#ifndef _DEBUG
-#include <omp.h>
-#endif
+//#ifndef _DEBUG
+//#include <omp.h>
+//#endif
 
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>                // 最後にインクルードしたほうがいい気がする。C++の場合。標準ヘッダの中にnewとかあると変になる？？
@@ -207,10 +207,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #ifdef _DEBUG
 	_log.information("*** system start (debug)");
 #else 
-	#pragma omp parallel
-	{
-		_log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
-	}
+	//#pragma omp parallel
+	//{
+	//	_log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
+	//}
 #endif
 
 	// レンダラーの初期化
@@ -270,10 +270,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 		} else {
-			::QueryPerformanceCounter(&current);
-			DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
-			last = time;
-
 			// 処理するメッセージが無いときは描画を行う
 			//if (_interruptFile.length() > 0) {
 			//	scene->prepareInterruptFile(_interruptFile);
@@ -288,6 +284,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				(wndpl.showCmd != SW_SHOWMINIMIZED) &&
 				(wndpl.showCmd != SW_SHOWMINNOACTIVE)) {
 
+				::QueryPerformanceCounter(&current);
+				DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+				last = time;
+
 				// 描画処理の実行
 				_renderer->renderScene(time);
 //				if (lastSwapout == 0 || time - lastSwapout > 3600000) {
@@ -300,6 +300,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			Sleep(_conf.frameIntervals);
 			timeEndPeriod(1);
 		}
+
 	}
 
 	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));

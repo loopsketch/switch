@@ -45,9 +45,9 @@ void FFVideoDecoder::clearAllFrames() {
 void FFVideoDecoder::start() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
 	AVCodecContext* avctx = _ic->streams[_streamNo]->codec;
-//		avctx->thread_count = 4;
-//		int res = avcodec_thread_init(avctx, 4);
-//		_log.information(Poco::format("thread: %d", res));
+	// avctx->thread_count = 4;
+	// int res = avcodec_thread_init(avctx, 4);
+	// _log.information(Poco::format("thread: %d", res));
 	int w = avctx->width;
 	int h = avctx->height;
 	int flags = SWS_FAST_BILINEAR;
@@ -83,8 +83,8 @@ void FFVideoDecoder::start() {
 			break;
 		case PIX_FMT_YUVJ422P:
 			type = "YUVJ422P";
-//				changeFormat = true;
-//				flags = SWS_FAST_BILINEAR;
+			// changeFormat = true;
+			// flags = SWS_FAST_BILINEAR;
 			if (createEffect()) {
 				changeFormat = false;
 			} else {
@@ -185,7 +185,7 @@ void FFVideoDecoder::run() {
 		Poco::Thread::sleep(0);
 		packetList = popPacket();
 		if (!packetList) {
-			Poco::Thread::sleep(11);
+			//Poco::Thread::sleep(10);
 			continue;
 		}
 		timer.start();
@@ -304,15 +304,15 @@ void FFVideoDecoder::run() {
 			if (vf) {
 				while (_worker != NULL && _frames.size() >= 50) {
 					// ƒLƒ…[‹ó‚«‘Ò‚¿
-					Poco::Thread::sleep(11);
+					Poco::Thread::sleep(10);
 				}
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					_frames.push(vf);
-//						std::wstring wfile;
-//						string file = Poco::format("image%04?i.png", packet.dts);
-//						Poco::UnicodeConverter::toUTF16(file, wfile);
-//						D3DXSaveTextureToFile(wfile.c_str(), D3DXIFF_PNG, vf->texture[0], NULL);
+					// std::wstring wfile;
+					// string file = Poco::format("image%04?i.png", packet.dts);
+					// Poco::UnicodeConverter::toUTF16(file, wfile);
+					// D3DXSaveTextureToFile(wfile.c_str(), D3DXIFF_PNG, vf->texture[0], NULL);
 					// _log.information("queue frame");
 				}
 			} else {
@@ -320,7 +320,7 @@ void FFVideoDecoder::run() {
 			}
 
 		} else {
-//				_log.information(Poco::format("video decode not finished: %d", bytes));
+			// _log.information(Poco::format("video decode not finished: %d", bytes));
 		}
 
 		av_free_packet(&packetList->pkt);

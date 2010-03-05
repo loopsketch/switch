@@ -1,7 +1,8 @@
 #include "FFBaseDecoder.h"
 #include <Poco/format.h>
 
-FFBaseDecoder::FFBaseDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): _log(Poco::Logger::get("")), _renderer(renderer), _ic(ic), _streamNo(streamNo), _readTime(0), _readCount(0), _avgTime(0) {
+FFBaseDecoder::FFBaseDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo):
+	_log(Poco::Logger::get("")), _renderer(renderer), _ic(ic), _streamNo(streamNo), _readTime(0), _readCount(0), _avgTime(0) {
 }
 
 FFBaseDecoder::~FFBaseDecoder() {
