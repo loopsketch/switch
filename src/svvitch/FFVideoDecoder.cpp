@@ -149,7 +149,8 @@ const float FFVideoDecoder::getDisplayAspectRatio() const {
 
 const UINT FFVideoDecoder::bufferedFrames() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	return _frames.size() + bufferedPackets();
+	//return _frames.size() + bufferedPackets();
+	return _frames.size();
 }
 
 const bool FFVideoDecoder::createEffect() {
@@ -302,9 +303,13 @@ void FFVideoDecoder::run() {
 			_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
 			if (vf) {
+				//UINT textureMen = _renderer.getTextureMem() * 10 / 100;
+				//UINT availableTextureMem = _renderer.getAvailableTextureMem();
 				while (_worker != NULL && _frames.size() >= 50) {
+				//while (_worker != NULL && availableTextureMem < textureMen) {
 					// ƒLƒ…[‹ó‚«‘Ò‚¿
 					Poco::Thread::sleep(10);
+					//availableTextureMem = _renderer.getAvailableTextureMem();
 				}
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);

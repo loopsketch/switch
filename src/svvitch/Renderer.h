@@ -85,6 +85,9 @@ private:
 
 	LPDIRECTSOUND _sound;
 
+	UINT _textureMem;
+	UINT _availableTextureMem;
+
 	DWORD _current;
 	LPDIRECT3DSURFACE9 _backBuffer;
 	LPDIRECT3DTEXTURE9 _captureTexture;
@@ -179,6 +182,12 @@ public:
 	 * 3Dデバイスを取得します
 	 */
 	const LPDIRECTSOUND getSoundDevice() const;
+
+	/** テクスチャメモリ */
+	const UINT getTextureMem() const;
+
+	/** 残テクスチャメモリ */
+	const UINT getAvailableTextureMem() const;
 
 	/**
 	 * キーボードデバイスを取得します

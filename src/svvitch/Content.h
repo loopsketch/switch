@@ -94,6 +94,8 @@ public:
 
 	void set(const string& key, const float& value);
 
+	void set(const string& key, const unsigned int& value);
+
 	const string& get(const string& key) const;
 
 	const float getF(const string& key, const float& defaultValue = 0) const;

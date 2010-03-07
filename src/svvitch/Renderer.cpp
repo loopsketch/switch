@@ -137,6 +137,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	} else {
 		_log.information("device: HAL/HARDWARE_VERTEXPROCESSING");
 	}
+	_textureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
 
 	// レンダリングターゲットの取得
 	//	D3DSURFACE_DESC desc;
@@ -597,8 +598,8 @@ void Renderer::renderScene(const DWORD current) {
 		Uint32 fps = _fpsCounter.getFPS();
 		if (config().viewStatus) {
 			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
-			Uint32 vram = _device->GetAvailableTextureMem() / 1024 / 1024;
-			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03luMB", mem, availMem, vram);
+			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
+			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03uMB", mem, availMem, _availableTextureMem);
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
 			drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0x99ffffff, Poco::format("FPS:%03lu %s %s", fps, time, memory));
 		}
@@ -652,6 +653,14 @@ void Renderer::renderScene(const DWORD current) {
 	SAFE_RELEASE(swapChain1);
 	SAFE_RELEASE(swapChain2);
 	_fpsCounter.count();
+}
+
+const UINT Renderer::getTextureMem() const {
+	return _textureMem;
+}
+
+const UINT Renderer::getAvailableTextureMem() const {
+	return _availableTextureMem;
 }
 
 const UINT Renderer::getDisplayAdapters() const {

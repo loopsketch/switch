@@ -203,8 +203,8 @@ void FFMovieContent::run() {
 		}
 		if (_videoDecoder) {
 			// videoデコード処理
-			if (_videoDecoder->bufferedPackets() > 100) {
-				Poco::Thread::sleep(30);
+			if (_videoDecoder->bufferedPackets() > 200) {
+				Poco::Thread::sleep(10);
 				continue;
 			}
 		}
@@ -339,10 +339,6 @@ void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_playing) {
-//			if (_audioDecoder && _videoDecoder->bufferedFrames() == 0) {
-				// ビデオのフレームが無くなった時点でオーディオ停止(リングバッファのオーバーラン再生防止)
-//				_audioDecoder->stop();
-//			}
 			if (_starting) {
 				_frameOddEven = frame % 2;
 				_starting = false;

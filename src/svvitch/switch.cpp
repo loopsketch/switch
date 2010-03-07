@@ -296,9 +296,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //				}
 			}
 
-			timeBeginPeriod(1);
+			//timeBeginPeriod(1);
 			Sleep(_conf.frameIntervals);
-			timeEndPeriod(1);
+			//timeEndPeriod(1);
 		}
 
 	}

@@ -115,6 +115,12 @@ void Content::set(const string& key, const float& value) {
 	set(key, s);
 }
 
+void Content::set(const string& key, const unsigned int& value) {
+	string s;
+	Poco::NumberFormatter::append(s, value);
+	set(key, s);
+}
+
 const string& Content::get(const string& key) const {
 	HashMap<string, string>::ConstIterator it = _properties.find(key);
 	if (it != _properties.end()) {
