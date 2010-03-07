@@ -250,6 +250,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// メッセージ処理および描画ループ
 	EmptyWorkingSet(GetCurrentProcess());
+	//::SetThreadAffinityMask(::GetCurrentThread(), 1);
 	LARGE_INTEGER freq;
 	LARGE_INTEGER start;
 	LARGE_INTEGER current;
@@ -296,8 +297,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //				}
 			}
 
+			//Poco::Thread::sleep(0);
 			//timeBeginPeriod(1);
-			Sleep(_conf.frameIntervals);
+			Poco::Thread::sleep(_conf.frameIntervals);
 			//timeEndPeriod(1);
 		}
 
