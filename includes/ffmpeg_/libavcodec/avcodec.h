@@ -30,7 +30,7 @@
 #include "libavutil/avutil.h"
 
 #define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 57
+#define LIBAVCODEC_VERSION_MINOR 58
 #define LIBAVCODEC_VERSION_MICRO  0
 
 #define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
@@ -206,6 +206,7 @@ enum CodecID {
     CODEC_ID_BINKVIDEO,
     CODEC_ID_IFF_ILBM,
     CODEC_ID_IFF_BYTERUN1,
+    CODEC_ID_KGV1,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -424,14 +425,12 @@ enum SampleFormat {
 
 /**
  * Required number of additionally allocated bytes at the end of the input bitstream for decoding.
- * The first 8 bytes are needed because some optimized bitstream readers read
- * 32 or 64 bit at once and could read over the end. The remainder is to give
- * decoders a reasonable amount of distance to work with before checking for
- * buffer overreads.<br>
+ * This is mainly needed because some optimized bitstream readers read
+ * 32 or 64 bit at once and could read over the end.<br>
  * Note: If the first 23 bits of the additional bytes are not 0, then damaged
  * MPEG bitstreams could cause overread and segfault.
  */
-#define FF_INPUT_BUFFER_PADDING_SIZE 64
+#define FF_INPUT_BUFFER_PADDING_SIZE 8
 
 /**
  * minimum encoding buffer size
