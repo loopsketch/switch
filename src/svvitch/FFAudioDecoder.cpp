@@ -195,6 +195,8 @@ void FFAudioDecoder::writeData() {
 }
 
 void FFAudioDecoder::finishedPacket() {
+	if (!_buffer) return;
+
 	int size = _bufferSize - _bufferOffset;
 	LPVOID lockedBuf = NULL;
 	DWORD lockedLen = 0;
