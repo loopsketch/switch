@@ -709,14 +709,14 @@ const LPDIRECT3DTEXTURE9 Renderer::createTexture(const int w, const int h, const
  * 画像ファイルからテクスチャを生成
  */
 const LPDIRECT3DTEXTURE9 Renderer::createTexture(const string file) const {
+	LPDIRECT3DTEXTURE9 texture = NULL;
 	wstring wfile;
 	Poco::UnicodeConverter::toUTF16(file, wfile);
-	D3DXIMAGE_INFO info;
+	D3DXIMAGE_INFO info = {0};
 	HRESULT hr = D3DXGetImageInfoFromFile(wfile.c_str(), &info);
-	LPDIRECT3DTEXTURE9 texture = NULL;
-	if (SUCCEEDED(hr)) {
+	if (SUCCEEDED(hr) && info.Width > 0 && info.Height > 0) {
 		hr = D3DXCreateTextureFromFileEx(_device, wfile.c_str(), info.Width, info.Height, 1, 0, info.Format, D3DPOOL_DEFAULT, D3DX_FILTER_NONE, D3DX_DEFAULT, 0, NULL, NULL, &texture);
-		if (FAILED(hr)) {
+		if FAILED(hr) {
 			_log.warning(Poco::format("failed create texture: %s", file));
 		}
 	}
