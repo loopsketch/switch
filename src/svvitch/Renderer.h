@@ -85,6 +85,7 @@ private:
 
 	LPDIRECTSOUND _sound;
 
+	int _mem;
 	UINT _textureMem;
 	UINT _availableTextureMem;
 

@@ -156,11 +156,15 @@ private:
 	/** リモートディレクトリのコピー */
 	bool copyRemoteDir(const string& remote, const string& root);
 
+	/** 次再生コンテンツを準備(アクティブ版) */
+	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;
+
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
 
 	virtual ~MainScene();
 
+	/** コンテンツの遅延解放を行います */
 	void delayedReleaseContainer();
 
 	/** 初期化 */
@@ -192,17 +196,20 @@ public:
 	/** 切替用コンテンツの準備(アクティブ版) */
 	ActiveMethod<bool, PlayParameters, MainScene> activePrepareContent;
 
-	/** 手動で切替を行います */
+	/**
+	 * 手動で切替を行います
+	 * このメソッドはメインスレッドをブロックするのでメインスレッドからはactiveSwitchContent()で呼出すこと
+	 */
 	bool switchContent();
+
+	/** 切替用コンテンツに切替(アクティブ版) */
+	ActiveMethod<bool, void, MainScene> activeSwitchContent;
 
 	/** workspace更新 */
 	bool updateWorkspace();
 
 	/** リモートコピー (アクティブ版) */
 	ActiveMethod<void, string, MainScene> activeCopyRemote;
-
-	/** 次再生コンテンツを準備(アクティブ版) */
-	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;
 
 	/** リムーバブルメディアの追加(アクティブ版) */
 	ActiveMethod<void, string, MainScene> activeAddRemovableMedia;

@@ -156,7 +156,14 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	case 2:
 		;
 	}
-	_captureTexture = createRenderTarget(w / 2, h / 2);
+	int cw = w;
+	int ch = h;
+	if (cw > 480) {
+		float aspect = F(h) / w;
+		cw = 480;
+		ch = L(cw * aspect);
+	}
+	_captureTexture = createRenderTarget(cw, ch);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
 		_captureTexture->GetLevelDesc(0, &desc);
@@ -212,6 +219,9 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	_keycode = 0;
 	_shift = false;
 	_ctrl = false;
+	PROCESS_MEMORY_COUNTERS pmc = {0};
+	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
+	_mem = pmc.WorkingSetSize / 1024;
 
 	return S_OK;
 }
@@ -594,14 +604,14 @@ void Renderer::renderScene(const DWORD current) {
 
 		PROCESS_MEMORY_COUNTERS pmc = {0};
 		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
-		int mem = pmc.WorkingSetSize / 1024 / 1024;
+		int mem = pmc.WorkingSetSize / 1024;
 		Uint32 fps = _fpsCounter.getFPS();
 		if (config().viewStatus) {
 			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
-			string memory = Poco::format("ram:%03dMB/avail:%03dMB vram:%03uMB", mem, availMem, _availableTextureMem);
+			string memory = Poco::format("ram:%03dMB/avail:%03dMB/used:%03dkB vram:%03uMB", (mem / 1024), availMem, (mem - _mem), _availableTextureMem);
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			drawFontTextureText(0, config().subRect.bottom - 20, 12, 16, 0x99ffffff, Poco::format("FPS:%03lu %s %s", fps, time, memory));
+			drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99ffffff, Poco::format("FPS:%03lu %s %s", fps, time, memory));
 		}
 		_device->EndScene();
 	}

@@ -35,6 +35,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepareContent(this, &MainScene::prepareContent),
 	activePrepareNextContent(this, &MainScene::prepareNextContent),
+	activeSwitchContent(this, &MainScene::switchContent),
 	activeCopyRemote(this, &MainScene::copyRemote),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
 	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
@@ -484,8 +485,6 @@ bool MainScene::switchContent() {
 		Poco::Thread::sleep(30);
 	}
 	delayedReleaseContainer();
-//	_log.information("purge prepared next contents");
-//	SAFE_DELETE(_prepared);
 	return true;
 }
 
@@ -1076,8 +1075,9 @@ void MainScene::process() {
 				string command = schedule->command();
 				if (command.find("playlist ") == 0) {
 					if (_prepared) {
+						activeSwitchContent();
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						_doSwitchPrepared = true;
+						//_doSwitchPrepared = true;
 					} else {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
 					}
@@ -1156,29 +1156,29 @@ void MainScene::draw2() {
 
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 170, 24, 32, 0x996699ff, config().name);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 140, 12, 16, 0x99ffffff, status1);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "frame");
-		_renderer.drawFontTextureText(120, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "time");
-		_renderer.drawFontTextureText(264, config().subRect.bottom - 120, 12, 16, 0x99ccccff, "remain");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 100, 12, 16, 0x99ffffff, status2);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "    action");
-		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 80, 12, 16, 0x99ffffff, _playCurrent.action);
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 60, 12, 16, 0x99ccccff, "transition");
-		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(130, config().subRect.bottom - 60, 12, 16, 0x99ffffff, _playNext.transition);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 128, 24, 32, 0x996699ff, config().name);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 96, 12, 16, 0x99ffffff, status1);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "frame");
+		_renderer.drawFontTextureText(120, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "time");
+		_renderer.drawFontTextureText(264, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "remain");
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 64, 12, 16, 0x99ffffff, status2);
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 48, 12, 16, 0x99ccccff, "action");
+		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(84, config().subRect.bottom - 48, 12, 16, 0x99ffffff, _playCurrent.action);
+		_renderer.drawFontTextureText(264, config().subRect.bottom - 48, 12, 16, 0x99ccccff, "transition");
+		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(396, config().subRect.bottom - 48, 12, 16, 0x99ffffff, _playNext.transition);
 
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 140, 12, 16, 0x99ccccff, " current");
-		_renderer.drawTexture(700, config().subRect.bottom - 140, _playlistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 120, _currentName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 100, 12, 16, 0x99ccccff, "    next");
-		_renderer.drawTexture(700, config().subRect.bottom - 100, _nextName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "prepared");
-		_renderer.drawTexture(700, config().subRect.bottom - 80, _preparedPlaylistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 60, _preparedName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 112, 12, 16, 0x99ccccff, " current");
+		_renderer.drawTexture(700, config().subRect.bottom - 112, _playlistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 96, _currentName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "    next");
+		_renderer.drawTexture(700, config().subRect.bottom - 80, _nextName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(600, config().subRect.bottom - 64, 12, 16, 0x99ccccff, "prepared");
+		_renderer.drawTexture(700, config().subRect.bottom - 64, _preparedPlaylistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 48, _preparedName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 40, 12, 16, 0x99ffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99ffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
 	}
 
 	{
