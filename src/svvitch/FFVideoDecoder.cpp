@@ -45,9 +45,9 @@ void FFVideoDecoder::clearAllFrames() {
 void FFVideoDecoder::start() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
 	AVCodecContext* avctx = _ic->streams[_streamNo]->codec;
-	// avctx->thread_count = 4;
-	// int res = avcodec_thread_init(avctx, 4);
-	// _log.information(Poco::format("thread: %d", res));
+	//avctx->thread_count = 4;
+	//int res = avcodec_thread_init(avctx, 4);
+	//_log.information(Poco::format("thread: %d", res));
 	int w = avctx->width;
 	int h = avctx->height;
 	int flags = SWS_FAST_BILINEAR;
