@@ -951,18 +951,18 @@ void MainScene::process() {
 
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
-			//_doSwitchNext = false;
-			_playCurrent = _playNext;
-			int next = (_currentContent + 1) % _contents.size();
-			ContentPtr nextContent = _contents[next]->get(0);
-			if (nextContent && !nextContent->opened().empty()) {
+			if (!_status["next-content"].empty()) {
 				_doSwitchNext = false;
-				_currentContent = next;
-				_contents[next]->play();
+				_playCurrent = _playNext;
 				LPDIRECT3DTEXTURE9 oldPlaylistName = NULL;
 				LPDIRECT3DTEXTURE9 oldCurrentName = NULL;
+				ContentPtr nextContent = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					int next = (_currentContent + 1) % _contents.size();
+					nextContent = _contents[next]->get(0);
+					_currentContent = next;
+					_contents[next]->play();
 					oldPlaylistName = _playlistName;
 					_playlistName = _nextPlaylistName;
 					_nextPlaylistName = NULL;
