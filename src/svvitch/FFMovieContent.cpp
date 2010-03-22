@@ -138,14 +138,15 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					//	}
 					//}
 				}
-				_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
 				if (_video < 0 && avcodec_open(avctx, avcodec) < 0) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
+					if (_rate < 1) _rate = F(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
 					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
+					_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
 
 					_log.information(Poco::format("open decoder: %s %.3hf %.3hf %dkbps", string(avcodec->long_name), _rate, _intervals, avctx->bit_rate / 1024));
 					_video = i;
