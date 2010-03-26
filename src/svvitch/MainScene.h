@@ -61,7 +61,7 @@ private:
 	DWORD _frame;
 	bool _startup;
 	bool _autoStart;
-	int _luminance;
+	int _brightness;
 
 	vector<ContainerPtr> _contents;
 	int _currentContent;
@@ -185,7 +185,7 @@ public:
 	bool setPlaylistText(const string& playlistID, const string& text);
 
 	/** 輝度設定 */
-	void setLuminance(int i);
+	void setBrightness(int i);
 
 	/** 遷移アクション設定 */
 	void setAction(string& action);

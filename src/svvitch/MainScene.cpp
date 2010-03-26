@@ -38,7 +38,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	activeSwitchContent(this, &MainScene::switchContent),
 	activeCopyRemote(this, &MainScene::copyRemote),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
-	_frame(0), _luminance(0), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
+	_frame(0), _brightness(100), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
 	_transition(NULL),
 	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
@@ -131,7 +131,7 @@ bool MainScene::initialize() {
 	}
 	_timeSecond = -1;
 	_frame = 0;
-	_luminance = config().luminance;
+	_brightness = config().brightness;
 	_running = true;
 	_startup = false;
 	_autoStart = false;
@@ -281,8 +281,8 @@ bool MainScene::setPlaylistText(const string& playlistID, const string& text) {
 	return false;
 }
 
-void MainScene::setLuminance(int i) {
-	config().luminance = i;
+void MainScene::setBrightness(int i) {
+	config().brightness = i;
 }
 
 void MainScene::setAction(string& action) {
@@ -732,16 +732,16 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 void MainScene::process() {
 	switch (_keycode) {
 		case 'Z':
-			if (config().luminance > 0) config().luminance--;
+			if (config().brightness > 0) config().brightness--;
 			break;
 		case 'X':
-			if (config().luminance < 100) config().luminance++;
+			if (config().brightness < 100) config().brightness++;
 			break;
 	}
-	if (_luminance < config().luminance) {
-		_luminance++;
-	} else if (_luminance > config().luminance) {
-		_luminance--;
+	if (_brightness < config().brightness) {
+		_brightness++;
+	} else if (_brightness > config().brightness) {
+		_brightness--;
 	}
 
 	// リムーバブルメディア検出
@@ -811,10 +811,10 @@ void MainScene::process() {
 							if (command.find("playlist ") == 0) {
 								string playlistID = command.substr(9);
 								playlist = _workspace->getPlaylist(playlistID);
-							} else if (command.find("luminance ") == 0) {
-								int luminance = -1;
-								if (Poco::NumberParser::tryParse(command.substr(10), luminance) && luminance >= 0 && luminance <= 100) {
-									setLuminance(luminance);
+							} else if (command.find("brightness ") == 0) {
+								int brightness = -1;
+								if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
+									setBrightness(brightness);
 								}
 							}
 						}
@@ -1082,17 +1082,17 @@ void MainScene::process() {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
 					}
 					break;
-				} else if (command.find("luminance ") == 0) {
-					int luminance = -1;
-					if (Poco::NumberParser::tryParse(command.substr(10), luminance) && luminance >= 0 && luminance <= 100) {
-						setLuminance(luminance);
+				} else if (command.find("brightness ") == 0) {
+					int brightness = -1;
+					if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
+						setBrightness(brightness);
 					}
 				}
 			}
 		}
 	}
 
-	_status["luminance"] = Poco::NumberFormatter::format(config().luminance);
+	_status["brightness"] = Poco::NumberFormatter::format(config().brightness);
 	_frame++;
 }
 
@@ -1110,8 +1110,8 @@ void MainScene::draw1() {
 		_contents[_currentContent]->draw(_frame);
 	}
 
-	if (_luminance < 100) {
-		DWORD col = ((DWORD)(0xff * (100 - _luminance) / 100) << 24) | 0x000000;
+	if (_brightness < 100) {
+		DWORD col = ((DWORD)(0xff * (100 - _brightness) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	if (_removableCover > 0.0f) {

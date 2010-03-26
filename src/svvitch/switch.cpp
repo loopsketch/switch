@@ -533,7 +533,7 @@ bool guiConfiguration()
 		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
 
 		_conf.useScenes = xml->getString("scenes", "main");
-		_conf.luminance = xml->getInt("stage.luminance", 100);
+		_conf.brightness = xml->getInt("stage.brightness", 100);
 		_conf.viewStatus = xml->getBool("stage.viewStatus", false);
 
 		_conf.imageSplitWidth = xml->getInt("stage.imageSplitWidth", 0);
@@ -600,10 +600,11 @@ void saveConfiguration() {
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
 		if (xml) {
-			xml->setInt("stage.luminnace", _conf.luminance);
+			xml->setInt("stage.brightness", _conf.brightness);
 			xml->setBool("stage.viewStatus", _conf.viewStatus);
 			xml->save("switch-config.xml");
 			xml->release();
+			_log.information("saveed configuration");
 		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
