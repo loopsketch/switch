@@ -31,7 +31,7 @@ public:
 
 	string useScenes;
 
-	int luminance;
+	int brightness;
 	bool viewStatus;
 	int imageSplitWidth;
 	string textFont;

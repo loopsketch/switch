@@ -212,12 +212,12 @@ void SwitchRequestHandler::set(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "luminance") {
+			} else if (name == "brightness") {
 				int i = 0;
 				Poco::NumberParser::tryParse(form().get("v"), i);
-				scene->setLuminance(i);
+				scene->setBrightness(i);
 				map<string, string> params;
-				params["luminance"] = Poco::format("%d", i);
+				params["brightness"] = Poco::format("%d", i);
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
