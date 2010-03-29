@@ -261,8 +261,15 @@ void SwitchRequestHandler::get(const string& name) {
 				LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
 				if (capture) {
 					// capture-lock
-					if SUCCEEDED(D3DXSaveTextureToFile(L"snapshot.png", D3DXIFF_PNG, capture, NULL)) {
-						response().sendFile("snapshot.png", "image/png");
+					LPD3DXBUFFER buf = NULL;
+					if SUCCEEDED(D3DXSaveTextureToFileInMemory(&buf, D3DXIFF_PNG, capture, NULL)) {
+						//response().sendFile("snapshot.png", "image/png");
+						try {
+							response().setContentType("image/png");
+							response().sendBuffer(buf->GetBufferPointer(), buf->GetBufferSize());
+						} catch (...) {
+						}
+						SAFE_RELEASE(buf);
 					} else {
 						_log.warning("failed snapshot");
 					}
