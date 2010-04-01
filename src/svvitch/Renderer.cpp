@@ -230,12 +230,13 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
  * 終了処理
  */
 void Renderer::finalize() {
-//	DXUTShutdown();
+	// DXUTShutdown();
+	// Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
+	_sceneMap.clear();
 	for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 		SAFE_DELETE(*it);
 	}
 	_scenes.clear();
-	_sceneMap.clear();
 	for (Poco::HashMap<string, LPDIRECT3DTEXTURE9>::Iterator it = _cachedTextures.begin(); it != _cachedTextures.end(); it++) {
 		SAFE_RELEASE(it->second);
 	}
@@ -750,23 +751,27 @@ const LPDIRECT3DSURFACE9 Renderer::createLockableSurface(const int w, const int 
 }
 
 const bool Renderer::getRenderTargetData(LPDIRECT3DTEXTURE9 texture, LPDIRECT3DSURFACE9 surface) const {
-	LPDIRECT3DSURFACE9 target;
-	HRESULT hr = texture->GetSurfaceLevel(0, &target);
-	if (SUCCEEDED(hr)) {
-		hr = _device->GetRenderTargetData(target, surface);
-		SAFE_RELEASE(target);
-		return SUCCEEDED(hr);
+	if (texture) {
+		LPDIRECT3DSURFACE9 target;
+		HRESULT hr = texture->GetSurfaceLevel(0, &target);
+		if (SUCCEEDED(hr)) {
+			hr = _device->GetRenderTargetData(target, surface);
+			SAFE_RELEASE(target);
+			return SUCCEEDED(hr);
+		}
 	}
 	return false;
 }
 
 const bool Renderer::updateRenderTargetData(LPDIRECT3DTEXTURE9 texture, LPDIRECT3DSURFACE9 surface) const {
-	LPDIRECT3DSURFACE9 target;
-	HRESULT hr = texture->GetSurfaceLevel(0, &target);
-	if (SUCCEEDED(hr)) {
-		hr = _device->UpdateSurface(surface, NULL, target, NULL);
-		SAFE_RELEASE(target);
-		return SUCCEEDED(hr);
+	if (texture) {
+		LPDIRECT3DSURFACE9 target;
+		HRESULT hr = texture->GetSurfaceLevel(0, &target);
+		if (SUCCEEDED(hr)) {
+			hr = _device->UpdateSurface(surface, NULL, target, NULL);
+			SAFE_RELEASE(target);
+			return SUCCEEDED(hr);
+		}
 	}
 	return false;
 }
@@ -808,20 +813,21 @@ void Renderer::drawTexture(const int x, const int y, const LPDIRECT3DTEXTURE9 te
 void Renderer::drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
 	float u1, u2, v1, v2;
 	switch (flipMode) {
-		case 1:
-			u1 = F(1); u2 = F(0);
-			v1 = F(0); v2 = F(1);
-			break;
-		default:
-			u1 = F(0); u2 = F(1);
-			v1 = F(0); v2 = F(1);
+	case 1:
+		u1 = F(1); u2 = F(0);
+		v1 = F(0); v2 = F(1);
+		break;
+	default:
+		u1 = F(0); u2 = F(1);
+		v1 = F(0); v2 = F(1);
 	}
-	float x1 = F(x     - 0.5);
-	float y1 = F(y     - 0.5);
-	float x2 = F(x + w - 0.5);
-	float y2 = F(y + h - 0.5);
-
 	_device->SetTexture(0, texture);
+
+	float x1, y1, x2, y2;
+	x1 = F(x     - 0.5);
+	y1 = F(y     - 0.5);
+	x2 = F(x + w - 0.5);
+	y2 = F(y + h - 0.5);
 	VERTEX dst[] =
 		{
 			{x1, y1, 0.0f, 1.0f, c1, u1, v1},
@@ -834,8 +840,50 @@ void Renderer::drawTexture(const int x, const int y, const int w, const int h, c
 }
 
 /**
- * テクスチャの指定部分を指定位置・範囲に描画します
+ * テクスチャを指定位置･サイズで描画します
  */
+void Renderer::drawTextureWithAngle(const int x, const int y, const int w, const int h, const int angle, const int cx, const int cy, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
+	float u1, u2, v1, v2;
+	switch (flipMode) {
+	case 1:
+		u1 = F(1); u2 = F(0);
+		v1 = F(0); v2 = F(1);
+		break;
+	default:
+		u1 = F(0); u2 = F(1);
+		v1 = F(0); v2 = F(1);
+	}
+
+	float x1 = F(x     - 0.5) - cx;
+	float y1 = F(y     - 0.5) - cy;
+	float x2 = F(x + w - 0.5) - cx;
+	float y2 = F(y + h - 0.5) - cy;
+
+	float rad = (angle % 360) * PI / 180;
+	float sin = ::sinf(rad);
+	float cos = ::cos(rad);
+
+	float ax1 = (cos * x1) - (sin * y1) + cx;
+	float ay1 = (sin * x1) + (cos * y1) + cy;
+	float ax2 = (cos * x2) - (sin * y1) + cx;
+	float ay2 = (sin * x2) + (cos * y1) + cy;
+	float ax3 = (cos * x1) - (sin * y2) + cx;
+	float ay3 = (sin * x1) + (cos * y2) + cy;
+	float ax4 = (cos * x2) - (sin * y2) + cx;
+	float ay4 = (sin * x2) + (cos * y2) + cy;
+
+	VERTEX dst[] =
+		{
+			{ax1, ay1, 0.0f, 1.0f, c1, u1, v1},
+			{ax2, ay2, 0.0f, 1.0f, c2, u2, v1},
+			{ax3, ay3, 0.0f, 1.0f, c3, u1, v2},
+			{ax4, ay4, 0.0f, 1.0f, c4, u2, v2}
+		};
+	_device->SetTexture(0, texture);
+	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
+	_device->SetTexture(0, NULL);
+}
+
 void Renderer::drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
 	float u1, v1, u2, v2;
 	if (texture) {
@@ -847,7 +895,6 @@ void Renderer::drawTexture(const float dx, const float dy, const float dw, const
 		v2 = (sy + sh) / desc.Height;
 	}
 
-	_device->SetTexture(0, texture);
 	VERTEX dst[] =
 		{
 			{dx      - 0.5, dy      - 0.5, 0.0f, 1.0f, c1, u1, v1},
@@ -855,6 +902,48 @@ void Renderer::drawTexture(const float dx, const float dy, const float dw, const
 			{dx      - 0.5, dy + dh - 0.5, 0.0f, 1.0f, c3, u1, v2},
 			{dx + dw - 0.5, dy + dh - 0.5, 0.0f, 1.0f, c4, u2, v2}
 		};
+	_device->SetTexture(0, texture);
+	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
+	_device->SetTexture(0, NULL);
+}
+
+void Renderer::drawTextureWithAngle(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const int angle, const int cx, const int cy, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
+	float u1, v1, u2, v2;
+	if (texture) {
+		D3DSURFACE_DESC desc;
+		HRESULT hr = texture->GetLevelDesc(0, &desc);
+		u1 = sx / desc.Width;
+		v1 = sy / desc.Height;
+		u2 = (sx + sw) / desc.Width;
+		v2 = (sy + sh) / desc.Height;
+	}
+
+	float x1 = F(dx      - 0.5) - cx;
+	float y1 = F(dy      - 0.5) - cy;
+	float x2 = F(dx + dw - 0.5) - cx;
+	float y2 = F(dy + dh - 0.5) - cy;
+
+	float rad = (angle % 360) * PI / 180;
+	float sin = ::sinf(rad);
+	float cos = ::cos(rad);
+
+	float ax1 = (cos * x1) - (sin * y1) + cx;
+	float ay1 = (sin * x1) + (cos * y1) + cy;
+	float ax2 = (cos * x2) - (sin * y1) + cx;
+	float ay2 = (sin * x2) + (cos * y1) + cy;
+	float ax3 = (cos * x1) - (sin * y2) + cx;
+	float ay3 = (sin * x1) + (cos * y2) + cy;
+	float ax4 = (cos * x2) - (sin * y2) + cx;
+	float ay4 = (sin * x2) + (cos * y2) + cy;
+
+	VERTEX dst[] =
+		{
+			{ax1, ay1, 0.0f, 1.0f, c1, u1, v1},
+			{ax2, ay2, 0.0f, 1.0f, c2, u2, v1},
+			{ax3, ay3, 0.0f, 1.0f, c3, u1, v2},
+			{ax4, ay4, 0.0f, 1.0f, c4, u2, v2}
+		};
+	_device->SetTexture(0, texture);
 	_device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
 	_device->SetTexture(0, NULL);
 }

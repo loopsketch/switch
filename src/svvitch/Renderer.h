@@ -265,9 +265,19 @@ public:
 	void drawTexture(const int x, const int y, const int w, const int h, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
 
 	/**
+	 * テクスチャを指定位置・範囲・回転で描画します
+	 */
+	void drawTextureWithAngle(const int x, const int y, const int w, const int h, const int angle, const int cx, const int cy, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1 = 0xffffffff, const D3DCOLOR c2 = 0xffffffff, const D3DCOLOR c3 = 0xffffffff, const D3DCOLOR c4 = 0xffffffff) const;
+
+	/**
 	 * テクスチャの指定部分を指定位置・範囲に描画します
 	 */
 	void drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
+
+	/**
+	 * テクスチャの指定部分を指定位置・範囲・回転に描画します
+	 */
+	void drawTextureWithAngle(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const int angle, const int cx, const int cy, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
 
 	/**
 	 * フォントファミリーの取得
