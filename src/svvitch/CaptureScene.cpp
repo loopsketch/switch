@@ -2,19 +2,18 @@
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
 
-CaptureScene::CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim): Scene(renderer),
-	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _deviceVideoType(MEDIASUBTYPE_YUY2), _samples(2),
-	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _fx(NULL), _cameraImage(NULL)
+CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
+	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _deviceVideoType(MEDIASUBTYPE_YUY2),
+	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
+	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL), _gray(NULL)
 {
 }
 
 CaptureScene::~CaptureScene() {
 	releaseFilter();
-	for (int i = 0; i < _mavgTextures.size(); i++) {
-		SAFE_RELEASE(_mavgTextures[i]);
-	}
 	SAFE_RELEASE(_cameraImage);
-	SAFE_RELEASE(_fx);
+	SAFE_RELEASE(_surface);
+	SAFE_DELETE(_gray);
 	_log.information("*release capture-scene");
 }
 
@@ -23,10 +22,18 @@ bool CaptureScene::initialize() {
 
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("capture-config.xml");
+		_useStageCapture = xml->getBool("device[@useStageCapture]", false);
 		_deviceNo = xml->getInt("device[@no]", 0);
 		_routePinNo = xml->getInt("device[@route]", 0);
-		_deviceW = xml->getInt("device[@w]", 640);
-		_deviceH = xml->getInt("device[@h]", 480);
+		if (_useStageCapture) {
+			_deviceW = xml->getInt("device[@w]", 640);
+			_deviceH = xml->getInt("device[@h]", 480);
+			//_deviceW = config().stageRect.right;
+			//_deviceH = config().stageRect.bottom;
+		} else {
+			_deviceW = xml->getInt("device[@w]", 640);
+			_deviceH = xml->getInt("device[@h]", 480);
+		}
 		_deviceFPS = xml->getInt("device[@fps]", 30);
 		string type = Poco::toLower(xml->getString("device[@type]", "yuv2"));
 		if (type == "rgb24") {
@@ -34,27 +41,22 @@ bool CaptureScene::initialize() {
 		} else if (type == "yuv2") {
 			_deviceVideoType = MEDIASUBTYPE_YUY2;
 		}
-		_samples = xml->getInt("samples", 1);
+
+		_previewX = xml->getInt("preview.x", 0);
+		_previewY = xml->getInt("preview.y", 0);
+		_previewW = xml->getInt("preview.width", 320);
+		_previewH = xml->getInt("preview.height", 240);
+
 		xml->release();
 	} catch (Poco::Exception& ex) {
 		_log.warning(ex.displayText());
 	}
 
-	if (createFilter()) {
-		std::wstring wfile;
-		Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
-		LPD3DXBUFFER errors = NULL;
-		HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
-		if (errors) {
-			vector<char> text(1024);
-			memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
-			text.push_back('\0');
-			_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
-			SAFE_RELEASE(errors);
-		} else if (FAILED(hr)) {
-			_log.warning(Poco::format("failed shader: %s", string("")));
-		}
+	if (_useStageCapture || createFilter()) {
 		_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
+		_surface = _renderer.createLockableSurface(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
+		_gray = new BYTE[_deviceW * _deviceH];
+		_log.information(Poco::format("camera image: %dx%d %s-mode %s", _deviceW, _deviceH, string(_useStageCapture?"stage":"capture"), string(_cameraImage?"OK":"NG")));
 		return true;
 	}
 	return false;
@@ -95,7 +97,6 @@ bool CaptureScene::createFilter() {
 			routeCrossbar(src, _routePinNo);
 		}
 
-		// PIN_CATEGORY_PREVIEW PIN_CATEGORY_CAPTURE
 		IPin* renderPin = NULL;
 		hr = _capture->FindPin(src, PINDIR_OUTPUT, &PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, FALSE, 0, &renderPin);
 		if (FAILED(hr)) {
@@ -162,6 +163,8 @@ bool CaptureScene::createFilter() {
 						videoType = "YV12";
 					} else if (IsEqualGUID(amt->subtype, MEDIASUBTYPE_YV12)) {
 						videoType = "YV12";
+					} else if (IsEqualGUID(amt->subtype, MEDIASUBTYPE_MJPG)) {
+						videoType = "MJPG";
 					} else {
 						videoType = Poco::format("unknown 0x%lx", amt->subtype.Data1);
 					}
@@ -172,8 +175,9 @@ bool CaptureScene::createFilter() {
 					long gy = scc.OutputGranularityY;
 				    long w = scc.MaxCroppingSize.cx;
 				    long h = scc.MaxCroppingSize.cy;
+					ULONG videoStandard = scc.VideoStandard;
 					string vinfo = Poco::format("min:%ldx%ld max crop:%ldx%ld fps:%0.2hf", mw, mh, w, h, fps);
-					_log.information(Poco::format("capability(%02d) video:%s size fixed:%s %s", i, videoType, string(outputFixed?"true":"false"), vinfo));
+					_log.information(Poco::format("capability(%02d) video:%s %lu size fixed:%s %s", i, videoType, videoStandard, string(outputFixed?"true":"false"), vinfo));
 
 					if (IsEqualGUID(amt->formattype, FORMAT_VideoInfo) && IsEqualGUID(amt->subtype, _deviceVideoType)) {
 						// ビデオタイプが一致
@@ -199,14 +203,15 @@ bool CaptureScene::createFilter() {
 					_log.information(Poco::format("fixed configuration setting: %d", hitConfig));
 					AM_MEDIA_TYPE* amt;
 					hr = sc->GetStreamCaps(hitConfig, &amt, reinterpret_cast<BYTE*>(&scc));
-					if (SUCCEEDED(hr)) {
+					if SUCCEEDED(hr) {
 						long w = scc.MaxCroppingSize.cx;
 						long h = scc.MaxCroppingSize.cy;
 						float fps = 10000000.0f / scc.MinFrameInterval;
 						VIDEOINFOHEADER* info = reinterpret_cast<VIDEOINFOHEADER*>(amt->pbFormat);
 						info->bmiHeader.biWidth = w;
 						info->bmiHeader.biHeight = h;
-//						info->AvgTimePerFrame = scc.MinFrameInterval;
+						// info->AvgTimePerFrame = 10000000 / _deviceFPS;
+						// info->AvgTimePerFrame = scc.MinFrameInterval;
 						hr = sc->SetFormat(amt);
 						if (FAILED(hr)) {
 							_log.warning(Poco::format("failed set format: %s", errorText(hr)));
@@ -228,7 +233,7 @@ bool CaptureScene::createFilter() {
 					VIDEOINFOHEADER* info = reinterpret_cast<VIDEOINFOHEADER*>(amt->pbFormat);
 					info->bmiHeader.biWidth = _deviceW;
 					info->bmiHeader.biHeight = _deviceH;
-					info->AvgTimePerFrame = 10000000 / _deviceFPS;
+					// info->AvgTimePerFrame = 10000000 / _deviceFPS;
 					hr = sc->SetFormat(amt);
 					if (FAILED(hr)) {
 						_log.warning(Poco::format("failed set format: %s", errorText(hr)));
@@ -272,9 +277,6 @@ bool CaptureScene::createFilter() {
 }
 
 void CaptureScene::releaseFilter() {
-//	IGraphBuilder* gb;
-//	_capture->GetFiltergraph(&gb);
-//	SAFE_RELEASE(gb);
 	if (_mc) {
 		HRESULT hr = _mc->Stop();
 		if (SUCCEEDED(hr)) {
@@ -301,8 +303,25 @@ LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {
 	return _cameraImage;
 }
 
-void CaptureScene::process() {
+LPBYTE CaptureScene::getGrayScale() {
+	return _gray;
+}
 
+void CaptureScene::process() {
+	if (_cameraImage && _renderer.getRenderTargetData(_cameraImage, _surface)) {
+		D3DLOCKED_RECT lockedRect = {0};
+		if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
+			LPBYTE src = (LPBYTE)lockedRect.pBits;
+			long len = _deviceW * _deviceH * 4;
+			long pos = 0;
+			for (long i = 0; i < len; i += 4) {
+				_gray[pos++] = src[i + 1];
+			}
+			_surface->UnlockRect();
+		}
+	} else {
+		_log.warning("failed getRenderTargetData()");
+	}
 	_frame++;
 }
 
@@ -318,8 +337,8 @@ void CaptureScene::draw1() {
 		{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
 	};
 
+	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	if (_vr) {
-		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		LPDIRECT3DSURFACE9 orgRT;
 		hr = device->GetRenderTarget(0, &orgRT);
 
@@ -327,27 +346,47 @@ void CaptureScene::draw1() {
 		_cameraImage->GetSurfaceLevel(0, &surface);
 		hr = device->SetRenderTarget(0, surface);
 		device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
-		_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1);
+		DWORD col = 0xffffffff;
+		_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1, col, col, col, col);
 		SAFE_RELEASE(surface);
 
 		hr = device->SetRenderTarget(0, orgRT);
 		SAFE_RELEASE(orgRT);
+	} else if (_useStageCapture) {
+		LPDIRECT3DSURFACE9 src,dst;
+		LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
+		capture->GetSurfaceLevel(0, &src);
+		_cameraImage->GetSurfaceLevel(0, &dst);
+		hr = device->StretchRect(src, NULL, dst, NULL, D3DTEXF_POINT);
+		if FAILED(hr) _log.warning("failed copy texture");
+		SAFE_RELEASE(src);
+		SAFE_RELEASE(dst);
 	}
 }
 
 void CaptureScene::draw2() {
-	if (_vr) {
+	if (_visible) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-		DWORD col = 0xffffffff;
-		_renderer.drawTexture(0, 242, 256, 192, _cameraImage, 0, col, col, col, col);
-		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-		string s = Poco::format("LIVE! read %03lums", _vr->readTime());
-		_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, s);
-	} else {
-		_renderer.drawFontTextureText(0, 242, 12, 16, 0xccff6666, "NO SIGNAL");
+		if (_vr) {
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			DWORD col = 0xffffffff;
+			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
+			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, s);
+		} else if (_useStageCapture) {
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			DWORD col = 0xffffffff;
+			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, "STAGE RECORDING");
+		} else {
+			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, "NO SIGNAL");
+		}
 	}
 }
 

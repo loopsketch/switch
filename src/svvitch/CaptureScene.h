@@ -10,15 +10,21 @@
 class CaptureScene: public Scene
 {
 private:
+	Poco::FastMutex _lock;
 	DWORD _frame;
 
+	BOOL _useStageCapture;
 	int _deviceNo;
 	int _routePinNo;
 	int _deviceW;
 	int _deviceH;
 	int _deviceFPS;
 	GUID _deviceVideoType;
-	int _samples;
+
+	int _previewX;
+	int _previewY;
+	int _previewW;
+	int _previewH;
 
 	IBaseFilter* _device;
 	IGraphBuilder* _gb;
@@ -26,9 +32,10 @@ private:
 	DSVideoRendererPtr _vr;
 	IMediaControl* _mc;
 
-	LPD3DXEFFECT _fx;
 	LPDIRECT3DTEXTURE9 _cameraImage;
-	vector<LPDIRECT3DTEXTURE9> _mavgTextures;
+	LPDIRECT3DSURFACE9 _surface;
+	LPBYTE _gray;
+
 
 	/** ÉtÉBÉãÉ^Çê∂ê¨ÇµÇ‹Ç∑ */
 	bool createFilter();
@@ -36,19 +43,25 @@ private:
 	void releaseFilter();
 
 	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName);
+
 	bool routeCrossbar(IBaseFilter *pSrc, int no);
+
 	int dumpFilter(IGraphBuilder* gb);
+
 	const string getPinName(long lType);
+
 	const string errorText(HRESULT hr);
 
 public:
-	CaptureScene(Renderer& renderer, ui::UserInterfaceManagerPtr uim);
+	CaptureScene(Renderer& renderer);
 
 	~CaptureScene();
 
 	virtual bool initialize();
 
 	LPDIRECT3DTEXTURE9 getCameraImage();
+
+	LPBYTE getGrayScale();
 
 	virtual void process();
 

@@ -632,21 +632,25 @@ void Renderer::renderScene(const DWORD current) {
 					LPDIRECT3DSURFACE9 dst = NULL;
 					hr = _captureTexture->GetSurfaceLevel(0, &dst);
 					if SUCCEEDED(hr) {
-						int w = config().mainRect.right;
-						int h = config().mainRect.bottom;
+						RECT rect;
+						rect.left = config().stageRect.left;
+						rect.top = config().stageRect.top;
+						rect.right = config().stageRect.right;
+						rect.bottom = config().stageRect.bottom;
 						switch(config().splitType) {
 						case 1:
+						case 2:
 							{
 								int dw = config().splitSize.cx * config().splitCycles;
-								w = (config().stageRect.right + dw) / dw * config().splitSize.cx;
-								h = config().stageRect.bottom * config().splitCycles;
+								rect.left = config().mainRect.left;
+								rect.top = config().mainRect.top;
+								rect.right = (config().stageRect.right + dw) / dw * config().splitSize.cx;
+								rect.bottom = config().stageRect.bottom * config().splitCycles;
 							}
 							break;
-						case 2:
-							;
+						default:
+							break;
 						}
-						RECT rect;
-						::SetRect(&rect, config().stageRect.left, config().stageRect.top, w, h);
 						_device->StretchRect(backBuffer, &rect, dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 						SAFE_RELEASE(dst);
 					} else {
