@@ -280,6 +280,11 @@ public:
 	void drawTextureWithAngle(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const int angle, const int cx, const int cy, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
 
 	/**
+	 * エフェクトを生成します
+	 */
+	LPD3DXEFFECT createEffect(const string path);
+
+	/**
 	 * フォントファミリーの取得
 	 */
 	void getPrivateFontFamily(string fontName, Gdiplus::FontFamily** ff);

@@ -45,9 +45,9 @@ void FFVideoDecoder::clearAllFrames() {
 void FFVideoDecoder::start() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_startLock);
 	AVCodecContext* avctx = _ic->streams[_streamNo]->codec;
-	//avctx->thread_count = 4;
-	//int res = avcodec_thread_init(avctx, 4);
-	//_log.information(Poco::format("thread: %d", res));
+	// avctx->thread_count = 4;
+	// int res = avcodec_thread_init(avctx, 4);
+	// _log.information(Poco::format("thread: %d", res));
 	int w = avctx->width;
 	int h = avctx->height;
 	int flags = SWS_FAST_BILINEAR;
@@ -56,7 +56,8 @@ void FFVideoDecoder::start() {
 	switch (avctx->pix_fmt) {
 		case PIX_FMT_YUV420P:
 			type = "YUV420P";
-			if (createEffect()) {
+			_fx = _renderer.createEffect("fx/conversion_yuv2rgb.fx");
+			if (_fx) {
 				changeFormat = false;
 			} else {
 				// エフェクトが生成できない場合
@@ -85,7 +86,8 @@ void FFVideoDecoder::start() {
 			type = "YUVJ422P";
 			// changeFormat = true;
 			// flags = SWS_FAST_BILINEAR;
-			if (createEffect()) {
+			_fx = _renderer.createEffect("fx/conversion_yuv2rgb.fx");
+			if (_fx) {
 				changeFormat = false;
 			} else {
 				// エフェクトが生成できない場合
@@ -151,25 +153,6 @@ const UINT FFVideoDecoder::bufferedFrames() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	//return _frames.size() + bufferedPackets();
 	return _frames.size();
-}
-
-const bool FFVideoDecoder::createEffect() {
-	std::wstring wfile;
-	Poco::UnicodeConverter::toUTF16(string("conversion_yuv2rgb.fx"), wfile);
-	LPD3DXBUFFER errors = NULL;
-	HRESULT hr = D3DXCreateEffectFromFile(_renderer.get3DDevice(), wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &_fx, &errors);
-	if (errors) {
-		std::vector<char> text(errors->GetBufferSize());
-		memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
-		text.push_back('\0');
-		_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
-		SAFE_RELEASE(errors);
-		return false;
-	} else if (FAILED(hr)) {
-		_log.warning(Poco::format("failed shader: %s", string("")));
-		return false;
-	}
-	return true;
 }
 
 void FFVideoDecoder::run() {

@@ -52,8 +52,6 @@ private:
 
 	const UINT bufferedFrames();
 
-	const bool createEffect();
-
 	void run();
 
 	VideoFrame* popUsedFrame();

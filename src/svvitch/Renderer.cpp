@@ -952,6 +952,26 @@ void Renderer::drawTextureWithAngle(const float dx, const float dy, const float 
 	_device->SetTexture(0, NULL);
 }
 
+LPD3DXEFFECT Renderer::createEffect(const string path) {
+	std::wstring wfile;
+	Poco::UnicodeConverter::toUTF16(string("fx/conversion_yuv2rgb.fx"), wfile);
+	LPD3DXBUFFER errors = NULL;
+	LPD3DXEFFECT fx = NULL;
+	HRESULT hr = D3DXCreateEffectFromFile(_device, wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &fx, &errors);
+	if (errors) {
+		std::vector<char> text(errors->GetBufferSize());
+		memcpy(&text[0], errors->GetBufferPointer(), errors->GetBufferSize());
+		text.push_back('\0');
+		_log.warning(Poco::format("shader compile error: %s", string(&text[0])));
+		SAFE_RELEASE(errors);
+		return NULL;
+	} else if (FAILED(hr)) {
+		_log.warning(Poco::format("failed shader: %s", string("")));
+		return NULL;
+	}
+	return fx;
+}
+
 void Renderer::getPrivateFontFamily(string fontName, Gdiplus::FontFamily** result) {
 	std::wstring wfontName;
 	Poco::UnicodeConverter::toUTF16(fontName, wfontName);
