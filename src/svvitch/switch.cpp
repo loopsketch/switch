@@ -226,7 +226,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// ƒV[ƒ“‚Ì¶¬
 	CaptureScenePtr captureScene = NULL;
 	if (_conf.useScenes.find("capture") != string::npos) {
-		captureScene = new CaptureScene(*_renderer, _uim);
+		captureScene = new CaptureScene(*_renderer);
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
