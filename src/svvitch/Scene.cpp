@@ -1,7 +1,7 @@
 #include "Scene.h"
 
 
-Scene::Scene(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer)
+Scene::Scene(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer), _visible(true)
 {
 }
 
@@ -11,6 +11,10 @@ Scene::~Scene() {
 
 bool Scene::initialize() {
 	return false;
+}
+
+void Scene::setVisible(const bool visible) {
+	_visible = visible;
 }
 
 void Scene::notifyKey(const int keycode, const bool shift, const bool ctrl) {
@@ -25,6 +29,15 @@ void Scene::setStatus(const string& key, const string& value) {
 
 const map<string, string>& Scene::getStatus() {
 	return _status;
+}
+
+/** ステータス情報の取得 */
+const string Scene::getStatus(const string& key) {
+	map<string, string>::const_iterator it = _status.find(key);
+	if (it != _status.end()) {
+		return it->second;
+	}
+	return string("");
 }
 
 void Scene::process() {

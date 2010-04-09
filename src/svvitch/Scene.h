@@ -14,6 +14,7 @@ class Scene
 protected:
 	Poco::Logger& _log;
 	Renderer& _renderer;
+	bool _visible;
 	int _keycode;
 	bool _shift;
 	bool _ctrl;
@@ -28,6 +29,9 @@ public:
 
 	virtual bool initialize();
 
+	/** 表示/非表示の設定 */
+	void setVisible(const bool visible);
+
 	virtual void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** ステータス情報の設定 */
@@ -35,6 +39,9 @@ public:
 
 	/** ステータス情報の取得 */
 	virtual const map<string, string>& getStatus();
+
+	/** ステータス情報の取得 */
+	virtual const string getStatus(const string& key);
 
 	virtual void process();
 
