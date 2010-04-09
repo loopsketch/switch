@@ -1,6 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE switch-config SYSTEM "switch-config.dtd"[]>
 <config>
+	<!-- ログ設定 -->
+	<log>
+		<file>switch.log</file>
+		<pattern>%Y-%m-%d %H:%M:%S.%c %N[%T]:%t</pattern>
+		<archive>timestamp</archive>
+		<compress>true</compress>
+		<rotation>daily</rotation>
+		<purgeage>5days</purgeage>
+	</log>
 	<!-- 画面のサイズを設定 -->
 	<display>
 		<width>1024</width>

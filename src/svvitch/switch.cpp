@@ -16,6 +16,7 @@
 #include <Poco/Exception.h>
 #include <Poco/Channel.h>
 #include <Poco/ConsoleChannel.h>
+#include <Poco/NullChannel.h>
 #include <Poco/FileChannel.h>
 #include <Poco/FormattingChannel.h>
 #include <Poco/format.h>
@@ -61,7 +62,7 @@ using Poco::File;
 using Poco::Util::XMLConfiguration;
 using Poco::XML::Document;
 using Poco::XML::Element;
-
+using std::stringbuf;
 
 static TCHAR clsName[] = TEXT("switchClass"); // クラス名
 
@@ -72,7 +73,7 @@ static Configuration _conf;
 static RendererPtr _renderer;
 static ui::UserInterfaceManagerPtr _uim;
 
-static std::string _interruptFile;
+static string _interruptFile;
 
 
 //-------------------------------------------------------------
@@ -462,8 +463,12 @@ bool guiConfiguration()
 		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log.pattern", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
 		pat->setProperty(Poco::PatternFormatter::PROP_TIMES, "local");
 		Poco::FormattingChannel* fc = new Poco::FormattingChannel(pat);
-//		_logFile = new Poco::ConsoleChannel();
-		_logFile = new Poco::FileChannel(xml->getString("log.file", "switch.log"));
+		string path = xml->getString("log.file", "switch.log");
+		if (path.empty()) {
+			_logFile = new Poco::NullChannel();
+		} else {
+			_logFile = new Poco::FileChannel(path);
+		}
 		fc->setChannel(_logFile);
 		_log.setChannel(fc);
 		// ローカル時刻指定
