@@ -3,6 +3,7 @@
 #include "Content.h"
 #include "Renderer.h"
 #include "DSVideoRenderer.h"
+#include "VideoTextureAllocator.h"
 #include <Poco/Mutex.h>
 #include <streams.h>
 
@@ -11,6 +12,8 @@ class DSContent: public Content {
 private:
 	Poco::FastMutex _lock;
 	IGraphBuilder* _gb;
+	IBaseFilter* _vmr9;
+	VideoTextureAllocatorPtr _allocator;
 	DSVideoRendererPtr _vr;
 	IMediaControl* _mc;
 	IMediaSeeking* _ms;

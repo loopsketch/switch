@@ -29,11 +29,90 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(Poco::format("failed create filter graph: hr=0x%lx", ((unsigned long)hr)));
 		return false;
 	}
-	_vr = new DSVideoRenderer(_renderer, NULL, &hr);
-	if (FAILED(hr = _gb->AddFilter(_vr, L"DSVideoRenderer"))) {
-		_log.warning(Poco::format("failed add filter: hr=0x%lx", hr));
-		return false;
+
+	if (true) {
+		hr = CoCreateInstance(CLSID_VideoMixingRenderer9, NULL, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void**)&_vmr9);
+		if (FAILED(hr)) {
+			//SAFE_RELEASE(s->gb);
+			//TCHAR err[1024];
+			//DWORD res = AMGetErrorText(hr, err, 1024);
+			//_log.warning(L"failed creation VideoMixingRenderer9: [%s]", err);
+			_log.warning("failed creation VideoMixingRenderer9");
+			return false;
+		}
+
+		IVMRFilterConfig9 *fc;
+		hr = _vmr9->QueryInterface(&fc);
+		if (FAILED(hr)) {
+			_log.warning("VMR-9 setup failed(VMRFilterConfig9 not found)");
+			return false;
+		}
+
+		hr = fc->SetRenderingMode(VMR9Mode_Renderless);
+		if (FAILED(hr)) {
+			_log.warning("VMR-9 setup failed(failed set renderless)");
+			return false;
+		}
+		hr = fc->SetNumberOfStreams(1);
+		if (FAILED(hr)) {
+			_log.warning("VMR-9 setup failed(failed set streams)");
+			return false;
+		}
+
+		IVMRSurfaceAllocatorNotify9 *allocatorNotify;
+		_vmr9->QueryInterface(&allocatorNotify);
+		if (FAILED(hr)) {
+			SAFE_RELEASE(fc);
+			_log.warning("failed surface allocator not created");
+			return false;
+		}
+
+		// VMR-9にカスタムアロケータを通知
+		_allocator = new VideoTextureAllocator(_renderer);
+		// s->allocator->setSurfacePrepareInterval(1);
+		hr = allocatorNotify->AdviseSurfaceAllocator(0, _allocator);
+		if (FAILED(hr)) {
+			SAFE_RELEASE(allocatorNotify);
+			SAFE_RELEASE(fc);
+			_log.warning("failed advise surface allocator");
+			return false;
+		}
+
+		// アロケータにVMR-9に登録したことを通知
+		hr = _allocator->AdviseNotify(allocatorNotify);
+		if (FAILED(hr)) {
+			SAFE_RELEASE(allocatorNotify);
+			SAFE_RELEASE(fc);
+			_log.warning("failed not advised notify surface allocator");
+			return false;
+		}
+
+		hr = fc->SetImageCompositor(_allocator);
+		if (FAILED(hr)) {
+			SAFE_RELEASE(allocatorNotify);
+			SAFE_RELEASE(fc);
+			_log.warning("***ImageCompositor creation failed");
+			return false;
+		}
+		SAFE_RELEASE(allocatorNotify);
+		SAFE_RELEASE(fc);
+
+		hr = _gb->AddFilter(_vmr9, L"VMR-9");
+		if (FAILED(hr)) {
+			_log.warning("failed not add VMR-9");
+			return false;
+		}
+
+
+
+	} else {
+		_vr = new DSVideoRenderer(_renderer, NULL, &hr);
+		if (FAILED(hr = _gb->AddFilter(_vr, L"DSVideoRenderer"))) {
+			_log.warning(Poco::format("failed add filter: hr=0x%lx", hr));
+			return false;
+		}
 	}
+
 	MediaItemFile mif = media->files()[0];
 	wstring wfile;
 	Poco::UnicodeConverter::toUTF16(Path(mif.file()).absolute(config().dataRoot).toString(), wfile);
@@ -139,6 +218,7 @@ void DSContent::close() {
 	SAFE_RELEASE(_ms);
 	SAFE_RELEASE(_mc);
 	SAFE_RELEASE(_vr);
+	SAFE_RELEASE(_vmr9);
 	SAFE_RELEASE(_gb);
 	_mediaID.clear();
 	CoUninitialize();
