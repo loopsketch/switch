@@ -2,7 +2,7 @@
 #include <Poco/UnicodeConverter.h>
 
 
-DSContent::DSContent(Renderer& renderer): Content(renderer), _gb(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)
+DSContent::DSContent(Renderer& renderer): Content(renderer), _gb(NULL), _vmr9(NULL), _allocator(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)
 {
 }
 
@@ -249,6 +249,12 @@ void DSContent::process(const DWORD& frame) {
 
 void DSContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
+		if (_vmr9) {
+			float alpha = getF("alpha");
+			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
+			LPDIRECT3DTEXTURE9 texture = _allocator->getTexture();
+			if (texture) _renderer.drawTexture(_x, _y, texture, 0, col, col, col, col);
+		}
 		if (_vr) {
 			float alpha = getF("alpha");
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;

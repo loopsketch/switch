@@ -373,8 +373,8 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 
 				case MediaTypeMovie:
 					{
-						FFMovieContentPtr movie = new FFMovieContent(_renderer);
-						// DSContentPtr movie = new DSContent(_renderer);
+						// FFMovieContentPtr movie = new FFMovieContent(_renderer);
+						DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
 							movie->setPosition(config().stageRect.left, config().stageRect.top);
 							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
