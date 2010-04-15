@@ -139,7 +139,12 @@ int64_t url_seek(URLContext *h, int64_t pos, int whence);
  */
 int url_close(URLContext *h);
 
+/**
+ * Returns a non-zero value if the resource indicated by url
+ * exists, 0 otherwise.
+ */
 int url_exist(const char *url);
+
 int64_t url_filesize(URLContext *h);
 
 /**
@@ -371,7 +376,7 @@ void put_flush_packet(ByteIOContext *s);
 
 /**
  * Reads size bytes from ByteIOContext into buf.
- * @returns number of bytes read or AVERROR
+ * @return number of bytes read or AVERROR
  */
 int get_buffer(ByteIOContext *s, unsigned char *buf, int size);
 
@@ -379,7 +384,7 @@ int get_buffer(ByteIOContext *s, unsigned char *buf, int size);
  * Reads size bytes from ByteIOContext into buf.
  * This reads at most 1 packet. If that is not enough fewer bytes will be
  * returned.
- * @returns number of bytes read or AVERROR
+ * @return number of bytes read or AVERROR
  */
 int get_partial_buffer(ByteIOContext *s, unsigned char *buf, int size);
 
@@ -426,6 +431,21 @@ int url_setbufsize(ByteIOContext *s, int buf_size);
  *        to set up the buffer for writing. */
 int url_resetbuf(ByteIOContext *s, int flags);
 #endif
+
+/**
+ * Rewinds the ByteIOContext using the specified buffer containing the first buf_size bytes of the file.
+ * Used after probing to avoid seeking.
+ * Joins buf and s->buffer, taking any overlap into consideration.
+ * @note s->buffer must overlap with buf or they can't be joined and the function fails
+ * @note This function is NOT part of the public API
+ *
+ * @param s The read-only ByteIOContext to rewind
+ * @param buf The probe buffer containing the first buf_size bytes of the file
+ * @param buf_size The size of buf
+ * @return 0 in case of success, a negative value corresponding to an
+ * AVERROR code in case of failure
+ */
+int ff_rewind_with_probe_data(ByteIOContext *s, unsigned char *buf, int buf_size);
 
 /**
  * Creates and initializes a ByteIOContext for accessing the
