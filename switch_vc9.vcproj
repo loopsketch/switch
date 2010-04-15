@@ -275,6 +275,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\VideoTextureAllocator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\WebAPI.cpp"
 				>
 			</File>
@@ -414,6 +418,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\VideoFrame.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\VideoTextureAllocator.h"
 				>
 			</File>
 			<File
