@@ -82,7 +82,6 @@ void MainScene::delayedReleaseContainer() {
 }
 
 bool MainScene::initialize() {
-	Poco::Net::HTTPStreamFactory::registerFactory();
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
 	_contents.push_back(new Container(_renderer)); // 2ŒÂ‚ÌContainer
@@ -197,8 +196,9 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 			}
 			SAFE_RELEASE(oldNextPlaylistName);
 			SAFE_RELEASE(oldNextName);
-			_status.erase(_status.find("next-playlist"));
-			_status.erase(_status.find("next-content"));
+			removeStatus("next-playlist");
+			removeStatus("next-content-id");
+			removeStatus("next-content");
 			return true;
 		}
 	}
@@ -206,6 +206,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 	c = new Container(_renderer);
 	if (prepareMedia(c, playlistID, i)) {
 		string playlistName = "ready";
+		string itemID = "";
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
@@ -219,6 +220,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 					_playNext.i = i;
 					_playNext.action = item->next();
 					_playNext.transition = item->transition();
+					itemID = item->media()->id();
 					itemName = item->media()->name();
 				}
 			}
@@ -242,6 +244,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		SAFE_RELEASE(oldNextPlaylistName);
 		SAFE_RELEASE(oldNextName);
 		_status["next-playlist"] = playlistName;
+		_status["next-content-id"] = itemID;
 		_status["next-content"] = itemName;
 	} else {
 		SAFE_DELETE(c);
@@ -294,10 +297,8 @@ void MainScene::setTransition(string& transition) {
 }
 
 bool MainScene::prepareContent(const PlayParameters& params) {
-	std::map<string, string>::iterator it = _status.find("prepared-playlist");
-	if (it != _status.end()) _status.erase(it);
-	it = _status.find("prepared-content");
-	if (it != _status.end()) _status.erase(it);
+	removeStatus("prepared-playlist");
+	removeStatus("prepared-content");
 	ContainerPtr oldPrepared = NULL;
 	LPDIRECT3DTEXTURE9 oldPreparedPlaylistName = NULL;
 	LPDIRECT3DTEXTURE9 oldPreparedName = NULL;
@@ -317,12 +318,14 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 	ContainerPtr c = new Container(_renderer);
 	if (prepareMedia(c, params.playlistID, params.i)) {
 		string playlistName = "ready";
+		string itemID = "";
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			PlayListPtr playlist = _workspace->getPlaylist(params.playlistID);
 			playlistName = playlist->name();
 			PlayListItemPtr item = playlist->items()[params.i % playlist->itemCount()];
+			itemID = item->media()->id();
 			itemName = item->media()->name();
 			_playPrepared.playlistID = params.playlistID;
 			_playPrepared.i = params.i;
@@ -339,6 +342,7 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 			_preparedName = t2;
 		}
 		_status["prepared-playlist"] = playlistName;
+		_status["prepared-content-id"] = itemID;
 		_status["prepared-content"] = itemName;
 		return true;
 	}
@@ -374,7 +378,7 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 				case MediaTypeMovie:
 					{
 						FFMovieContentPtr movie = new FFMovieContent(_renderer);
-						//DSContentPtr movie = new DSContent(_renderer);
+						// DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
 							movie->setPosition(config().stageRect.left, config().stageRect.top);
 							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
@@ -905,6 +909,7 @@ void MainScene::process() {
 					_log.warning(Poco::format("not find playlist: %s", _playPrepared.i));
 				}
 				_status["next-playlist"] = _status["prepared-playlist"];
+				_status["next-content-id"] = _status["prepared-content-id"];
 				_status["next-content"] = _status["prepared-content"];
 				LPDIRECT3DTEXTURE9 oldPreparedPlaylistName = NULL;
 				LPDIRECT3DTEXTURE9 oldPreparedName = NULL;
@@ -921,12 +926,8 @@ void MainScene::process() {
 				SAFE_RELEASE(oldPreparedPlaylistName);
 				SAFE_RELEASE(oldPreparedName);
 				SAFE_DELETE(oldTransition);
-				//std::map<string, string>::iterator it = _status.find("prepared-playlist");
-				//if (it != _status.end()) _status.erase(it);
-				//it = _status.find("prepared-content");
-				//if (it != _status.end()) _status.erase(it);
-				_status.erase(_status.find("prepared-playlist"));
-				_status.erase(_status.find("prepared-content"));
+				removeStatus("prepared-playlist");
+				removeStatus("prepared-content");
 				_doSwitchNext = true;
 
 			} else {
@@ -951,18 +952,18 @@ void MainScene::process() {
 
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
-			if (!_status["next-content"].empty()) {
+			//_doSwitchNext = false;
+			_playCurrent = _playNext;
+			int next = (_currentContent + 1) % _contents.size();
+			ContentPtr nextContent = _contents[next]->get(0);
+			if (nextContent && !nextContent->opened().empty()) {
 				_doSwitchNext = false;
-				_playCurrent = _playNext;
+				_currentContent = next;
+				_contents[next]->play();
 				LPDIRECT3DTEXTURE9 oldPlaylistName = NULL;
 				LPDIRECT3DTEXTURE9 oldCurrentName = NULL;
-				ContentPtr nextContent = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					int next = (_currentContent + 1) % _contents.size();
-					nextContent = _contents[next]->get(0);
-					_currentContent = next;
-					_contents[next]->play();
 					oldPlaylistName = _playlistName;
 					_playlistName = _nextPlaylistName;
 					_nextPlaylistName = NULL;
@@ -973,9 +974,11 @@ void MainScene::process() {
 				SAFE_RELEASE(oldPlaylistName);
 				SAFE_RELEASE(oldCurrentName);
 				_status["current-playlist"] = _status["next-playlist"];
+				_status["current-content-id"] = _status["next-content-id"];
 				_status["current-content"] = _status["next-content"];
-				_status.erase(_status.find("next-playlist"));
-				_status.erase(_status.find("next-content"));
+				removeStatus("next-playlist");
+				removeStatus("next-content-id");
+				removeStatus("next-content");
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
@@ -1149,6 +1152,7 @@ void MainScene::draw2() {
 				buffers = movie->get("buffers");
 			}
 			time = c->get("time");
+			_status["time_current"] = c->get("time_current");
 			_status["time_remain"] = c->get("time_remain");
 			status2 = Poco::format("%04d/%04d %s %s", current, duration, time, buffers);
 		}

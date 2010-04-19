@@ -31,13 +31,17 @@ const map<string, string>& Scene::getStatus() {
 	return _status;
 }
 
-/** ステータス情報の取得 */
 const string Scene::getStatus(const string& key) {
 	map<string, string>::const_iterator it = _status.find(key);
 	if (it != _status.end()) {
 		return it->second;
 	}
 	return string("");
+}
+
+void Scene::removeStatus(const string& key) {
+	map<string, string>::const_iterator it = _status.find(key);
+	if (it != _status.end()) _status.erase(it);
 }
 
 void Scene::process() {

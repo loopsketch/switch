@@ -43,6 +43,9 @@ public:
 	/** ステータス情報の取得 */
 	virtual const string getStatus(const string& key);
 
+	/** ステータス情報の削除 */
+	virtual void removeStatus(const string& key);
+
 	virtual void process();
 
 	virtual void draw1();
