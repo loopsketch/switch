@@ -92,6 +92,7 @@ bool Workspace::parse() {
 						string name = e->getAttribute("name");
 						string id = e->getAttribute("id");
 						string d = e->getAttribute("duration");
+						bool stanby = Poco::toLower(e->getAttribute("stanby")) == "true";
 						int duration = 0;
 						if (!d.empty()) {
 							duration = Poco::NumberParser::parse(d);
@@ -129,6 +130,8 @@ bool Workspace::parse() {
 							typeCode = MediaTypeCv;
 						} else  if (type == "cvcap") {
 							typeCode = MediaTypeCvCap;
+						} else  if (type == "game") {
+							typeCode = MediaTypeGame;
 						}
 						Poco::HashMap<string, MediaItemPtr>::Iterator find = _mediaMap.find(id);
 						if (find != _mediaMap.end()) {
@@ -143,7 +146,7 @@ bool Workspace::parse() {
 							SAFE_DELETE(find->second);
 							_mediaMap.erase(find);
 						}
-						MediaItemPtr media  = new MediaItem(typeCode, id, name, duration, files);
+						MediaItemPtr media  = new MediaItem(typeCode, id, name, duration, stanby, files);
 						_mediaMap[id] = media;
 						_media.push_back(media);
 //						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, _media[id]->name());

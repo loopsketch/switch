@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Poco/Net/HTTPStreamFactory.h>
 #include <Poco/StreamCopier.h>
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -134,6 +133,12 @@ private:
 
 	vector<ContainerPtr> _delayReleases;
 
+	/** スタンバイメディア */
+	map<string, ContainerPtr> _stanbyMedias;
+	ContainerPtr _interrupttedContent;
+
+	/** スタンバイメディアの準備 */
+	void preparedStanbyMedia();
 
 	void run();
 
@@ -144,7 +149,9 @@ private:
 	bool prepareNextContent(const PlayParameters& args);
 
 	/** Containerに指定されたプレイリストのコンテンツを準備します */
-	bool prepareMedia(ContainerPtr container, const string& playlistID, const int i = 0);
+	bool preparePlaylist(ContainerPtr container, const string& playlistID, const int i = 0);
+
+	bool prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText);
 
 	void addRemovableMedia(const string& driveLetter);
 
@@ -158,6 +165,7 @@ private:
 
 	/** 次再生コンテンツを準備(アクティブ版) */
 	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;
+
 
 public:
 	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);

@@ -21,7 +21,8 @@ enum MediaType {
 	MediaTypeImage,
 	MediaTypeText,
 	MediaTypeCv,
-	MediaTypeCvCap
+	MediaTypeCvCap,
+	MediaTypeGame,
 };
 
 
@@ -110,11 +111,12 @@ private:
 	string _id;
 	string _name;
 	int _duration;
+	bool _stanby;
 	vector<MediaItemFile> _files;
 
 public:
-	MediaItem(const MediaType type, const string id, const string name, const int duration, const vector<MediaItemFile> files):
-		_log(Poco::Logger::get("")), _type(type), _id(id), _name(name), _duration(duration), _files(files) {
+	MediaItem(const MediaType type, const string id, const string name, const int duration, const bool stanby, const vector<MediaItemFile> files):
+		_log(Poco::Logger::get("")), _type(type), _id(id), _name(name), _duration(duration), _stanby(stanby), _files(files) {
 
 	}
 
@@ -152,6 +154,10 @@ public:
 
 	const int duration() const {
 		return _duration;
+	}
+
+	const bool stanby() const {
+		return _stanby;
 	}
 
 	const int fileCount() {

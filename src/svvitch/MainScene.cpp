@@ -44,7 +44,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false),
 	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
-	_copyRemoteFiles(0)
+	_copyRemoteFiles(0), _interrupttedContent(NULL)
 {
 	initialize();
 }
@@ -52,13 +52,13 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 MainScene::~MainScene() {
 	_log.information("release contents");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) SAFE_DELETE(*it);
-	_contents.clear();
+	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it = _contents.erase(it)) {
+		SAFE_DELETE(*it);
+	}
 
 	delayedReleaseContainer();
 	SAFE_DELETE(_prepared);
 	SAFE_DELETE(_transition);
-	//SAFE_DELETE(_interruptMedia);
 
 	SAFE_RELEASE(_playlistName);
 	SAFE_RELEASE(_currentName);
@@ -68,6 +68,7 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_removableIcon);
 
 	SAFE_DELETE(_workspace);
+	preparedStanbyMedia();
 	_log.information("*release main-scene");
 }
 
@@ -125,7 +126,9 @@ bool MainScene::initialize() {
 	}
 
 	_workspace = new Workspace(_workspaceFile);
-	if (!_workspace->parse()) {
+	if (_workspace->parse()) {
+		preparedStanbyMedia();
+	} else {
 		_log.warning("failed parse workspace");
 	}
 	_timeSecond = -1;
@@ -136,6 +139,25 @@ bool MainScene::initialize() {
 	_autoStart = false;
 	_log.information("*created main-scene");
 	return true;
+}
+
+void MainScene::preparedStanbyMedia() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+	for (map<string, ContainerPtr>::iterator it = _stanbyMedias.begin(); it != _stanbyMedias.end(); it = _stanbyMedias.erase(it)) {
+		SAFE_DELETE(it->second);
+	}
+	if (_workspace) {
+		for (int i = 0; i < _workspace->getMediaCount(); i++) {
+			MediaItemPtr media = _workspace->getMedia(i);
+			if (media->stanby()) {
+				ContainerPtr c = new Container(_renderer);
+				if (prepareMedia(c, media, "")) {
+					_stanbyMedias[media->id()] = c;
+					_log.information(Poco::format("standby media: %s", media->id()));
+				}
+			}
+		}
+	}
 }
 
 
@@ -204,7 +226,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 	}
 
 	c = new Container(_renderer);
-	if (prepareMedia(c, playlistID, i)) {
+	if (preparePlaylist(c, playlistID, i)) {
 		string playlistName = "ready";
 		string itemID = "";
 		string itemName = "ready";
@@ -316,7 +338,7 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 	SAFE_RELEASE(oldPreparedName);
 
 	ContainerPtr c = new Container(_renderer);
-	if (prepareMedia(c, params.playlistID, params.i)) {
+	if (preparePlaylist(c, params.playlistID, params.i)) {
 		string playlistName = "ready";
 		string itemID = "";
 		string itemName = "ready";
@@ -350,7 +372,7 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 	return false;
 }
 
-bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, const int listIndex) {
+bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID, const int listIndex) {
 	_log.information(Poco::format("prepare: %s-%d", playlistID, listIndex));
 	PlayListPtr playlist = NULL;
 	{
@@ -362,123 +384,128 @@ bool MainScene::prepareMedia(ContainerPtr container, const string& playlistID, c
 		PlayListItemPtr item = playlist->items()[listIndex % playlist->itemCount()];
 		MediaItemPtr media = item->media();
 		if (media) {
-			_log.information(Poco::format("file: %d", media->fileCount()));
-			switch (media->type()) {
-				case MediaTypeImage:
-					{
-						ImagePtr image = new Image(_renderer);
-						if (image->open(media)) {
-							container->add(image);
-						} else {
-							SAFE_DELETE(image);
-						}
-					}
-					break;
-
-				case MediaTypeMovie:
-					{
-						FFMovieContentPtr movie = new FFMovieContent(_renderer);
-						// DSContentPtr movie = new DSContent(_renderer);
-						if (movie->open(media)) {
-							movie->setPosition(config().stageRect.left, config().stageRect.top);
-							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
-							// movie->set("aspect-mode", "fit");
-							container->add(movie);
-						} else {
-							SAFE_DELETE(movie);
-						}
-					}
-					break;
-
-				case MediaTypeText:
-					break;
-
-				case MediaTypeCv:
-					{
-						CvContentPtr cv = new CvContent(_renderer);
-						if (cv->open(media)) {
-							container->add(cv);
-						} else {
-							SAFE_DELETE(cv);
-						}
-					}
-					break;
-
-				case MediaTypeCvCap:
-					{
-						CaptureContentPtr cvcap = new CaptureContent(_renderer);
-						if (cvcap->open(media)) {
-							container->add(cvcap);
-						} else {
-							SAFE_DELETE(cvcap);
-						}
-					}
-					break;
-
-				default:
-					_log.warning("media type: unknown");
-			}
-			if (media->containsFileType(MediaTypeText)) {
-				_log.information("contains text");
-				vector<TextPtr> ref;
-				int j = 0;
-				int block = -1;
-				for (int i = 0; i < media->fileCount(); i++) {
-					MediaItemFile mif = media->files().at(i);
-					if (mif.type() == MediaTypeText) {
-						TextPtr text = new Text(_renderer);
-						if (text->open(media, i)) {
-							if (block <= 0) {
-								// 実体モード
-								if (mif.file().empty()) {
-									_log.information(Poco::format("tempate text: %s", playlist->text()));
-									text->drawTexture(playlist->text());
-								} else if (mif.file().find("$") != string::npos) {
-									int line = 0;
-									if (Poco::NumberParser::tryParse(mif.file().substr(1), line)) {
-										string s = Poco::trim(playlist->text());
-										if (line > 0) {
-											vector<string> texts;
-											svvitch::split(s, '\r', texts);
-											if (texts.size() >= line) {
-												s = texts[line - 1];
-												text->drawTexture(s);
-											} else {
-												_log.warning(Poco::format("not enough lines: %u", texts.size()));
-											}
-										} else {
-											text->drawTexture(s);
-										}
-									} else {
-										_log.warning(Poco::format("failed text URL: %s", mif.file()));
-									}
-								}
-								ref.push_back(text);
-							} else {
-								// 参照モード
-								text->setReference(ref.at(j++ % ref.size()));
-							}
-							container->add(text);
-						} else {
-							SAFE_DELETE(text);
-						}
-					} else {
-						block++;
-						j = 0;
-					}
-				}
-			}
-			if (container->size() > 0) {
-				_log.information(Poco::format("prepared: %s", media->name()));
-				return true;
-			} else {
-				_log.warning("failed prepare next media");
-			}
+			return prepareMedia(container, media, playlist->text());
 		} else {
 			_log.warning("failed prepare next media, no media item");
 		}
 	} else {
 		_log.warning("failed prepare next media, no item in current playlist");
+	}
+	return false;
+}
+
+bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText) {
+	_log.information(Poco::format("file: %d", media->fileCount()));
+	switch (media->type()) {
+		case MediaTypeImage:
+			{
+				ImagePtr image = new Image(_renderer);
+				if (image->open(media)) {
+					container->add(image);
+				} else {
+					SAFE_DELETE(image);
+				}
+			}
+			break;
+
+		case MediaTypeMovie:
+			{
+				FFMovieContentPtr movie = new FFMovieContent(_renderer);
+				// DSContentPtr movie = new DSContent(_renderer);
+				if (movie->open(media)) {
+					movie->setPosition(config().stageRect.left, config().stageRect.top);
+					movie->setBounds(config().stageRect.right, config().stageRect.bottom);
+					// movie->set("aspect-mode", "fit");
+					container->add(movie);
+				} else {
+					SAFE_DELETE(movie);
+				}
+			}
+			break;
+
+		case MediaTypeText:
+			break;
+
+		case MediaTypeCv:
+			{
+				CvContentPtr cv = new CvContent(_renderer);
+				if (cv->open(media)) {
+					container->add(cv);
+				} else {
+					SAFE_DELETE(cv);
+				}
+			}
+			break;
+
+		case MediaTypeCvCap:
+			{
+				CaptureContentPtr cvcap = new CaptureContent(_renderer);
+				if (cvcap->open(media)) {
+					container->add(cvcap);
+				} else {
+					SAFE_DELETE(cvcap);
+				}
+			}
+			break;
+
+		default:
+			_log.warning("media type: unknown");
+	}
+	if (media->containsFileType(MediaTypeText)) {
+		_log.information("contains text");
+		vector<TextPtr> ref;
+		int j = 0;
+		int block = -1;
+		for (int i = 0; i < media->fileCount(); i++) {
+			MediaItemFile mif = media->files().at(i);
+			if (mif.type() == MediaTypeText) {
+				TextPtr text = new Text(_renderer);
+				if (text->open(media, i)) {
+					if (block <= 0) {
+						// 実体モード
+						if (mif.file().empty()) {
+							_log.information(Poco::format("tempate text: %s", templatedText));
+							text->drawTexture(templatedText);
+						} else if (mif.file().find("$") != string::npos) {
+							int line = 0;
+							if (Poco::NumberParser::tryParse(mif.file().substr(1), line)) {
+								string s = Poco::trim(templatedText);
+								if (line > 0) {
+									vector<string> texts;
+									svvitch::split(s, '\r', texts);
+									if (texts.size() >= line) {
+										s = texts[line - 1];
+										text->drawTexture(s);
+									} else {
+										_log.warning(Poco::format("not enough lines: %u", texts.size()));
+									}
+								} else {
+									text->drawTexture(s);
+								}
+							} else {
+								_log.warning(Poco::format("failed text URL: %s", mif.file()));
+							}
+						}
+						ref.push_back(text);
+					} else {
+						// 参照モード
+						text->setReference(ref.at(j++ % ref.size()));
+					}
+					container->add(text);
+				} else {
+					SAFE_DELETE(text);
+				}
+			} else {
+				block++;
+				j = 0;
+			}
+		}
+	}
+	if (container->size() > 0) {
+		_log.information(Poco::format("prepared: %s", media->name()));
+		return true;
+	} else {
+		_log.warning("failed prepare next media");
 	}
 	return false;
 }
@@ -733,6 +760,7 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 }
 
 
+
 void MainScene::process() {
 	switch (_keycode) {
 		case 'Z':
@@ -740,6 +768,20 @@ void MainScene::process() {
 			break;
 		case 'X':
 			if (config().brightness < 100) config().brightness++;
+			break;
+		case '0':
+			if (_interrupttedContent) {
+				_interrupttedContent->stop();
+				_interrupttedContent = NULL;
+			} else {
+				map<string, ContainerPtr>::iterator it = _stanbyMedias.find("000");
+				if (it != _stanbyMedias.end()) {
+					_interrupttedContent = it->second;
+					if (!_interrupttedContent->playing()) {
+						_interrupttedContent->play();
+					}
+				}
+			}
 			break;
 	}
 	if (_brightness < config().brightness) {
@@ -1095,6 +1137,8 @@ void MainScene::process() {
 		}
 	}
 
+	if (_interrupttedContent) _interrupttedContent->process(_frame);
+
 	_status["brightness"] = Poco::NumberFormatter::format(config().brightness);
 	_frame++;
 }
@@ -1112,6 +1156,7 @@ void MainScene::draw1() {
 		_contents[before]->draw(_frame);
 		_contents[_currentContent]->draw(_frame);
 	}
+	if (_interrupttedContent) _interrupttedContent->draw(_frame);
 
 	if (_brightness < 100) {
 		DWORD col = ((DWORD)(0xff * (100 - _brightness) / 100) << 24) | 0x000000;

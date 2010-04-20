@@ -86,7 +86,7 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 
 	vector<MediaItemFile> file1;
 	file1.push_back(MediaItemFile(MediaTypeMovie, _normalFile, ""));
-	_normalItem = new MediaItem(MediaTypeMovie, "normal", "normal", 0, file1);
+	_normalItem = new MediaItem(MediaTypeMovie, "normal", "normal", 0, false, file1);
 	_normalMovie = new FFMovieContent(_renderer);
 	if (_normalMovie->open(_normalItem)) {
 		_normalMovie->setPosition(config().stageRect.left, config().stageRect.top);
@@ -137,7 +137,7 @@ void CvContent::openDetectMovie() {
 	if (!_detectFiles.empty()) {
 		vector<MediaItemFile> files;
 		files.push_back(MediaItemFile(MediaTypeMovie, _detectFiles.at(rand() % _detectFiles.size()), ""));
-		_detectedItem = new MediaItem(MediaTypeMovie, "detected", "detected", 0, files);
+		_detectedItem = new MediaItem(MediaTypeMovie, "detected", "detected", 0, false, files);
 		if (_detectedMovie->open(_detectedItem)) {
 	//		_detectedMovie->setPosition(conf->stageRect.left, conf->stageRect.top);
 	//		_detectedMovie->setBounds(conf->stageRect.right, conf->stageRect.bottom);
