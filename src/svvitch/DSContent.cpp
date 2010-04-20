@@ -17,6 +17,7 @@ void DSContent::initialize() {
 /** ファイルをオープンします */
 bool DSContent::open(const MediaItemPtr media, const int offset) {
 	initialize();
+	if (media->files().empty()) return false;
 
 	HRESULT hr;
 	hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -87,13 +88,13 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 			return false;
 		}
 
-		hr = fc->SetImageCompositor(_allocator);
-		if (FAILED(hr)) {
-			SAFE_RELEASE(allocatorNotify);
-			SAFE_RELEASE(fc);
-			_log.warning("***ImageCompositor creation failed");
-			return false;
-		}
+		//hr = fc->SetImageCompositor(_allocator);
+		//if (FAILED(hr)) {
+		//	SAFE_RELEASE(allocatorNotify);
+		//	SAFE_RELEASE(fc);
+		//	_log.warning("***ImageCompositor creation failed");
+		//	return false;
+		//}
 		SAFE_RELEASE(allocatorNotify);
 		SAFE_RELEASE(fc);
 
@@ -117,35 +118,35 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	wstring wfile;
 	Poco::UnicodeConverter::toUTF16(Path(mif.file()).absolute(config().dataRoot).toString(), wfile);
 	IBaseFilter* src = NULL;
-	if (true) {
-		hr = _gb->AddSourceFilter(wfile.c_str(), L"File Source", &src);
-		if (SUCCEEDED(hr) && src) {
-			IPin* srcOut = NULL;
-			if (getOutPin(src, &srcOut)) {
-				hr = _gb->Render(srcOut);
-				SAFE_RELEASE(srcOut);
-				if (SUCCEEDED(hr)) {
-					while (getOutPin(src, &srcOut)) {
-						// ソースから複数の出力ピンが出てる場合を考慮…
-						hr = _gb->Render(srcOut);
-						SAFE_RELEASE(srcOut);
-						if (FAILED(hr)) {
-							_log.warning("multi src out pin rendering failed");
-							break;
-						}
+	hr = _gb->AddSourceFilter(wfile.c_str(), L"File Source", &src);
+	if (SUCCEEDED(hr) && src) {
+		IPin* srcOut = NULL;
+		if (getOutPin(src, &srcOut)) {
+			hr = _gb->Render(srcOut);
+			SAFE_RELEASE(srcOut);
+			if SUCCEEDED(hr) {
+				while (getOutPin(src, &srcOut)) {
+					// ソースから複数の出力ピンが出てる場合を考慮…
+					hr = _gb->Render(srcOut);
+					SAFE_RELEASE(srcOut);
+					if (FAILED(hr)) {
+						_log.warning("multi src out pin rendering failed");
+						break;
 					}
-				} else {
-					_log.warning("failed render outpin");
 				}
+			} else {
+				_log.warning("failed render outpin");
 			}
-		} else if (hr == VFW_E_NOT_FOUND) {
-			_log.warning(Poco::format("source not found: %s", mif.file()));
-		} else {
-			_log.warning(Poco::format("failed add source filter: %s", mif.file()));
 		}
+	} else if (hr == VFW_E_NOT_FOUND) {
+		_log.warning(Poco::format("source not found: %s", mif.file()));
 	} else {
+		_log.warning(Poco::format("failed add source filter: %s", mif.file()));
 	}
 	SAFE_RELEASE(src);
+	if FAILED(hr) {
+		return false;
+	}
 
 	hr = _gb->QueryInterface(&_mc);
 	if (FAILED(hr)) {

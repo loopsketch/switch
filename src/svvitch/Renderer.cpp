@@ -476,6 +476,14 @@ void Renderer::removeScene(const string& name) {
 	}
 }
 
+bool Renderer::tryDrawLock() {
+	return _drawLock.tryLock();
+}
+
+void Renderer::drawUnlock() {
+	_drawLock.unlock();
+}
+
 /**
  *  Sceneをレンダリングします
  */
@@ -521,6 +529,7 @@ void Renderer::renderScene(const DWORD current) {
 	_device->SetRenderState(D3DRS_ZENABLE, false);
 	_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
+	_drawLock.lock();
 	LPDIRECT3DSWAPCHAIN9 swapChain1 = NULL;
 	LPDIRECT3DSWAPCHAIN9 swapChain2 = NULL;
 	HRESULT hr = _device->GetSwapChain(0, &swapChain1);
@@ -542,16 +551,8 @@ void Renderer::renderScene(const DWORD current) {
 			(*it)->draw1();
 		}
 		_device->EndScene();
-
-		if (false) { 
-			LPDIRECT3DSURFACE9 src;
-			_device->GetRenderTarget(0, &src);
-			wstring wfile;
-			Poco::UnicodeConverter::toUTF16(string("snapshot.png"), wfile);
-			D3DXSaveSurfaceToFile(wfile.c_str(), D3DXIFF_PNG, src, NULL, NULL);
-			SAFE_RELEASE(src);
-		}
 	}
+	_drawLock.unlock();
 
 	if (_displayAdpters > 1) {
 		swapChain1->Present(NULL, NULL, NULL, NULL, 0);
@@ -587,10 +588,29 @@ void Renderer::renderScene(const DWORD current) {
 		}
 	}
 
+	MEMORYSTATUS ms;
+	ms.dwLength = sizeof(MEMORYSTATUS);
+	GlobalMemoryStatus(&ms);
+	int availMem = ms.dwAvailPhys / 1024 / 1024;
+
+	PROCESS_MEMORY_COUNTERS pmc = {0};
+	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
+	int mem = pmc.WorkingSetSize / 1024;
+	Uint32 fps = _fpsCounter.getFPS();
+	_fpsCounter.count();
+
 	// 描画2
 	hr = _device->GetRenderTarget(0, &_backBuffer);
 	if FAILED(hr) {
 		_log.warning("failed get back buffer 2");
+	}
+
+	_drawLock.lock();
+	if (_displayAdpters == 1) {
+		LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
+		hr = swapChain1->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+		hr = _device->SetRenderTarget(0, backBuffer);
+		SAFE_RELEASE(backBuffer);
 	}
 	if SUCCEEDED(_device->BeginScene()) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
@@ -598,15 +618,6 @@ void Renderer::renderScene(const DWORD current) {
 			(*it)->draw2();
 		}
 
-		MEMORYSTATUS ms;
-		ms.dwLength = sizeof(MEMORYSTATUS);
-		GlobalMemoryStatus(&ms);
-		int availMem = ms.dwAvailPhys / 1024 / 1024;
-
-		PROCESS_MEMORY_COUNTERS pmc = {0};
-		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
-		int mem = pmc.WorkingSetSize / 1024;
-		Uint32 fps = _fpsCounter.getFPS();
 		if (config().viewStatus) {
 			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
@@ -616,6 +627,7 @@ void Renderer::renderScene(const DWORD current) {
 		}
 		_device->EndScene();
 	}
+	_drawLock.unlock();
 	if (_displayAdpters > 1) {
 		swapChain2->Present(NULL, NULL, NULL, NULL, 0);
 
@@ -663,11 +675,10 @@ void Renderer::renderScene(const DWORD current) {
 			}
 		}
 	}
-
 	SAFE_RELEASE(_backBuffer);
+
 	SAFE_RELEASE(swapChain1);
 	SAFE_RELEASE(swapChain2);
-	_fpsCounter.count();
 }
 
 const UINT Renderer::getTextureMem() const {

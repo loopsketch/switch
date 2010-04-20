@@ -297,11 +297,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //					lastSwapout = time;
 //				}
 			}
-
-			//Poco::Thread::sleep(0);
-			//timeBeginPeriod(1);
 			Poco::Thread::sleep(_conf.frameIntervals);
-			//timeEndPeriod(1);
 		}
 
 	}

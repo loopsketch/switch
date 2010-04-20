@@ -2,7 +2,9 @@
 #include <Poco/format.h>
 #include <Poco/UUID.h>
 
-VideoTextureAllocator::VideoTextureAllocator(Renderer& renderer): _log(Poco::Logger::get("")), _refCount(0), _renderer(renderer), _texture(NULL) {
+VideoTextureAllocator::VideoTextureAllocator(Renderer& renderer):
+	_log(Poco::Logger::get("")), _refCount(0), _renderer(renderer), _texture(NULL), _presenting(false)
+{
 }
 
 VideoTextureAllocator::~VideoTextureAllocator() {
@@ -38,7 +40,7 @@ HRESULT VideoTextureAllocator::InitializeDevice(DWORD_PTR userID, VMR9Allocation
 }
 
 HRESULT VideoTextureAllocator::TerminateDevice(DWORD_PTR userID) {
-	_log.information("** terminate device");
+	//_log.information("** terminate device");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	SAFE_RELEASE(_texture);
 	return S_OK;
@@ -66,7 +68,10 @@ HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD s
 	}
 
 	//_log.information("** get surfaced");
-
+	while (surface && _presenting && !_renderer.tryDrawLock()) {
+		// block
+		Sleep(1);
+	}
 	return hr;
 }
 
@@ -88,16 +93,24 @@ HRESULT VideoTextureAllocator::AdviseNotify(IVMRSurfaceAllocatorNotify9* surfAll
 // IVMRImagePresenter9
  HRESULT VideoTextureAllocator::StartPresenting(DWORD_PTR userID) {
 	_log.information("** start presenting");
+	_presenting = true;
 	return S_OK;
 }
 
 HRESULT VideoTextureAllocator::StopPresenting(DWORD_PTR userID) {
 	_log.information("** stop presenting");
+	_presenting = false;
 	return S_OK;
 }
 
 HRESULT VideoTextureAllocator::PresentImage(DWORD_PTR userID, VMR9PresentationInfo *info) {
 	// レンダリング可能状態
+	D3DLOCKED_RECT locked_rect;
+	HRESULT hr =info->lpSurf->LockRect(&locked_rect, NULL, D3DLOCK_READONLY);
+	if SUCCEEDED(hr) {
+		hr = info->lpSurf->UnlockRect();
+	}
+	_renderer.drawUnlock();
 	return S_OK;
 }
 
@@ -229,7 +242,18 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 }
 
 HRESULT VideoTextureAllocator::CompositeImage(IUnknown* pD3DDevice, IDirect3DSurface9* rt, AM_MEDIA_TYPE* pmt, REFERENCE_TIME start, REFERENCE_TIME end, D3DCOLOR background, VMR9VideoStreamInfo* info, UINT streams) {
-	HRESULT hr = _renderer.get3DDevice()->StretchRect(info->pddsVideoSurface, NULL, rt, NULL, D3DTEXF_NONE);
+	LPDIRECT3DSWAPCHAIN9 swapChain = NULL;
+	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+	HRESULT hr = device->GetSwapChain(0, &swapChain);
+	if SUCCEEDED(hr) {
+		LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
+		hr = swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+		hr = device->SetRenderTarget(0, backBuffer);
+		SAFE_RELEASE(backBuffer);
+		SAFE_RELEASE(swapChain);
+	}
+
+	hr = device->StretchRect(info->pddsVideoSurface, NULL, rt, NULL, D3DTEXF_NONE);
 	return S_OK;
 }
 

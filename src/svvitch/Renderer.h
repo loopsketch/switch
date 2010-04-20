@@ -66,8 +66,9 @@ class Renderer
 {
 private:
 	Poco::Logger& _log;
-	mutable Poco::FastMutex _lock;
+	Poco::FastMutex _lock; //mutable 修飾子外した
 	Poco::FastMutex _sceneLock;
+	Poco::FastMutex _drawLock;
 	Poco::FastMutex _deviceLock;
 
 	HWND _hwnd;
@@ -214,6 +215,9 @@ public:
 	Scene* getScene(const string& name);
 
 	void removeScene(const string& name);
+
+	bool tryDrawLock();
+	void drawUnlock();
 
 	/**
 	 * Sceneをレンダリングします

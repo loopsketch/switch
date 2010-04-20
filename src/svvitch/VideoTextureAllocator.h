@@ -19,6 +19,7 @@ private:
 	int _w;
 	int _h;
 	D3DFORMAT _format;
+	bool _presenting;
 
 public:
 	VideoTextureAllocator(Renderer& renderer);
