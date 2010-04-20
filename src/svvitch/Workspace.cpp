@@ -122,8 +122,9 @@ bool Workspace::parse() {
 						movies->release();
 
 						// MediaTypeImage
-						MediaType typeCode = MediaTypeMovie;
+						MediaType typeCode = MediaTypeUnknown;
 						if (type == "movie") {
+							typeCode = MediaTypeMovie;
 						} else if (type == "image") {
 							typeCode = MediaTypeImage;
 						} else  if (type == "cv") {

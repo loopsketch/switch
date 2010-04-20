@@ -23,6 +23,7 @@ enum MediaType {
 	MediaTypeCv,
 	MediaTypeCvCap,
 	MediaTypeGame,
+	MediaTypeUnknown,
 };
 
 

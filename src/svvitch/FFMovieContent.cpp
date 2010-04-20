@@ -30,6 +30,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_openLock);
 	initialize();
 
+	if (media->files().empty()) return false;
 	MediaItemFile mif = media->files()[0];
 	AVInputFormat* format = NULL;
 	if (mif.file().find(string("vfwcap")) == 0) {
