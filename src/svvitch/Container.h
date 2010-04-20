@@ -36,6 +36,8 @@ public:
 
 	void stop();
 
+	void rewind();
+
 	const bool finished();
 
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);

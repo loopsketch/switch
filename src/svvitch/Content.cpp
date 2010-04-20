@@ -35,6 +35,10 @@ void Content::stop() {
 	_playing = false;
 }
 
+void Content::rewind() {
+	_current = 0;
+}
+
 /**
  * Ä¶’†‚©‚Ç‚¤‚©
  */
