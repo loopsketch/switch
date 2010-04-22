@@ -17,7 +17,7 @@
 
 Renderer::Renderer():
 	_log(Poco::Logger::get("")),
-	_d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL),
+	_postedQuit(false), _d3d(NULL), _device(NULL), _backBuffer(NULL), _captureTexture(NULL), _sound(NULL), _fontTexture(NULL),
 	_current(0), _lastDeviceChanged(0)
 {
 }
@@ -226,9 +226,31 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	return S_OK;
 }
 
-/**
- * 終了処理
- */
+const HWND Renderer::getWindowHandle() const {
+	return _hwnd;
+}
+
+bool Renderer::peekMessage() {
+	MSG msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT) {
+			// PostQuitMessage()が呼ばれた
+			_postedQuit = true;
+			_exitCode = (int)msg.wParam;
+			//break;
+		} else {
+			// メッセージの翻訳とディスパッチ
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+	return !_postedQuit;
+}
+
+int Renderer::getExitCode() {
+	return _exitCode;
+}
+
 void Renderer::finalize() {
 	// DXUTShutdown();
 	// Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
@@ -250,10 +272,6 @@ void Renderer::finalize() {
 	SAFE_DELETE(_presentParams);
 	SAFE_DELETE(_fc);
 	Gdiplus::GdiplusShutdown(_gdiToken);
-}
-
-const HWND Renderer::getWindowHandle() const {
-	return _hwnd;
 }
 
 
@@ -1371,4 +1389,21 @@ string Renderer::popReadyDrive() {
 		return drive;
 	}
 	return string();
+}
+
+void Renderer::setStatus(const string& key, const string& value) {
+	_status[key] = value;
+}
+
+const string Renderer::getStatus(const string& key) {
+	map<string, string>::const_iterator it = _status.find(key);
+	if (it != _status.end()) {
+		return it->second;
+	}
+	return string("");
+}
+
+void Renderer::removeStatus(const string& key) {
+	map<string, string>::const_iterator it = _status.find(key);
+	if (it != _status.end()) _status.erase(it);
 }

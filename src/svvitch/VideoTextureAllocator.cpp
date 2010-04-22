@@ -68,10 +68,10 @@ HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD s
 	}
 
 	//_log.information("** get surfaced");
-	while (surface && _presenting && !_renderer.tryDrawLock()) {
+	//while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
 		// block
-		Sleep(1);
-	}
+	//	Sleep(1);
+	//}
 	return hr;
 }
 
@@ -105,12 +105,12 @@ HRESULT VideoTextureAllocator::StopPresenting(DWORD_PTR userID) {
 
 HRESULT VideoTextureAllocator::PresentImage(DWORD_PTR userID, VMR9PresentationInfo *info) {
 	// ƒŒƒ“ƒ_ƒŠƒ“ƒO‰Â”\ó‘Ô
-	D3DLOCKED_RECT locked_rect;
-	HRESULT hr =info->lpSurf->LockRect(&locked_rect, NULL, D3DLOCK_READONLY);
-	if SUCCEEDED(hr) {
-		hr = info->lpSurf->UnlockRect();
-	}
 	_renderer.drawUnlock();
+	//D3DLOCKED_RECT locked_rect;
+	//HRESULT hr =info->lpSurf->LockRect(&locked_rect, NULL, D3DLOCK_READONLY);
+	//if SUCCEEDED(hr) {
+	//	hr = info->lpSurf->UnlockRect();
+	//}
 	return S_OK;
 }
 
@@ -254,6 +254,7 @@ HRESULT VideoTextureAllocator::CompositeImage(IUnknown* pD3DDevice, IDirect3DSur
 	}
 
 	hr = device->StretchRect(info->pddsVideoSurface, NULL, rt, NULL, D3DTEXF_NONE);
+	//_renderer.drawUnlock();
 	return S_OK;
 }
 

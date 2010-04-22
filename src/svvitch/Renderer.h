@@ -72,6 +72,8 @@ private:
 	Poco::FastMutex _deviceLock;
 
 	HWND _hwnd;
+	bool _postedQuit;
+	int _exitCode;
 
 	UINT _displayAdpters;
 	UINT _maxTextureW;
@@ -117,6 +119,8 @@ private:
 	vector<string> _addDrives;
 	queue<string> _readyDrives;
 	DWORD _lastDeviceChanged;
+
+	std::map<string, string> _status;
 
 
 	/**
@@ -169,6 +173,10 @@ public:
 
 	/** ウィンドウハンドルを取得します */
 	const HWND getWindowHandle() const;
+
+	bool peekMessage();
+
+	int getExitCode();
 
 	/**
 	 * UI用のメッセージを伝達します
@@ -327,6 +335,15 @@ public:
 
 	// ボリュームのイジェクト
 	BOOL ejectVolume(const string& driveLetter);
+
+	/** ステータス情報の設定 */
+	virtual void setStatus(const string& key, const string& value);
+
+	/** ステータス情報の取得 */
+	virtual const string getStatus(const string& key);
+
+	/** ステータス情報の削除 */
+	virtual void removeStatus(const string& key);
 
 	/**
 	 * 終了処理

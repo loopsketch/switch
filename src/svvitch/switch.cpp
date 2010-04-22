@@ -260,46 +260,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 //	DWORD lastSwapout = 0;
 	DWORD last = 0;
-	for (;;) {
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-			if (msg.message == WM_QUIT) {
-				// PostQuitMessage()が呼ばれた
-				break;	//ループの終了
-			} else {
-				// メッセージの翻訳とディスパッチ
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
+	while (_renderer->peekMessage()) {
+		// 処理するメッセージが無いときは描画を行う
+		//if (_interruptFile.length() > 0) {
+		//	scene->prepareInterruptFile(_interruptFile);
+		//	_interruptFile.clear();
+		//}
 
-		} else {
-			// 処理するメッセージが無いときは描画を行う
-			//if (_interruptFile.length() > 0) {
-			//	scene->prepareInterruptFile(_interruptFile);
-			//	_interruptFile.clear();
-			//}
+		// ウィンドウが見えている時だけ描画するための処理
+		WINDOWPLACEMENT wndpl;
+		GetWindowPlacement(hWnd, &wndpl);	// ウインドウの状態を取得
+		if ((wndpl.showCmd != SW_HIDE) && 
+			(wndpl.showCmd != SW_MINIMIZE) &&
+			(wndpl.showCmd != SW_SHOWMINIMIZED) &&
+			(wndpl.showCmd != SW_SHOWMINNOACTIVE)) {
 
-			// ウィンドウが見えている時だけ描画するための処理
-			WINDOWPLACEMENT wndpl;
-			GetWindowPlacement(hWnd, &wndpl);	// ウインドウの状態を取得
-			if ((wndpl.showCmd != SW_HIDE) && 
-				(wndpl.showCmd != SW_MINIMIZE) &&
-				(wndpl.showCmd != SW_SHOWMINIMIZED) &&
-				(wndpl.showCmd != SW_SHOWMINNOACTIVE)) {
+			::QueryPerformanceCounter(&current);
+			DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+			last = time;
 
-				::QueryPerformanceCounter(&current);
-				DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
-				last = time;
-
-				// 描画処理の実行
-				_renderer->renderScene(time);
-//				if (lastSwapout == 0 || time - lastSwapout > 3600000) {
-//					swapout();
-//					lastSwapout = time;
-//				}
-			}
-			Poco::Thread::sleep(_conf.frameIntervals);
+			// 描画処理の実行
+			_renderer->renderScene(time);
+			// if (lastSwapout == 0 || time - lastSwapout > 3600000) {
+			//	swapout();
+			//	lastSwapout = time;
+			// }
 		}
-
+		Poco::Thread::sleep(_conf.frameIntervals);
 	}
 
 	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
@@ -308,7 +295,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Sleep(1000);
 	SAFE_DELETE(server);
 
-	_log.information("shutdown system");
+	int exitCode = _renderer->getExitCode();
+	_log.information(Poco::format("shutdown system (%d)", exitCode));
 	SAFE_DELETE(_renderer);
 	SAFE_DELETE(_uim);
 	saveConfiguration();
@@ -316,7 +304,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //	_log.shutdown();
 	CoUninitialize();
 
-	return (int)msg.wParam;
+	return exitCode;
 }
 
 

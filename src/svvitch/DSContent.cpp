@@ -20,7 +20,7 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	if (media->files().empty()) return false;
 
 	HRESULT hr;
-	hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+	//hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed CoInitializeEx: hr=0x%lx", ((unsigned long)hr)));
 		return false;
@@ -222,7 +222,7 @@ void DSContent::close() {
 	SAFE_RELEASE(_vmr9);
 	SAFE_RELEASE(_gb);
 	_mediaID.clear();
-	CoUninitialize();
+	//CoUninitialize();
 }
 
 void DSContent::process(const DWORD& frame) {
