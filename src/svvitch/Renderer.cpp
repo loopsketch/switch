@@ -1366,10 +1366,24 @@ BOOL Renderer::ejectVolume(const string& driveLetter) {
 	return TRUE;
 }
 
-void Renderer::notifyAddDrive(ULONG unitmask) {
+void Renderer::addDrive(ULONG unitmask) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
 	string drive = firstDriveFromMask(unitmask);
 	_addDrives.push_back(drive);
+	_log.information(Poco::format("add drive %s", drive));
+}
+
+void Renderer::removeDrive(ULONG unitmask) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_deviceLock);
+	string drive = firstDriveFromMask(unitmask);
+	for (vector<string>::iterator it = _addDrives.begin(); it != _addDrives.end(); ) {
+		if ((*it) == drive) {
+			it = _addDrives.erase(it);
+		} else {
+			it++;
+		}
+	}
+	_log.information(Poco::format("remove drive %s", drive));
 }
 
 bool Renderer::hasAddDrives() {
@@ -1377,7 +1391,7 @@ bool Renderer::hasAddDrives() {
 	return !_addDrives.empty();
 }
 
-void Renderer::notifyDeviceChanged() {
+void Renderer::deviceChanged() {
 	_lastDeviceChanged = _current;
 }
 

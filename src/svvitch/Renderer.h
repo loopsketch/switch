@@ -117,6 +117,7 @@ private:
 	bool _ctrl;
 
 	vector<string> _addDrives;
+	vector<string> _removeDrives;
 	queue<string> _readyDrives;
 	DWORD _lastDeviceChanged;
 
@@ -322,13 +323,16 @@ public:
 	const LPDIRECT3DTEXTURE9 getCachedTexture(const string& name) const;
 
 	/** ドライブ追加の通知 */
-	void notifyAddDrive(ULONG unitmask);
+	void addDrive(ULONG unitmask);
+
+	/** ドライブ追加の通知 */
+	void removeDrive(ULONG unitmask);
 
 	/** 追加ドライブの有無 */
 	bool hasAddDrives();
 
 	/** デバイス変化の通知 */
-	void notifyDeviceChanged();
+	void deviceChanged();
 
 	/** 準備ドライブ取得 */
 	string popReadyDrive();

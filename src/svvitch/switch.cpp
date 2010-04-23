@@ -416,14 +416,23 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						DEV_BROADCAST_HDR* data = (DEV_BROADCAST_HDR*)lParam;
 						if (data && data->dbch_devicetype == DBT_DEVTYP_VOLUME) {
 							DEV_BROADCAST_VOLUME* extend = (DEV_BROADCAST_VOLUME*)data;
-							if (extend && _renderer) _renderer->notifyAddDrive(extend->dbcv_unitmask);
+							if (extend && _renderer) _renderer->addDrive(extend->dbcv_unitmask);
+						}
+					}
+					break;
+				case DBT_DEVICEREMOVECOMPLETE:
+					{
+						DEV_BROADCAST_HDR* data = (DEV_BROADCAST_HDR*)lParam;
+						if (data && data->dbch_devicetype == DBT_DEVTYP_VOLUME) {
+							DEV_BROADCAST_VOLUME* extend = (DEV_BROADCAST_VOLUME*)data;
+							if (extend && _renderer) _renderer->removeDrive(extend->dbcv_unitmask);
 						}
 					}
 					break;
 				case DBT_DEVNODES_CHANGED:
 					break;
 				}
-				_renderer->notifyDeviceChanged();
+				_renderer->deviceChanged();
 			}
 			break;
 
