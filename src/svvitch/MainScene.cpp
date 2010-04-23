@@ -38,9 +38,9 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	activeSwitchContent(this, &MainScene::switchContent),
 	activeCopyRemote(this, &MainScene::copyRemote),
 	activeAddRemovableMedia(this, &MainScene::addRemovableMedia),
-	_frame(0), _brightness(100), _preparing(false), _playCount(0), _doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false),
-	_transition(NULL),
-	_playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
+	_frame(0), _brightness(100), _preparing(false), _playCount(0),
+	_doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false), _transition(NULL),
+	_description(NULL), _playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false),
 	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
@@ -118,6 +118,8 @@ bool MainScene::initialize() {
 		device->SetRenderState(D3DRS_SRCBLEND,  D3DBLEND_ONE);
 		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ZERO);
 	}
+
+	setDescription(config().description);
 
 	LPDIRECT3DTEXTURE9 texture = _renderer.createTexture("images/Crystal_Clear_device_usbpendrive_unmount.png");
 	if (texture) {
@@ -284,6 +286,19 @@ bool MainScene::stackPrepareContent(string& playlistID, int i) {
 	if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
 	_prepareStackTime = 0;
 	return true;
+}
+
+const void MainScene::setDescription(const string& description) {
+	if (!_description || config().description != description) {
+		config().description = description;
+		LPDIRECT3DTEXTURE9 t = _renderer.createTexturedText(L"", 30, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, description);
+		LPDIRECT3DTEXTURE9 old = _description;
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			_description = t;
+		}
+		SAFE_RELEASE(old);
+	}
 }
 
 const string MainScene::getPlaylistText(const string& playlistID) {
@@ -1206,6 +1221,7 @@ void MainScene::draw2() {
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 128, 24, 32, 0x996699ff, config().name);
+		_renderer.drawTexture((config().name.size() + 1) * 24, config().subRect.bottom - 128, _description, 0, 0xccff9966, 0xccff9966, 0x99ffffff, 0x99ffffff);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 96, 12, 16, 0x99ffffff, status1);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "frame");
 		_renderer.drawFontTextureText(120, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "time");
@@ -1217,13 +1233,13 @@ void MainScene::draw2() {
 		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(396, config().subRect.bottom - 48, 12, 16, 0x99ffffff, _playNext.transition);
 
 		_renderer.drawFontTextureText(600, config().subRect.bottom - 112, 12, 16, 0x99ccccff, " current");
-		_renderer.drawTexture(700, config().subRect.bottom - 112, _playlistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 96, _currentName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 112, _playlistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 96, _currentName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "    next");
-		_renderer.drawTexture(700, config().subRect.bottom - 80, _nextName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 80, _nextName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 		_renderer.drawFontTextureText(600, config().subRect.bottom - 64, 12, 16, 0x99ccccff, "prepared");
-		_renderer.drawTexture(700, config().subRect.bottom - 64, _preparedPlaylistName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 48, _preparedName, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 64, _preparedPlaylistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(700, config().subRect.bottom - 48, _preparedName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");

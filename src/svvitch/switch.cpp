@@ -507,6 +507,7 @@ bool guiConfiguration()
 		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
 
 		_conf.name = xml->getString("stage.name", "");
+		_conf.description = xml->getString("stage.description", "");
 		int cw = xml->getInt("stage.split.width", w);
 		int ch = xml->getInt("stage.split.height", h);
 		int cycles = xml->getInt("stage.split.cycles", h / ch);

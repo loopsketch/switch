@@ -69,6 +69,8 @@ private:
 	/** 再生コンテンツ情報 */
 	PlayParameters _playCurrent;
 
+	/** 説明 */
+	LPDIRECT3DTEXTURE9 _description;
 	/** プレイリスト名 */
 	LPDIRECT3DTEXTURE9 _playlistName;
 	/** 再生中のコンテンツ名 */
@@ -185,6 +187,9 @@ public:
 
 	/** 切替用コンテンツをスタックします */
 	bool stackPrepareContent(string& playlistID, int i = 0);
+
+	/** 説明設定 */
+	const void setDescription(const string& description);
 
 	/** プレイリストテキスト取得 */
 	const string getPlaylistText(const string& playlistID);

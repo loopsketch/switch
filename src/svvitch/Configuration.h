@@ -14,6 +14,7 @@ class Configuration
 public:
 	string windowTitle;
 	string name;
+	string description;
 	RECT mainRect;
 	int mainRate;
 	RECT subRect;
