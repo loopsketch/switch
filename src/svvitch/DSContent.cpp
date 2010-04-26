@@ -31,7 +31,7 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		return false;
 	}
 
-	if (true) {
+	if (false) {
 		hr = CoCreateInstance(CLSID_VideoMixingRenderer9, NULL, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void**)&_vmr9);
 		if (FAILED(hr)) {
 			//SAFE_RELEASE(s->gb);

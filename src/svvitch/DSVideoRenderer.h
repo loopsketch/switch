@@ -2,6 +2,7 @@
 
 #include "Renderer.h"
 #include <streams.h>
+#include <dvdmedia.h>
 #include <Poco/format.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>

@@ -68,17 +68,28 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 
 HRESULT DSVideoRenderer::CheckMediaType(const CMediaType* pmt) {
 	CheckPointer(pmt, E_POINTER);
-	if (*pmt->FormatType() != FORMAT_VideoInfo) {
+	if (!IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo) && !IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo2)) {
+		string serial;
+		for (int i = 0; i < 8; i++) {
+			serial += Poco::format(",%02?x", pmt->FormatType()->Data4[i]);
+		}
+		string guid = Poco::format("unknown[%08?x,%04?x,%04?x%s]", pmt->FormatType()->Data1, pmt->FormatType()->Data2, pmt->FormatType()->Data3, serial);
+		_log.warning(Poco::format("invalid format type: %s", guid));
 		return E_INVALIDARG;
 	}
 
 	HRESULT hr = E_FAIL;
 	if (IsEqualGUID(*pmt->Type(), MEDIATYPE_Video)) {
-		VIDEOINFO* info = (VIDEOINFO*)pmt->Format();
-		long w = info->bmiHeader.biWidth;
-		long h = info->bmiHeader.biHeight;
+		long w, h;
 		string type;
 		D3DFORMAT format;
+		if (IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo)) {
+			VIDEOINFO* info = (VIDEOINFO*)pmt->Format();
+			w = info->bmiHeader.biWidth;
+			h = info->bmiHeader.biHeight;
+		} else {
+			//VIDEOINFO2* info = (VIDEOINFO2*)pmt->Format();
+		}
 		if (getMediaTypeName(pmt, type, &format)) {
 			hr = S_OK;
 		}
