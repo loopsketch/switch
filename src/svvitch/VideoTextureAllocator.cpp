@@ -16,12 +16,12 @@ LPDIRECT3DTEXTURE9 VideoTextureAllocator::getTexture() {
 
 // IVMRSurfaceAllocator9
 HRESULT VideoTextureAllocator::InitializeDevice(DWORD_PTR userID, VMR9AllocationInfo* info, DWORD* buffers) {
-	if (buffers == NULL) return E_POINTER;
+	if (buffers == NULL || info == NULL) return E_POINTER;
 
-	//_log.information(Poco::format("** initialize device %lu %lu", userID, ((DWORD)info->Format)));
+	_log.information(Poco::format("** initialize device %lu %lu", userID, ((DWORD)info->Format)));
 	string s = Poco::format("aspect:%ld/%ld native:%ldx%ld", info->szAspectRatio.cx, info->szAspectRatio.cy, info->szNativeSize.cx, info->szNativeSize.cy);
 	_log.information(Poco::format("** initialize device(%lu) format:%lu %lux%lu(%s) x %lu", userID, ((DWORD)info->Format), info->dwWidth, info->dwHeight, s, *buffers));
-	D3DFORMAT format = D3DFMT_X8R8G8B8;
+	D3DFORMAT format = D3DFMT_A8R8G8B8;
 	LPDIRECT3DTEXTURE9 texture = NULL;
 	switch (info->dwFlags) {
 		case VMR9AllocFlag_3DRenderTarget:
@@ -68,10 +68,10 @@ HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD s
 	}
 
 	//_log.information("** get surfaced");
-	//while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
+	while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
 		// block
-	//	Sleep(1);
-	//}
+		Sleep(1);
+	}
 	return hr;
 }
 
