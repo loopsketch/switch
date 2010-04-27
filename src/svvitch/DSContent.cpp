@@ -246,6 +246,16 @@ void DSContent::process(const DWORD& frame) {
 			hr = _me->FreeEventParams(eventCode, param1, param2);
 		}
 	}
+
+	int fps = 60;
+	int unit = 100000;
+	unsigned long cu = _current / unit;
+	unsigned long re = (_duration - _current) / unit;
+	string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current % fps) / 2);
+	string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, ((_duration - _current) % fps) / 2);
+	set("time", Poco::format("%s %s", t1, t2));
+	set("time_current", t1);
+	set("time_remain", t2);
 }
 
 void DSContent::draw(const DWORD& frame) {
