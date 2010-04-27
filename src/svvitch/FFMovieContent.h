@@ -1,6 +1,9 @@
 #pragma once
 
 #include <d3d9.h>
+#ifndef UINT64_C
+#define UINT64_C(c) (c ## ULL)
+#endif
 extern "C" {
 #define inline _inline
 #include <libavutil/avstring.h>
