@@ -241,14 +241,14 @@ void Text::draw(const DWORD& frame) {
 					if ((sx + cw - dxx) >= _tw) {
 						// ソースの横がはみ出る()
 						cww = _tw - sx;
-						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, col, col, col, col);
+						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, 0, col, col, col, col);
 						// _renderer.drawFontTextureText(dx + dxx, y + dy, 10, 10, 0xffff0000, Poco::format("%d,%d %d %d %d %d", sx, sy, cw, dxx, _tw, cww));
 						sx = 0;
 						sy += _ih;
 						if (sy < _th) {
 							// srcを折り返してdstの残りに描画
 							if (_th - sy < ch) chh = _th - sy;
-							_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _texture, col, col, col, col);
+							_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _texture, 0, col, col, col, col);
 							// _renderer.drawFontTextureText(dx + dxx + cww, y + dy, 12, 12, 0xff00ff00, Poco::format("t%d,%d", sx, sy));
 							sx += cw - cww;
 							ix += cw;
@@ -270,7 +270,7 @@ void Text::draw(const DWORD& frame) {
 						if (sx + cww >= _tw) {
 							cww = _tw - sx;
 						}
-						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, col, col, col, col);
+						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, 0, col, col, col, col);
 						// _renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffcc00, Poco::format("%d,%d", sx, sy));
 						sx += cww;
 						ix += cww;
@@ -317,7 +317,7 @@ void Text::draw(const DWORD& frame) {
 						int tch = chh;
 						if (_tw - tx < cww) tcw = _tw - tx;
 //						if (_th - ty < chh) tch = _th - ty;
-						if (tcw > 0 && tch > 0) _renderer.drawTexture(ox + dx, oy + dy, tcw, tch, tx, ty, tcw, tch, _texture, col, col, col, col);
+						if (tcw > 0 && tch > 0) _renderer.drawTexture(ox + dx, oy + dy, tcw, tch, tx, ty, tcw, tch, _texture, 0, col, col, col, col);
 					}
 				}
 				device->SetScissorRect(&scissorRect);

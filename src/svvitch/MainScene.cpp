@@ -1214,7 +1214,7 @@ void MainScene::draw2() {
 			time = c->get("time");
 			_status["time_current"] = c->get("time_current");
 			_status["time_remain"] = c->get("time_remain");
-			status2 = Poco::format("%04d/%04d %s %s", current, duration, time, buffers);
+			status2 = Poco::format("%05d/%05d %s %s", current, duration, time, buffers);
 		}
 	}
 
@@ -1224,8 +1224,8 @@ void MainScene::draw2() {
 		_renderer.drawTexture((config().name.size() + 1) * 24, config().subRect.bottom - 128, _description, 0, 0xccff9966, 0xccff9966, 0x99ffffff, 0x99ffffff);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 96, 12, 16, 0x99ffffff, status1);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "frame");
-		_renderer.drawFontTextureText(120, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "time");
-		_renderer.drawFontTextureText(264, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "remain");
+		_renderer.drawFontTextureText(144, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "time");
+		_renderer.drawFontTextureText(288, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "remain");
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 64, 12, 16, 0x99ffffff, status2);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 48, 12, 16, 0x99ccccff, "action");
 		if (!_playCurrent.action.empty()) _renderer.drawFontTextureText(84, config().subRect.bottom - 48, 12, 16, 0x99ffffff, _playCurrent.action);

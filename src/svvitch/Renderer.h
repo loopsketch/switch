@@ -285,7 +285,7 @@ public:
 	/**
 	 * テクスチャの指定部分を指定位置・範囲に描画します
 	 */
-	void drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
+	void drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const;
 
 	/**
 	 * テクスチャの指定部分を指定位置・範囲・回転に描画します

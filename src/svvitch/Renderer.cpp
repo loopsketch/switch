@@ -917,8 +917,8 @@ void Renderer::drawTextureWithAngle(const int x, const int y, const int w, const
 	_device->SetTexture(0, NULL);
 }
 
-void Renderer::drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
-	float u1, v1, u2, v2;
+void Renderer::drawTexture(const float dx, const float dy, const float dw, const float dh, const float sx, const float sy, const float sw, const float sh, const LPDIRECT3DTEXTURE9 texture, const int flipMode, const D3DCOLOR c1, const D3DCOLOR c2, const D3DCOLOR c3, const D3DCOLOR c4) const {
+	float u1, u2, v1, v2;
 	if (texture) {
 		D3DSURFACE_DESC desc;
 		HRESULT hr = texture->GetLevelDesc(0, &desc);
@@ -926,6 +926,15 @@ void Renderer::drawTexture(const float dx, const float dy, const float dw, const
 		v1 = sy / desc.Height;
 		u2 = (sx + sw) / desc.Width;
 		v2 = (sy + sh) / desc.Height;
+	}
+	float tmp;
+	switch (flipMode) {
+	case 1:
+		tmp = u1; u1 = u2; u2 = tmp;
+		break;
+	case 2:
+		tmp = v1; v1 = v2; v2 = tmp;
+		break;
 	}
 
 	VERTEX dst[] =

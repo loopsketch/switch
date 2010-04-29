@@ -336,13 +336,13 @@ void CvContent::draw(const DWORD& frame) {
 			if ((frame % _intervalDiff) == 0) {
 				_small1->GetSurfaceLevel(0, &surface);
 				hr = device->SetRenderTarget(0, surface);
-				_renderer.drawTexture(0, 0, desc.Width, desc.Height, _clipX, _clipY, _clipW, _clipH, cameraImage, col, col, col, col);
+				_renderer.drawTexture(0, 0, desc.Width, desc.Height, _clipX, _clipY, _clipW, _clipH, cameraImage, 0, col, col, col, col);
 				SAFE_RELEASE(surface);
 			}
 			if ((frame % _intervalSmall) == 0) {
 				_small2->GetSurfaceLevel(0, &surface);
 				hr = device->SetRenderTarget(0, surface);
-				_renderer.drawTexture(0, 0, desc.Width, desc.Height, _clipX, _clipY, _clipW, _clipH, cameraImage, col, col, col, col);
+				_renderer.drawTexture(0, 0, desc.Width, desc.Height, _clipX, _clipY, _clipW, _clipH, cameraImage, 0, col, col, col, col);
 				SAFE_RELEASE(surface);
 
 				// ç∑ï™

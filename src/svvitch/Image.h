@@ -246,13 +246,13 @@ public:
 						if ((sx + cw - dxx) >= _tw) {
 							// srcÇÃâEí[Ç≈ê‹ï‘Çµ
 							cww = _tw - sx - dxx;
-							_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target, col, col, col, col);
+							_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target, 0, col, col, col, col);
 							sx = 0;
 							sy += ch;
 							if (sy < _th) {
 								// srcÇê‹ÇËï‘ÇµÇƒdstÇÃécÇËÇ…ï`âÊ
 								if (_th - sy < ch) chh = _th - sy;
-								_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _target, col, col, col, col);
+								_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _target, 0, col, col, col, col);
 								sx += cw - cww;
 								ix += cw;
 								dxx = cww + cw - cww;
@@ -269,7 +269,7 @@ public:
 							} else {
 								cww = cw - dxx;
 							}
-							_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target, col, col, col, col);
+							_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target,0,  col, col, col, col);
 							sx += cww;
 							ix += cww;
 							dxx = cww;
@@ -324,7 +324,7 @@ public:
 							int dy = ch * 3 - (sx % 4) * ch;
 							RECT rect = {ox + dx, oy + dy, ox + dx + cw, oy + dy + ch};
 							device->SetScissorRect(&rect);
-							_renderer.drawTexture(ox + dx + _x, oy + dy + _y, cww, chh, sx * cw, sy * ch, cww, chh, _target, col, col, col, col);
+							_renderer.drawTexture(ox + dx + _x, oy + dy + _y, cww, chh, sx * cw, sy * ch, cww, chh, _target, 0, col, col, col, col);
 						}
 					}
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
