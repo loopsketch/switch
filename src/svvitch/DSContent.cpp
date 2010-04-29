@@ -147,6 +147,10 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	if FAILED(hr) {
 		return false;
 	}
+	if (dumpFilter(_gb) > 0) {
+		_log.warning("failed lookup another video renderer");
+		return false;
+	}
 
 	hr = _gb->QueryInterface(&_mc);
 	if (FAILED(hr)) {
@@ -163,15 +167,12 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning("failed query interface: IMediaEvent");
 		return false;
 	}
-	if (dumpFilter(_gb) > 0) {
-//		_log.information("failed query interface: IMediaEvent");
-	}
 
 	set("alpha", 1.0f);
 	LONGLONG duration;
 	hr = _ms->GetStopPosition(&duration);
 	if (SUCCEEDED(hr)) {
-		_duration = duration;//(duration / 10) * 60 / 1000;
+		_duration = duration / 10000;
 		_log.information(Poco::format("duration: %d", _duration));
 	}
 	_current = 0;
@@ -208,7 +209,6 @@ const bool DSContent::playing() const {
 }
 
 const bool DSContent::finished() {
-//	return _current >= _duration;
 	return _finished;
 }
 
@@ -230,8 +230,8 @@ void DSContent::process(const DWORD& frame) {
 		LONGLONG current;
 		LONGLONG stop;
 		_ms->GetPositions(&current, &stop);
-		_current = current;
-		_duration = stop;
+		_current = current / 10000;
+		//_duration = stop;
 	}
 	if (_me) {
 		long eventCode;
@@ -247,12 +247,10 @@ void DSContent::process(const DWORD& frame) {
 		}
 	}
 
-	int fps = 60;
-	int unit = 100000;
-	unsigned long cu = _current / unit;
-	unsigned long re = (_duration - _current) / unit;
-	string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current % fps) / 2);
-	string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, ((_duration - _current) % fps) / 2);
+	unsigned long cu = _current / 1000;
+	unsigned long re = (_duration - _current) / 1000;
+	string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current % 1000) / 30);
+	string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, ((_duration - _current) % 1000) / 30);
 	set("time", Poco::format("%s %s", t1, t2));
 	set("time_current", t1);
 	set("time_remain", t2);
@@ -260,17 +258,123 @@ void DSContent::process(const DWORD& frame) {
 
 void DSContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
-		if (_vmr9) {
-			float alpha = getF("alpha");
-			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			LPDIRECT3DTEXTURE9 texture = _allocator->getTexture();
-			if (texture) _renderer.drawTexture(_x, _y, texture, 0, col, col, col, col);
-		}
 		if (_vr) {
+			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 			float alpha = getF("alpha");
+			int cw = config().splitSize.cx;
+			int ch = config().splitSize.cy;
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			LPDIRECT3DTEXTURE9 texture = _vr->getTexture();
-			if (texture) _renderer.drawTexture(_x, _y, texture, 0, col, col, col, col);
+			switch (config().splitType) {
+			case 1:
+				{
+					int sx = 0, sy = 0, dx = 0, dy = 0;
+					int cww = 0;
+					int chh = ch;
+					while (dx < config().mainRect.right) {
+						if ((sx + cw) >= _vr->width()) {
+							// はみ出る
+							cww = _vr->width() - sx;
+							_vr->draw(dx, dy, cww, chh, 0, col, sx, sy, cww, chh);
+							sx = 0;
+							sy += ch;
+							if (sy >= _vr->height()) break;
+							if (_vr->height() - sy < ch) chh = _vr->height() - sy;
+							// クイの分
+							_vr->draw(dx + cww, dy, cw - cww, chh, 0, col, sx, sy, cw - cww, chh);
+							sx += (cw - cww);
+						} else {
+							_vr->draw(dx, dy, cw, chh, 0, col, sx, sy, cw, chh);
+							sx += cw;
+						}
+						// _log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
+						dy += ch;
+						if (dy >= config().stageRect.bottom * config().splitCycles) {
+							dx += cw;
+							dy = 0;
+						}
+					}
+				}
+				break;
+
+			case 2:
+				{
+					int sw = L(_w / cw);
+					if (sw <= 0) sw = 1;
+					int sh = L(_h / ch);
+					if (sh <= 0) sh = 1;
+					for (int sy = 0; sy < sh; sy++) {
+						int ox = (sy % 2) * cw * 8 + config().stageRect.left;
+						int oy = (sy / 2) * ch * 4 + config().stageRect.top;
+						// int ox = (sy % 2) * cw * 8;
+						// int oy = (sy / 2) * ch * 4;
+						for (int sx = 0; sx < sw; sx++) {
+							int dx = (sx / 4) * cw;
+							int dy = ch * 3 - (sx % 4) * ch;
+							_vr->draw(ox + dx, oy + dy, cw, ch, 0, col, sx * cw, sy * ch, cw, ch);
+							// _renderer.drawTexture(ox + dx, oy + dy, cw, ch, sx * cw, sy * ch, cw, ch, _target, col, col, col, col);
+						}
+					}
+				}
+				break;
+
+			case 11:
+				{
+					if (_vr->height() == 120) {
+						_vr->draw(0, 360, 320, 120, 0, col, 2880, 0, 320, 120);
+						_vr->draw(0, 240, 960, 120, 0, col, 1920, 0, 960, 120);
+						_vr->draw(0, 120, 960, 120, 0, col,  960, 0, 960, 120);
+						_vr->draw(0,   0, 960, 120, 0, col,    0, 0, 960, 120);
+					} else {
+						int w = config().mainRect.right;
+						int h = config().mainRect.bottom;
+						if (_vr->width() > w || _vr->height() > h) {
+							device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+							device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+							_vr->draw( 0, 0, w, h, 1, col);
+							device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+							device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+						} else {
+							_vr->draw(0, 0, -1, -1, 0, col);
+						}
+					}
+				}
+				break;
+			default:
+				{
+					RECT rect = config().stageRect;
+					string aspectMode = get("aspect-mode");
+					if (aspectMode == "fit") {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						_vr->draw(L(_x), L(_y), L(_w), L(_h), 0, col);
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+
+					} else {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						if (alpha > 0.0f) {
+							DWORD base = ((DWORD)(0xff * alpha) << 24) | 0x000000;
+							_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, base, base, base, base);
+							float dar = _vr->getDisplayAspectRatio();
+							if (_h * dar > _w) {
+								// 画角よりディスプレイサイズは横長
+								long h = _w / dar;
+								long dy = (_h - h) / 2;
+								_vr->draw(L(_x), L(_y + dy), L(_w), h, 0, col);
+							} else {
+								long w = _h * dar;
+								long dx = (_w - w) / 2;
+								_vr->draw(L(_x + dx), L(_y), w, L(_h), 0, col);
+							}
+						}
+
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+					}
+				}
+				break;
+			}
 		}
 	}
 }

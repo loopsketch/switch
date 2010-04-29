@@ -47,6 +47,18 @@ public:
 	LPDIRECT3DTEXTURE9 getTexture();
 
 	DWORD readTime();
+
+	/** 横幅 */
+	long width();
+
+	/** 高さ */
+	long height();
+
+	/** アスペクト比 */
+	float getDisplayAspectRatio();
+
+	/** 描画 */
+	void draw(const int x, const int y, int w = -1, int h = -1, int aspectMode = 0, DWORD col = 0xffffffff, int tx = 0, int ty = 0, int tw = -1, int th = -1);
 };
 
 typedef DSVideoRenderer* DSVideoRendererPtr;

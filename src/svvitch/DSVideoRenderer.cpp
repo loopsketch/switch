@@ -40,7 +40,7 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 			result = false;
 		} else if (IsEqualGUID(*pmt->Subtype(), MEDIASUBTYPE_RGB32)) {
 			type = "RGB32";
-			*format = D3DFMT_A8R8G8B8;
+			*format = D3DFMT_X8R8G8B8;
 			result = true;
 		} else if (IsEqualGUID(*pmt->Subtype(), MEDIASUBTYPE_RGB555)) {
 			type = "RGB555";
@@ -52,7 +52,7 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 			result = false;
 		} else if (IsEqualGUID(*pmt->Subtype(), MEDIASUBTYPE_RGB8)) {
 			type = "RGB8";
-			*format = D3DFMT_A8R8G8B8;
+			*format = D3DFMT_X8R8G8B8;
 			result = false;
 
 
@@ -80,13 +80,13 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 			result = false;
 
 		} else {
+			//GUIDの見本 32315659-0000-0010-8000-00AA00389B71
 			string serial;
 			for (int i = 0; i < 8; i++) {
 				serial += Poco::format(",%02?x", pmt->Subtype()->Data4[i]);
 			}
-			string guid = Poco::format("unknown[%08?x,%04?x,%04?x%s]", pmt->Subtype()->Data1, pmt->Subtype()->Data2, pmt->Subtype()->Data3, serial);
+			string guid = Poco::format("[%08?x,%04?x,%04?x%s]", pmt->Subtype()->Data1, pmt->Subtype()->Data2, pmt->Subtype()->Data3, serial);
 			_log.warning(Poco::format("invalid media subtype: %s", guid));
-			//Poco::format("unknown type: %lx-%lx-%lx-%lx", pmt->Subtype()->Data1, pmt->Subtype()->Data2, pmt->Subtype()->Data3, pmt->Subtype()->Data4);
 		}
 	}
 	return result;
@@ -95,13 +95,12 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 HRESULT DSVideoRenderer::CheckMediaType(const CMediaType* pmt) {
 	CheckPointer(pmt, E_POINTER);
 	if (!IsEqualGUID(*pmt->Type(), MEDIATYPE_Video)) {
-		// 
-		string serial;
-		for (int i = 0; i < 8; i++) {
-			serial += Poco::format(",%02?x", pmt->FormatType()->Data4[i]);
-		}
-		string guid = Poco::format("unknown[%08?x,%04?x,%04?x%s]", pmt->FormatType()->Data1, pmt->FormatType()->Data2, pmt->FormatType()->Data3, serial);
-		_log.warning(Poco::format("invalid format type: %s", guid));
+		//string serial;
+		//for (int i = 0; i < 8; i++) {
+		//	serial += Poco::format(",%02?x", pmt->FormatType()->Data4[i]);
+		//}
+		//string guid = Poco::format("[%08?x,%04?x,%04?x%s]", pmt->FormatType()->Data1, pmt->FormatType()->Data2, pmt->FormatType()->Data3, serial);
+		//_log.warning(Poco::format("invalid format type: %s", guid));
 		return E_INVALIDARG;
 	}
 
@@ -109,8 +108,45 @@ HRESULT DSVideoRenderer::CheckMediaType(const CMediaType* pmt) {
 	long w = 0;
 	long h = 0;
 	int i = 0;
+	RECT src ,target;
 	string type;
 	D3DFORMAT format;
+	if (IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo)) {
+		VIDEOINFOHEADER* info = (VIDEOINFOHEADER*)pmt->Format();
+		w = info->bmiHeader.biWidth;
+		h = info->bmiHeader.biHeight;
+		i = 1;
+		CopyRect(&src, &info->rcSource);
+		CopyRect(&target, &info->rcTarget);
+	} else if (IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo2)) {
+		VIDEOINFOHEADER2* info = (VIDEOINFOHEADER2*)pmt->Format();
+		w = info->bmiHeader.biWidth;
+		h = info->bmiHeader.biHeight;
+		i = 2;
+		CopyRect(&src, &info->rcSource);
+		CopyRect(&target, &info->rcTarget);
+	} else if (IsEqualGUID(*pmt->FormatType(), FORMAT_MPEGVideo)) {
+		MPEG1VIDEOINFO* info = (MPEG1VIDEOINFO*)pmt->Format();
+		w = info->hdr.bmiHeader.biWidth;
+		h = info->hdr.bmiHeader.biHeight;
+		i = 3;
+		CopyRect(&src, &info->hdr.rcSource);
+		CopyRect(&target, &info->hdr.rcTarget);
+	}
+	if (getMediaTypeName(pmt, type, &format)) {
+		hr = S_OK;
+	}
+	string srcRect = Poco::format("(%ld,%ld,%ld,%ld)", src.left, src.top, src.right, src.bottom);
+	string targetRect = Poco::format("(%ld,%ld,%ld,%ld)", target.left, target.top, target.right, target.bottom);
+	_log.information(Poco::format("check media type[%d]: %s %ldx%ld %s %s", i, type, w, h, srcRect, targetRect));
+	return hr;
+}
+
+HRESULT DSVideoRenderer::SetMediaType(const CMediaType* pmt) {
+	HRESULT hr = E_FAIL;
+	long w = 0;
+	long h = 0;
+	int i = 0;
 	if (IsEqualGUID(*pmt->FormatType(), FORMAT_VideoInfo)) {
 		VIDEOINFOHEADER* info = (VIDEOINFOHEADER*)pmt->Format();
 		w = info->bmiHeader.biWidth;
@@ -127,49 +163,25 @@ HRESULT DSVideoRenderer::CheckMediaType(const CMediaType* pmt) {
 		h = info->hdr.bmiHeader.biHeight;
 		i = 3;
 	}
-	if (getMediaTypeName(pmt, type, &format)) {
-		hr = S_OK;
-	}
-	_log.information(Poco::format("check media type[%d]: %s %ldx%ld", i, type, w, h));
-	return hr;
-}
-
-HRESULT DSVideoRenderer::SetMediaType(const CMediaType* pmt) {
-	HRESULT hr = E_FAIL;
-	VIDEOINFO* info = (VIDEOINFO*)pmt->Format();
-	long w = info->bmiHeader.biWidth;
-	long h = info->bmiHeader.biHeight;
 	if (w != 0 && h != 0) {
 		releaseTexture();
 		string type;
 		D3DFORMAT format;
 		if (getMediaTypeName(pmt, type, &format)) {
 			switch (format) {
-				case D3DFMT_R8G8B8:
-					_format = format;
-					_w = w;
-					_h = h;
-					_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
-					if (_texture) hr = S_OK;
-					break;
-				case D3DFMT_X8R8G8B8:
-				case D3DFMT_A8R8G8B8:
-					_format = format;
-					_w = w;
-					_h = h;
-					_texture = _renderer.createTexture(_w, _h, _format);
-					if (_texture) hr = S_OK;
-					break;
-				case D3DFMT_YUY2:
-					_format = format;
-					_w = w;
-					_h = h;
-					_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
-					if (_texture) hr = S_OK;
-					break;
+			case D3DFMT_R8G8B8:
+			case D3DFMT_X8R8G8B8:
+			case D3DFMT_A8R8G8B8:
+			case D3DFMT_YUY2:
+				_format = format;
+				_w = w;
+				_h = h;
+				_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
+				if (_texture) hr = S_OK;
+				break;
 			}
 		}
-		_log.information(Poco::format("set media type: %s %ldx%ld", type, w, h));
+		_log.information(Poco::format("set media type[%d]: %s %ldx%ld", i, type, w, h));
 	}
 	return hr;
 }
@@ -212,9 +224,6 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 			_log.warning("failed capture texture lock");
 		}
 		_readTime = _readTimer.getTime();
-//		timeBeginPeriod(1);
-//		Sleep(1);
-//		timeEndPeriod(1);
 	} else {
 		hr = E_UNEXPECTED;
 	}
@@ -256,4 +265,56 @@ void DSVideoRenderer::convertYUY2_RGB(LPBYTE dst, LPBYTE src, size_t len) {
 		pos++;
 //		dst[pos++] = 0xff;
 	}
+}
+
+long DSVideoRenderer::width() {
+	return _w;
+}
+
+long DSVideoRenderer::height() {
+	return _h;
+}
+
+/** アスペクト比 */
+float DSVideoRenderer::getDisplayAspectRatio() {
+	return F(_w) / _h;
+}
+
+void DSVideoRenderer::draw(const int x, const int y, int w, int h, int aspectMode, DWORD col, int tx, int ty, int tw, int th) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (w < 0) w = _w;
+	if (h < 0) h = _h;
+	int dx = 0;
+	int dy = 0;
+	switch (aspectMode) {
+		case 0:
+			break;
+
+		case 1:
+			// float srcZ =_w[0] / _h[0];
+
+			if (w < _w) {
+				float z = F(w) / _w;
+				float hh = L(_h * z);
+				dy = (h - hh) / 2;
+				h = hh;
+			} else if (h < _h) {
+				float z = F(h) / _h;
+				float ww = L(_w * z);
+				dx = (w - ww) / 2;
+				w = ww;
+			} else {
+				if (w > _w) w = _w;
+				if (h > _h) h = _h;
+			}
+			break;
+		default:
+			w = _w;
+			h = _h;
+	}
+	if (tw == -1) tw = _w;
+	if (th == -1) th = _h;
+
+	// 上下反転して描画
+	_renderer.drawTexture(x + dx, y + dy, w, h, tx, ty, tx + tw, ty + th, _texture, 2, col, col, col, col);
 }
