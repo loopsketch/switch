@@ -277,7 +277,10 @@ long DSVideoRenderer::height() {
 
 /** アスペクト比 */
 float DSVideoRenderer::getDisplayAspectRatio() {
-	return F(_w) / _h;
+	if (_h > 0) {
+		return F(_w) / _h;
+	}
+	return 0;
 }
 
 void DSVideoRenderer::draw(const int x, const int y, int w, int h, int aspectMode, DWORD col, int tx, int ty, int tw, int th) {
