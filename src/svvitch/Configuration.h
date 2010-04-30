@@ -1,11 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <Poco/Path.h>
 
 using std::string;
 using std::wstring;
+using std::vector;
 using Poco::Path;
 
 
@@ -30,7 +32,11 @@ public:
 	SIZE splitSize;
 	int splitCycles;
 
-	string useScenes;
+	vector<string> movieEngines;
+	vector<string> scenes;
+	bool hasScene(string s) {
+		return std::find(scenes.begin(), scenes.end(), s) != scenes.end();
+	}
 
 	int brightness;
 	bool viewStatus;

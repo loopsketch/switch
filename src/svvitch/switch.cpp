@@ -34,6 +34,7 @@
 #include "CaptureScene.h"
 #include "MainScene.h"
 //#include "UserInterfaceScene.h"
+#include "Utils.h"
 #include "Workspace.h"
 #include "WebAPI.h"
 //#include "ui/UserInterfaceManager.h"
@@ -229,7 +230,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	_uim->initialize();
 	// ƒV[ƒ“‚Ì¶¬
 	CaptureScenePtr captureScene = NULL;
-	if (_conf.useScenes.find("capture") != string::npos) {
+	if (_conf.hasScene("capture")) {
 		captureScene = new CaptureScene(*_renderer);
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
@@ -534,7 +535,10 @@ bool guiConfiguration()
 		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", _conf.stageRect.left, _conf.stageRect.top, _conf.stageRect.right, _conf.stageRect.bottom));
 		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
 
-		_conf.useScenes = xml->getString("scenes", "main");
+		string movieEngines = xml->getString("movieEngines", "ffmpeg,directshow");
+		svvitch::split(movieEngines, ',', _conf.movieEngines);
+		string scenes = xml->getString("scenes", "");
+		svvitch::split(scenes, ',', _conf.scenes);
 		_conf.brightness = xml->getInt("stage.brightness", 100);
 		_conf.viewStatus = xml->getBool("stage.viewStatus", false);
 

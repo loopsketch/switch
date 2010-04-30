@@ -425,15 +425,33 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 
 		case MediaTypeMovie:
 			{
-				// FFMovieContentPtr movie = new FFMovieContent(_renderer);
-				DSContentPtr movie = new DSContent(_renderer);
-				if (movie->open(media)) {
-					movie->setPosition(config().stageRect.left, config().stageRect.top);
-					movie->setBounds(config().stageRect.right, config().stageRect.bottom);
-					// movie->set("aspect-mode", "fit");
-					container->add(movie);
-				} else {
-					SAFE_DELETE(movie);
+				for (vector<string>::iterator it = config().movieEngines.begin(); it < config().movieEngines.end(); it++) {
+					string engine = Poco::toLower(*it);
+					if (engine == "ffmpeg") {
+						FFMovieContentPtr movie = new FFMovieContent(_renderer);
+						if (movie->open(media)) {
+							movie->setPosition(config().stageRect.left, config().stageRect.top);
+							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
+							// movie->set("aspect-mode", "fit");
+							container->add(movie);
+							break;
+						} else {
+							SAFE_DELETE(movie);
+						}
+					} else if (engine == "directshow") {
+						DSContentPtr movie = new DSContent(_renderer);
+						if (movie->open(media)) {
+							movie->setPosition(config().stageRect.left, config().stageRect.top);
+							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
+							// movie->set("aspect-mode", "fit");
+							container->add(movie);
+							break;
+						} else {
+							SAFE_DELETE(movie);
+						}
+					} else {
+						_log.warning(Poco::format("failed not found movie engine: %s", engine));
+					}
 				}
 			}
 			break;
