@@ -316,51 +316,54 @@ void CaptureScene::process() {
 			long pos = 0;
 			for (long i = 0; i < len; i += 4) {
 				_gray[pos++] = src[i + 1];
+				//int y = 0.299f * src[i + 2] + 0.587f * src[i + 1] + 0.114f * src[i + 0];
+				//if (y > 255) y = 255;
+				//_gray[pos++] = y;
 			}
 			_surface->UnlockRect();
 		}
-	} else {
-		_log.warning("failed getRenderTargetData()");
 	}
 	_frame++;
 }
 
 void CaptureScene::draw1() {
-	DWORD col = 0xffffffff;
-	D3DSURFACE_DESC desc;
-	HRESULT hr = _cameraImage->GetLevelDesc(0, &desc);
-	VERTEX dst[] =
-	{
-		{F(0              - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 0, 0},
-		{F(0 + desc.Width - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 1, 0},
-		{F(0              - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 0, 1},
-		{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
-	};
-
-	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	if (_vr) {
-		LPDIRECT3DSURFACE9 orgRT;
-		hr = device->GetRenderTarget(0, &orgRT);
-
-		LPDIRECT3DSURFACE9 surface;
-		_cameraImage->GetSurfaceLevel(0, &surface);
-		hr = device->SetRenderTarget(0, surface);
-		device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+	if (_cameraImage) {
 		DWORD col = 0xffffffff;
-		_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1, col, col, col, col);
-		SAFE_RELEASE(surface);
+		D3DSURFACE_DESC desc;
+		HRESULT hr = _cameraImage->GetLevelDesc(0, &desc);
+		VERTEX dst[] =
+		{
+			{F(0              - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 0, 0},
+			{F(0 + desc.Width - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 1, 0},
+			{F(0              - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 0, 1},
+			{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
+		};
 
-		hr = device->SetRenderTarget(0, orgRT);
-		SAFE_RELEASE(orgRT);
-	} else if (_useStageCapture) {
-		LPDIRECT3DSURFACE9 src,dst;
-		LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-		capture->GetSurfaceLevel(0, &src);
-		_cameraImage->GetSurfaceLevel(0, &dst);
-		hr = device->StretchRect(src, NULL, dst, NULL, D3DTEXF_POINT);
-		if FAILED(hr) _log.warning("failed copy texture");
-		SAFE_RELEASE(src);
-		SAFE_RELEASE(dst);
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+		if (_vr) {
+			LPDIRECT3DSURFACE9 orgRT;
+			hr = device->GetRenderTarget(0, &orgRT);
+
+			LPDIRECT3DSURFACE9 surface;
+			_cameraImage->GetSurfaceLevel(0, &surface);
+			hr = device->SetRenderTarget(0, surface);
+			device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+			DWORD col = 0xffffffff;
+			_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1, col, col, col, col);
+			SAFE_RELEASE(surface);
+
+			hr = device->SetRenderTarget(0, orgRT);
+			SAFE_RELEASE(orgRT);
+		} else if (_useStageCapture) {
+			LPDIRECT3DSURFACE9 src,dst;
+			LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
+			capture->GetSurfaceLevel(0, &src);
+			_cameraImage->GetSurfaceLevel(0, &dst);
+			hr = device->StretchRect(src, NULL, dst, NULL, D3DTEXF_POINT);
+			if FAILED(hr) _log.warning("failed copy texture");
+			SAFE_RELEASE(src);
+			SAFE_RELEASE(dst);
+		}
 	}
 }
 
