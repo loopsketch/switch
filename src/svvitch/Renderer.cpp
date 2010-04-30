@@ -935,6 +935,10 @@ void Renderer::drawTexture(const float dx, const float dy, const float dw, const
 	case 2:
 		tmp = v1; v1 = v2; v2 = tmp;
 		break;
+	case 3:
+		tmp = u1; u1 = u2; u2 = tmp;
+		tmp = v1; v1 = v2; v2 = tmp;
+		break;
 	}
 
 	VERTEX dst[] =

@@ -5,9 +5,9 @@
 #define WRITE_CLIPPED_BYTE(D, S)  { int v = S; if (v < 0) v = 0; if (v > 255) v = 255; (D)=(BYTE)v; }
 
 
-DSVideoRenderer::DSVideoRenderer(Renderer& renderer, LPUNKNOWN unk, HRESULT* result):
+DSVideoRenderer::DSVideoRenderer(Renderer& renderer, bool supportYUV2, LPUNKNOWN unk, HRESULT* result):
 	CBaseVideoRenderer(__uuidof(CLSID_DSVideoRenderer), NAME("DSVideoRenderer"), unk, result),
-	_log(Poco::Logger::get("")), _renderer(renderer), _w(0), _h(0), _texture(NULL), _readTime(0)
+	_log(Poco::Logger::get("")), _renderer(renderer), _supportYUV2(supportYUV2), _w(0), _h(0), _texture(NULL), _readTime(0)
 {
 	AddRef();
 	_format = D3DFMT_UNKNOWN;
@@ -59,7 +59,7 @@ bool DSVideoRenderer::getMediaTypeName(const CMediaType* pmt, string& type, D3DF
 		} else if (IsEqualGUID(*pmt->Subtype(), MEDIASUBTYPE_YUY2)) { // Packed YUYV
 			type = "YUY2";
 			*format = D3DFMT_YUY2;
-			result = false;
+			result = _supportYUV2;
 		} else if (IsEqualGUID(*pmt->Subtype(), MEDIASUBTYPE_YUYV)) { // Packed
 			type = "YUYV";
 			*format = D3DFMT_UNKNOWN;
@@ -283,7 +283,7 @@ float DSVideoRenderer::getDisplayAspectRatio() {
 	return 0;
 }
 
-void DSVideoRenderer::draw(const int x, const int y, int w, int h, int aspectMode, DWORD col, int tx, int ty, int tw, int th) {
+void DSVideoRenderer::draw(const int x, const int y, int w, int h, int aspectMode, int flipMode, DWORD col, int tx, int ty, int tw, int th) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (w < 0) w = _w;
 	if (h < 0) h = _h;
@@ -319,5 +319,5 @@ void DSVideoRenderer::draw(const int x, const int y, int w, int h, int aspectMod
 	if (th == -1) th = _h;
 
 	// ã‰º”½“]‚µ‚Ä•`‰æ
-	_renderer.drawTexture(x + dx, y + dy, w, h, tx, ty, tx + tw, ty + th, _texture, 2, col, col, col, col);
+	_renderer.drawTexture(x + dx, y + dy, w, h, tx, ty, tx + tw, ty + th, _texture, flipMode, col, col, col, col);
 }

@@ -352,11 +352,11 @@ void FFMovieContent::process(const DWORD& frame) {
 					if (_vf) _videoDecoder->pushFrame(_vf);
 					_vf = vf;
 					_current++;
-					if (_videoDecoder) vbufs = _videoDecoder->bufferedFrames();
-					if (_audioDecoder) abufs = _audioDecoder->bufferedFrames();
 					_fpsCounter.count();
 				}
 			}
+			if (_videoDecoder) vbufs = _videoDecoder->bufferedFrames();
+			if (_audioDecoder) abufs = _audioDecoder->bufferedFrames();
 			_avgTime = _videoDecoder->getAvgTime();
 
 		} else {
@@ -376,7 +376,7 @@ void FFMovieContent::process(const DWORD& frame) {
 		set("time_remain", t2);
 		set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 
-		set("status", Poco::format("%03lufps(%03.2hfms) %d:%d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
+		set("status", Poco::format("%03lufps(%03.2hfms) %02d:%02d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
 	}
 }
 

@@ -19,6 +19,7 @@ private:
 	int _deviceW;
 	int _deviceH;
 	int _deviceFPS;
+	int _flipMode;
 	GUID _deviceVideoType;
 
 	int _previewX;

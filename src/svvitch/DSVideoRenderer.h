@@ -22,12 +22,11 @@ private:
 
 	Renderer& _renderer;
 
+	bool _supportYUV2;
 	D3DFORMAT _format;
 
 	long _w;
-
 	long _h;
-
 	LPDIRECT3DTEXTURE9 _texture;
 
 	PerformanceTimer _readTimer;
@@ -44,7 +43,7 @@ private:
 	void convertYUY2_RGB(LPBYTE dst, LPBYTE src, size_t len);
 
 public:
-	DSVideoRenderer(Renderer& renderer, LPUNKNOWN unk, HRESULT* result);
+	DSVideoRenderer(Renderer& renderer, bool supportYUV2, LPUNKNOWN unk, HRESULT* result);
 	virtual ~DSVideoRenderer();
 
 	HRESULT CheckMediaType(const CMediaType* pmt);
@@ -65,7 +64,7 @@ public:
 	float getDisplayAspectRatio();
 
 	/** •`‰æ */
-	void draw(const int x, const int y, int w = -1, int h = -1, int aspectMode = 0, DWORD col = 0xffffffff, int tx = 0, int ty = 0, int tw = -1, int th = -1);
+	void draw(const int x, const int y, int w = -1, int h = -1, int aspectMode = 0, int flipMode = 0, DWORD col = 0xffffffff, int tx = 0, int ty = 0, int tw = -1, int th = -1);
 };
 
 typedef DSVideoRenderer* DSVideoRendererPtr;

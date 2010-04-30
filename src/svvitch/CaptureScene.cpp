@@ -3,7 +3,7 @@
 #include <Poco/UnicodeConverter.h>
 
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
-	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _deviceVideoType(MEDIASUBTYPE_YUY2),
+	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL), _gray(NULL)
 {
@@ -35,9 +35,12 @@ bool CaptureScene::initialize() {
 			_deviceH = xml->getInt("device[@h]", 480);
 		}
 		_deviceFPS = xml->getInt("device[@fps]", 30);
+		_flipMode = xml->getInt("device[@flipMode]", 3);
 		string type = Poco::toLower(xml->getString("device[@type]", "yuv2"));
 		if (type == "rgb24") {
 			_deviceVideoType = MEDIASUBTYPE_RGB24;
+		} else if (type == "rgb32") {
+			_deviceVideoType = MEDIASUBTYPE_RGB32;
 		} else if (type == "yuv2") {
 			_deviceVideoType = MEDIASUBTYPE_YUY2;
 		}
@@ -69,7 +72,7 @@ bool CaptureScene::createFilter() {
 		_log.warning(Poco::format("failed create filter graph: %s", errorText(hr)));
 		return false;
 	}
-	_vr = new DSVideoRenderer(_renderer, NULL, &hr);
+	_vr = new DSVideoRenderer(_renderer, true, NULL, &hr);
 	if (FAILED(hr = _gb->AddFilter(_vr, L"DSVideoRenderer"))) {
 		_log.warning(Poco::format("failed add filter: %s", errorText(hr)));
 		return false;
@@ -349,7 +352,7 @@ void CaptureScene::draw1() {
 			hr = device->SetRenderTarget(0, surface);
 			device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
 			DWORD col = 0xffffffff;
-			_renderer.drawTexture(0, 0, desc.Width, desc.Height, _vr->getTexture(), 1, col, col, col, col);
+			_vr->draw(0, 0, desc.Width, desc.Height, 0, _flipMode, col, col, col, col);
 			SAFE_RELEASE(surface);
 
 			hr = device->SetRenderTarget(0, orgRT);
