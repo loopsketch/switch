@@ -338,6 +338,8 @@ void FFMovieContent::close() {
 void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		int vbufs = 0;
+		int abufs = 0;
 		if (_playing) {
 			if (_starting) {
 				_frameOddEven = frame % 2;
@@ -350,9 +352,8 @@ void FFMovieContent::process(const DWORD& frame) {
 					if (_vf) _videoDecoder->pushFrame(_vf);
 					_vf = vf;
 					_current++;
-					int vf = _videoDecoder?(int)_videoDecoder->bufferedFrames():0;
-					int af = _audioDecoder?(int)_audioDecoder->bufferedFrames():0;
-					set("buffers", Poco::format("%d:%d", vf, af));
+					if (_videoDecoder) vbufs = _videoDecoder->bufferedFrames();
+					if (_audioDecoder) abufs = _audioDecoder->bufferedFrames();
 					_fpsCounter.count();
 				}
 			}
@@ -374,6 +375,8 @@ void FFMovieContent::process(const DWORD& frame) {
 		set("time_current", t1);
 		set("time_remain", t2);
 		set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
+
+		set("status", Poco::format("%03lufps(%03.2hfms) %d:%d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
 	}
 }
 

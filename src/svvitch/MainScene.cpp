@@ -1202,19 +1202,11 @@ void MainScene::draw2() {
 		if (c && !c->opened().empty()) {
 			int current = c->current();
 			int duration = c->duration();
-			string time;
-			string buffers;
-			FFMovieContentPtr movie = dynamic_cast<FFMovieContentPtr>(c);
-			if (movie != NULL) {
-				Uint32 fps = movie->getFPS();
-				float avgTime = movie->getAvgTime();
-				status1 = Poco::format("%03lufps(%03.2hfms)", fps, avgTime);
-				buffers = movie->get("buffers");
-			}
-			time = c->get("time");
+			string time = c->get("time");
 			_status["time_current"] = c->get("time_current");
 			_status["time_remain"] = c->get("time_remain");
-			status2 = Poco::format("%05d/%05d %s %s", current, duration, time, buffers);
+			status1 = c->get("status");
+			status2 = Poco::format("%05d/%05d %s", current, duration, time);
 		}
 	}
 

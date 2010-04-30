@@ -56,9 +56,17 @@ public:
 	void draw(const DWORD& frame);
 
 
-	bool getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir);
-	bool getInPin(IBaseFilter *pFilter, IPin** pPin);
-	bool getOutPin(IBaseFilter *pFilter, IPin** pPin);
+	int getPinCount(IBaseFilter *pFilter, PIN_DIRECTION PinDir);
+
+	/**
+	 * フィルタの指定した方向の接続されていないピンを探して返します。
+	 */
+	bool getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir, int index = -1);
+
+	bool getInPin(IBaseFilter *pFilter, IPin** pPin, int index = -1);
+
+	bool getOutPin(IBaseFilter *pFilter, IPin** pPin, int index = -1);
+
 	int dumpFilter(IGraphBuilder* gb);
 };
 

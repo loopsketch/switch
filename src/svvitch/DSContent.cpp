@@ -254,6 +254,12 @@ void DSContent::process(const DWORD& frame) {
 	set("time", Poco::format("%s %s", t1, t2));
 	set("time_current", t1);
 	set("time_remain", t2);
+
+	if (_vr) {
+		int fps = 0;
+		_vr->get_AvgFrameRate(&fps);
+		set("status", Poco::format("%03.2hffps(%03lums)", fps / F(100), _vr->readTime()));
+	}
 }
 
 void DSContent::draw(const DWORD& frame) {
@@ -379,15 +385,30 @@ void DSContent::draw(const DWORD& frame) {
 	}
 }
 
+int DSContent::getPinCount(IBaseFilter* pFilter, PIN_DIRECTION PinDir) {
+	int count = 0;
+    IEnumPins* pEnum = NULL;
+    HRESULT hr = pFilter->EnumPins(&pEnum);
+    if (SUCCEEDED(hr)) {
+		IPin* pin = NULL;
+	    while (pEnum->Next(1, &pin, 0) == S_OK) {
+	        PIN_DIRECTION PinDirThis;
+	        pin->QueryDirection(&PinDirThis);
+	        if (PinDir == PinDirThis) count++;
+			SAFE_RELEASE(pin);
+	    }
+		// ピンの参照は残したまま戻す
+		SAFE_RELEASE(pEnum);
+    }
+	return count;
+}
 
-/**
- * フィルタの指定した方向の接続されていないピンを探して返します。
- */
-bool DSContent::getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir) {
+bool DSContent::getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir, int index) {
     bool bFound = false;
     IEnumPins *pEnum = NULL;
     HRESULT hr = pFilter->EnumPins(&pEnum);
     if (SUCCEEDED(hr)) {
+		int i = 0;
 	    while (!bFound && pEnum->Next(1, pPin, 0) == S_OK) {
 	        PIN_DIRECTION PinDirThis;
 	        (*pPin)->QueryDirection(&PinDirThis);
@@ -398,9 +419,10 @@ bool DSContent::getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir) 
 					SAFE_RELEASE(pToPin);
 					SAFE_RELEASE(*pPin);
 				} else if (hr == VFW_E_NOT_CONNECTED) {
-					bFound = true;
+					if (index == -1 || i == index) bFound = true;
 				}
 			}
+			i++;
 	    }
 		// ピンの参照は残したまま戻す
 		SAFE_RELEASE(pEnum);
@@ -409,13 +431,13 @@ bool DSContent::getPin(IBaseFilter *pFilter, IPin** pPin, PIN_DIRECTION PinDir) 
 }
 
 /* 指定したフィルタの入力ピンを返します */
-bool DSContent::getInPin(IBaseFilter *pFilter, IPin** pPin) {
-    return getPin(pFilter, pPin, PINDIR_INPUT);
+bool DSContent::getInPin(IBaseFilter *pFilter, IPin** pPin, int index) {
+    return getPin(pFilter, pPin, PINDIR_INPUT, index);
 }
 
 /* 指定したフィルタの出力ピンを返します */
-bool DSContent::getOutPin(IBaseFilter *pFilter, IPin** pPin) {
-    return getPin(pFilter, pPin, PINDIR_OUTPUT);
+bool DSContent::getOutPin(IBaseFilter *pFilter, IPin** pPin, int index) {
+    return getPin(pFilter, pPin, PINDIR_OUTPUT, index);
 }
 
 /**

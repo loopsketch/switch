@@ -30,7 +30,6 @@ private:
 
 	LPDIRECT3DTEXTURE9 _texture;
 
-
 	PerformanceTimer _readTimer;
 	DWORD _readTime;
 
