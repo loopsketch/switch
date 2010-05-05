@@ -2,7 +2,9 @@
 #include <Poco/UnicodeConverter.h>
 
 
-DSContent::DSContent(Renderer& renderer): Content(renderer), _gb(NULL), _vmr9(NULL), _allocator(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)
+DSContent::DSContent(Renderer& renderer): Content(renderer),
+	activePlay(this, &DSContent::syncronizedPlay),
+	_gb(NULL), _vmr9(NULL), _allocator(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)
 {
 }
 
@@ -156,7 +158,9 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	if (FAILED(hr)) {
 		_log.warning("failed query interface: IMediaControl");
 		return false;
-	}	
+	}
+	hr = _mc->Pause();
+
 	hr = _gb->QueryInterface(&_ms);
 	if (FAILED(hr)) {
 		_log.warning("failed query interface: IMediaSeeking");
@@ -185,6 +189,10 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
  * Ä¶
  */
 void DSContent::play() {
+	if (_mc) activePlay();
+}
+
+void DSContent::syncronizedPlay() {
 	if (_mc) {
 		HRESULT hr = _mc->Run();
 		_playing = true;

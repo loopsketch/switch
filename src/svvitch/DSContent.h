@@ -4,6 +4,7 @@
 #include "Renderer.h"
 #include "DSVideoRenderer.h"
 #include "VideoTextureAllocator.h"
+#include <Poco/ActiveMethod.h>
 #include <Poco/Mutex.h>
 #include <streams.h>
 
@@ -19,6 +20,9 @@ private:
 	IMediaSeeking* _ms;
 	IMediaEvent* _me;
 	bool _finished;
+
+	ActiveMethod<void, void, DSContent> activePlay;
+	void syncronizedPlay();
 
 public:
 	DSContent(Renderer& renderer);
