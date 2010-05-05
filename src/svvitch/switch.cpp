@@ -535,7 +535,7 @@ bool guiConfiguration()
 		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", _conf.stageRect.left, _conf.stageRect.top, _conf.stageRect.right, _conf.stageRect.bottom));
 		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
 
-		string movieEngines = xml->getString("movieEngines", "ffmpeg,directshow");
+		string movieEngines = xml->getString("movieEngines", "ffmpeg");
 		svvitch::split(movieEngines, ',', _conf.movieEngines);
 		string scenes = xml->getString("scenes", "");
 		svvitch::split(scenes, ',', _conf.scenes);
