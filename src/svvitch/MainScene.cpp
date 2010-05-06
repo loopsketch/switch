@@ -133,6 +133,8 @@ bool MainScene::initialize() {
 	} else {
 		_log.warning("failed parse workspace");
 	}
+	setStatus("stage-name", config().name);
+	setStatus("stage-description", config().description);
 	_timeSecond = -1;
 	_frame = 0;
 	_brightness = config().brightness;
