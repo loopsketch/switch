@@ -25,6 +25,7 @@
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
 #include <Poco/PatternFormatter.h>
+#include "Poco/Net/HTTPStreamFactory.h"
 #include <Poco/Net/HTTPServer.h>
 #include <Poco/Net/HTTPServerParams.h>
 #include <Poco/Net/ServerSocket.h>
@@ -245,6 +246,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
 //	_renderer->addScene("ui", uiScene);
 
+	Poco::Net::HTTPStreamFactory::registerFactory();
 	Poco::ThreadPool::defaultPool().addCapacity(8);
 	Poco::Net::HTTPServerParams* params = new Poco::Net::HTTPServerParams;
 	params->setMaxQueued(_conf.maxQueued);

@@ -1,6 +1,12 @@
 #include "MainScene.h"
 
+#include <algorithm>
 #include <Psapi.h>
+#include <Poco/AutoPtr.h>
+#include <Poco/DOM/DOMParser.h>
+#include <Poco/DOM/Document.h>
+#include <Poco/DOM/Element.h>
+#include <Poco/DOM/NodeList.h>
 #include <Poco/format.h>
 #include <Poco/DirectoryIterator.h>
 #include <Poco/DateTimeFormat.h>
@@ -8,6 +14,7 @@
 #include <Poco/Exception.h>
 #include <Poco/string.h>
 #include <Poco/NumberFormatter.h>
+#include "Poco/NumberParser.h">
 #include <Poco/UnicodeConverter.h>
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/LocalDateTime.h>
@@ -15,8 +22,8 @@
 #include <Poco/Timespan.h>
 #include <Poco/Timezone.h>
 #include <Poco/FileStream.h>
-#include "Poco/URIStreamOpener.h"
-#include "Poco/URI.h"
+#include <Poco/URIStreamOpener.h>
+#include <Poco/URI.h>
 
 #include "Image.h"
 #include "FFMovieContent.h"
@@ -29,6 +36,11 @@
 #include "Schedule.h"
 
 #include "Utils.h"
+
+
+using Poco::XML::Document;
+using Poco::XML::Element;
+using Poco::XML::NodeList;
 
 
 MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile):
@@ -578,8 +590,133 @@ void MainScene::copyRemote(const string& remote) {
 	_log.information(Poco::format("remote copy: %s", remote));
 	File copyDir("copys");
 	if (copyDir.exists()) copyDir.remove(true);
-	bool result = copyRemoteDir(remote, "/");
+	//bool result = copyRemoteDir(remote, "/");
+
+	Path remoteWorkspace("tmp/workspace.xml");
+	if (copyRemoteFile(remote, "/workspace.xml", remoteWorkspace)) {
+		vector<string> remoteFiles;
+		try {
+			Poco::XML::DOMParser parser;
+			Document* doc = parser.parse(remoteWorkspace.toString());
+			if (doc) {
+				Element* mediaList = doc->documentElement()->getChildElement("medialist");
+				if (mediaList) {
+					NodeList* items = mediaList->getElementsByTagName("item");
+					for (int i = 0; i < items->length(); i++) {
+						Element* e = (Element*)items->item(i);
+
+						NodeList* files = e->getElementsByTagName("*");
+						for (int j = 0; j < files->length(); j++) {
+							Element* e1 = (Element*)files->item(j);
+							string file = e1->innerText();
+							string params;
+							if (file.find("?") != string::npos) {
+								params = file.substr(file.find("?") + 1);
+								file = file.substr(0, file.find("?"));
+							}
+							if (file.find("switch-data:/") == 0) {
+								//file = Path(config().dataRoot, file.substr(13)).toString();
+								file = file.substr(13);
+								vector<string>::iterator it = std::find(remoteFiles.begin(), remoteFiles.end(), file);
+								if (it == remoteFiles.end()) remoteFiles.push_back(file);
+							}
+						}
+						files->release();
+					}
+					items->release();
+				}
+				doc->release();
+
+				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
+					_log.information(Poco::format("remote: %s", *it));
+					Path out(config().dataRoot, *it); //Path out("tmp/" + *it);
+					copyRemoteFile(remote, *it, out, true);
+				}
+
+			} else {
+				_log.warning(Poco::format("failed parse: %s", remoteWorkspace.toString()));
+			}
+			File workspaceFile(config().workspaceFile);
+			if (workspaceFile.exists()) workspaceFile.remove();
+			File f(remoteWorkspace);
+			f.moveTo(workspaceFile.path());
+			updateWorkspace();
+		} catch (Poco::Exception& ex) {
+			_log.warning(ex.displayText());
+		}
+	}
 }
+
+bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck) {
+	Poco::DateTime modified;
+	int tzd = Poco::Timezone::tzd();
+	modified.makeLocal(tzd);
+	long size = 0;
+	try {
+		//string encoded;
+		//Poco::URI::encode(path, "", encoded);
+		Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, path));
+		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
+		string result;
+		Poco::StreamCopier::copyToString(*is.get(), result);
+		_log.debug(Poco::format("result: %s", result));
+		map<string, string> m;
+		svvitch::parseJSON(result, m);
+		svvitch::parseJSON(m["files"], m);
+		//for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
+		//	_log.information(Poco::format("[%s]=%s", it->first, it->second));
+		//}
+		int tz = 0;
+		Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tzd);
+		//modified.makeUTC(tzd);
+		Poco::Int64 num = 0;
+		Poco::NumberParser::tryParse64(m["size"], num);
+		size = num;
+		_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
+		File outFile(out);
+		if (equalityCheck && outFile.exists()) {
+			long modifiedDiff = abs((long)((modified.timestamp() - outFile.getLastModified())));
+			if (size == outFile.getSize() && modifiedDiff <= 1000) {
+				// サイズと更新日時(秒精度)があっていれば同一ファイルとする
+				_log.information(Poco::format("remote file already exists: %s", path));
+				return true;
+			}
+		}
+	} catch (Poco::SyntaxException& ex) {
+		_log.warning(Poco::format("failed remote files(URI miss): %s", ex.displayText()));
+	} catch (Poco::IOException& ex) {
+		_log.warning(Poco::format("failed remote I/O: %s", ex.displayText()));
+	} catch (Poco::Exception& ex) {
+		_log.warning(Poco::format("failed remote files: %s", ex.displayText()));
+	}
+
+	try {
+		File outDir(out.parent());
+		outDir.createDirectories();
+		File tempFile(out.toString() + ".part");
+		if (tempFile.exists()) tempFile.remove();
+
+		//string encoded;
+		//Poco::URI::encode(path, "", encoded);
+		Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, path));
+		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
+		Poco::FileOutputStream os(tempFile.path());
+		long readSize = Poco::StreamCopier::copyStream(*is.get(), os, 1024 * 1024);
+		os.close();
+		File outFile(out);
+		if (outFile.exists()) outFile.remove();
+		tempFile.renameTo(out.toString());
+		tempFile.setLastModified(modified.timestamp());
+		_log.information(Poco::format("remote file copy %s %ld %ld", path, size, readSize));
+		return true;
+	} catch (Poco::FileException& ex) {
+		_log.warning(Poco::format("failed remote copy: %s", ex.displayText()));
+	} catch (Poco::Exception& ex) {
+		_log.warning(Poco::format("failed remote copy: %s", ex.displayText()));
+	}
+	return false;
+}
+
 
 bool MainScene::copyRemoteDir(const string& remote, const string& root) {
 	_log.information(Poco::format("remote copy directory: %s", root));

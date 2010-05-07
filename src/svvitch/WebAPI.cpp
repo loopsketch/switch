@@ -120,13 +120,18 @@ void SwitchRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerR
 }
 
 void SwitchRequestHandler::doRequest() {
-	_log.debug(Poco::format("request from %s", request().clientAddress().toString()));
-	URI uri(request().getURI());
+	_log.information(Poco::format("request from %s", request().clientAddress().toString()));
+	string encoded;
+	URI::encode(request().getURI(), "/", encoded);
+	URI uri(encoded);
+	_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
+	//vector<string> params;
+	//svvitch::split(uri.getPath().substr(1), '?', params, 2);
 	vector<string> urls;
 	svvitch::split(uri.getPath().substr(1), '/', urls, 2);
-//	for (vector<string>::iterator it = urls.begin(); it != urls.end(); it++) {
-//		_log.information(Poco::format("url %s", string(*it)));
-//	}
+	// for (vector<string>::iterator it = urls.begin(); it != urls.end(); it++) {
+	//	_log.information(Poco::format("url %s", string(*it)));
+	// }
 	int count = urls.size();
 	if (!urls.empty()) {
 		if        (urls[0] == "switch") {
@@ -308,10 +313,10 @@ void SwitchRequestHandler::get(const string& name) {
 
 void SwitchRequestHandler::files() {
 	string path = form().get("path", "");
+	//_log.information(Poco::format("files: %s", path));
 	Path dir = config().dataRoot;
 	try {
 		if (!path.empty()) dir = dir.append(path);
-		// _log.information(Poco::format("files: %s", dir.toString()));
 		map<string, string> result;
 		result["count"] = Poco::format("%d", svvitch::fileCount(dir));
 		result["path"] = "\"" + path + "\"";

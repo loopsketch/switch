@@ -162,6 +162,8 @@ private:
 	/** リモートコピー */
 	void copyRemote(const string& remote);
 
+	bool copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck = false);
+
 	/** リモートディレクトリのコピー */
 	bool copyRemoteDir(const string& remote, const string& root);
 
