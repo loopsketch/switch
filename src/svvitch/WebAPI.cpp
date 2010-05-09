@@ -322,10 +322,10 @@ void SwitchRequestHandler::files() {
 		result["path"] = "\"" + path + "\"";
 		result["files"] = fileToJSON(dir);
 		sendJSONP(form().get("callback", ""), result);
-	} catch (Poco::FileException ex) {
+	} catch (Poco::FileException& ex) {
 		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
-	} catch (Poco::PathSyntaxException ex) {
+	} catch (Poco::PathSyntaxException& ex) {
 		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 	}
@@ -401,15 +401,15 @@ void SwitchRequestHandler::download() {
 				response().setContentType("application/octet-stream");
 			}
 			response().setChunkedTransferEncoding(false);
-			Poco::StreamCopier::copyStream(is, response().send(), 1024 * 1024);
+			Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
 			is.close();
 		} else {
 			throw Poco::OpenFileException(src.toString());
 		}
-	} catch (Poco::FileException ex) {
+	} catch (Poco::FileException& ex) {
 		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
-	} catch (Poco::PathSyntaxException ex) {
+	} catch (Poco::PathSyntaxException& ex) {
 		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 	}
@@ -430,23 +430,31 @@ void SwitchRequestHandler::upload() {
 			File("uploads").list(list);
 			boolean result = true;
 			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+				File src = *it;
 				try {
-					File src = *it;
 					if (f.exists()) {
 						f.remove();
 						_log.information(Poco::format("deleted already file: %s", f.path()));
 					}
 					src.renameTo(f.path());
 					_log.information(Poco::format("rename: %s -> %s", src.path(), f.path()));
-				} catch (Poco::FileException ex) {
-					_log.warning(ex.displayText());
-					result = false;
+				} catch (Poco::FileException& ex) {
+					_log.warning(Poco::format("failed upload file[%s]: %s", src.path(), ex.displayText()));
+					MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+					if (scene) {
+						try {
+							src.renameTo(f.path() + ".part");
+							scene->addDelayedUpdateFile(src);
+						} catch (Poco::FileException& ex1) {
+							result = false;
+						}
+					}
 				}
 			}
 			map<string, string> params;
 			params["upload"] = result?"true":"false";
 			sendJSONP(form().get("callback", ""), params);
-		} catch (Poco::PathSyntaxException ex) {
+		} catch (Poco::PathSyntaxException& ex) {
 			_log.warning(ex.displayText());
 			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 		}

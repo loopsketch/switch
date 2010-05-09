@@ -424,7 +424,32 @@ bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID
 }
 
 bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText) {
-	_log.information(Poco::format("file: %d", media->fileCount()));
+	if (!_delayUpdateFiles.empty()) {
+		for (vector<File>::iterator it = _delayUpdateFiles.begin(); it != _delayUpdateFiles.end();) {
+			string path = (*it).path();
+			int pos = path.size() - 5;
+			if ((*it).exists() && pos >= 0 && path.substr(pos) == ".part") {
+				File dst(path.substr(0, pos));
+				try {
+					if (dst.exists()) {
+						dst.remove();
+						(*it).renameTo(dst.path());
+						_log.information(Poco::format("delayed file updated: %s", dst.path()));
+
+					} else {
+						(*it).remove();
+						_log.warning(Poco::format("delayed updating file none: %s", path));
+					}
+					it = _delayUpdateFiles.erase(it);
+					continue;
+				} catch (Poco::FileException& ex) {
+					_log.warning(Poco::format("failed delayed file updating[%s]: %s", path, ex.displayText()));
+				}
+			}
+			it++;
+		}
+	}
+	//_log.information(Poco::format("file: %d", media->fileCount()));
 	switch (media->type()) {
 		case MediaTypeImage:
 			{
@@ -566,6 +591,11 @@ bool MainScene::switchContent() {
 	return true;
 }
 
+void MainScene::addDelayedUpdateFile(File& file) {
+	_delayUpdateFiles.push_back(file);
+	_log.information(Poco::format("add delayed update: %s", file.path()));
+}
+
 bool MainScene::updateWorkspace() {
 	_log.information("update workspace");
 	if (_workspace->checkUpdate()) {
@@ -629,18 +659,18 @@ void MainScene::copyRemote(const string& remote) {
 
 				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
 					_log.information(Poco::format("remote: %s", *it));
-					Path out(config().dataRoot, *it); //Path out("tmp/" + *it);
+					Path out(config().dataRoot, *it);
 					copyRemoteFile(remote, *it, out, true);
 				}
 
+				File dst(config().workspaceFile);
+				if (dst.exists()) dst.remove();
+				File src(remoteWorkspace);
+				src.renameTo(dst.path());
+				updateWorkspace();
 			} else {
 				_log.warning(Poco::format("failed parse: %s", remoteWorkspace.toString()));
 			}
-			File workspaceFile(config().workspaceFile);
-			if (workspaceFile.exists()) workspaceFile.remove();
-			File f(remoteWorkspace);
-			f.moveTo(workspaceFile.path());
-			updateWorkspace();
 		} catch (Poco::Exception& ex) {
 			_log.warning(ex.displayText());
 		}
@@ -653,8 +683,6 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 	modified.makeLocal(tzd);
 	long size = 0;
 	try {
-		//string encoded;
-		//Poco::URI::encode(path, "", encoded);
 		Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		string result;
@@ -690,27 +718,31 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		_log.warning(Poco::format("failed remote files: %s", ex.displayText()));
 	}
 
+	bool updating = false;
+	File tempFile(out.toString() + ".part");
+	if (tempFile.exists()) tempFile.remove();
 	try {
 		File outDir(out.parent());
 		outDir.createDirectories();
-		File tempFile(out.toString() + ".part");
-		if (tempFile.exists()) tempFile.remove();
 
-		//string encoded;
-		//Poco::URI::encode(path, "", encoded);
 		Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		Poco::FileOutputStream os(tempFile.path());
-		long readSize = Poco::StreamCopier::copyStream(*is.get(), os, 1024 * 1024);
+		long readSize = Poco::StreamCopier::copyStream(*is.get(), os, 512 * 1024);
 		os.close();
+		tempFile.setLastModified(modified.timestamp());
+		updating = true;
 		File outFile(out);
 		if (outFile.exists()) outFile.remove();
 		tempFile.renameTo(out.toString());
-		tempFile.setLastModified(modified.timestamp());
 		_log.information(Poco::format("remote file copy %s %ld %ld", path, size, readSize));
 		return true;
 	} catch (Poco::FileException& ex) {
 		_log.warning(Poco::format("failed remote copy: %s", ex.displayText()));
+		if (updating && tempFile.exists()) {
+			addDelayedUpdateFile(tempFile);
+			return true;
+		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed remote copy: %s", ex.displayText()));
 	}
@@ -768,7 +800,7 @@ bool MainScene::copyRemoteDir(const string& remote, const string& root) {
 
 				} catch (Poco::FileException& ex) {
 					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				} catch (Poco::Exception ex) {
+				} catch (Poco::Exception& ex) {
 					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
 				}
 
@@ -790,12 +822,12 @@ bool MainScene::copyRemoteDir(const string& remote, const string& root) {
 					_copyRemoteFiles--;
 				} catch (Poco::FileException& ex) {
 					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				} catch (Poco::Exception ex) {
+				} catch (Poco::Exception& ex) {
 					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
 				}
 			}
 		}
-	} catch (Poco::Exception ex) {
+	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed files: %s", ex.displayText()));
 	}
 	return true;
@@ -921,7 +953,7 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 					}
 					is.close();
 					os.close();
-				} catch (Poco::FileException ex) {
+				} catch (Poco::FileException& ex) {
 					_log.warning(ex.displayText());
 				}
 			}

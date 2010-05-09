@@ -264,7 +264,7 @@ bool Workspace::parse() {
 								file.remove();
 								_log.information(Poco::format("file delete: %s", file.path()));
 							}
-						} catch (Poco::FileException ex) {
+						} catch (Poco::FileException& ex) {
 							_log.warning(ex.displayText());
 						}
 

@@ -130,8 +130,8 @@ private:
 	unsigned long _currentCopySize;
 	int _copyProgress;
 	int _currentCopyProgress;
-
 	int _copyRemoteFiles;
+	vector<File> _delayUpdateFiles;
 
 	vector<ContainerPtr> _delayReleases;
 
@@ -219,6 +219,9 @@ public:
 
 	/** 切替用コンテンツに切替(アクティブ版) */
 	ActiveMethod<bool, void, MainScene> activeSwitchContent;
+
+	/** 遅延更新ファイルを追加します */
+	void addDelayedUpdateFile(File& file);
 
 	/** workspace更新 */
 	bool updateWorkspace();
