@@ -12,45 +12,87 @@ PC上で作成できる動画ファイル、静止画ファイルの送出の他、テキストファイルをテロッ
 
 「switch」の特徴は次のとおりです。
 ・DirectXを使ったWindowsアプリケーションです。
-・動画の再生にはFFmpegのエンジン(libavcodec)を利用します。
-・VSyncを基準クロックとしますが、単純に分周しているだけなので、動画ファイルは30fpsで
-　準備してください。
+・動画の再生にはffmpegのエンジン(libavcodec)を利用します。
+・VSyncに同期させるために、動画ファイルについては30fpsである必要があります。
 ・フレームを1枚1枚テクスチャとしてバッファするので、素材と素材の間も綺麗につなぐこと
 　ができます。
 
 
 ■ 開発環境
-OS: Windows7
-IDE: Microsoft Visual C++ 2008 Express Edition
-     FlashDevelop3.0.6RTM
+OS: WindowsXP SP3
+VIDEO: ATI Radeon HD 4600 Series
+IDE: Microsoft Visual C++ 2008 Professional Edition
+
 
 ■ 依存する外部ライブラリ
 <ffmpeg>※MinGWやlibmp3lameなど含む
 <POCO C++ Libraries>
 <OpenSSL>※pocoにてSSL関連を扱う場合
-<Microsoft DirectX 9.0 SDK (August 2009)>
-<Windows Software Development Kit (SDK) for Windows 7 and .NET Framework 3.5 Service Pack 1>
-<AdobeAIR1.5.3>※airSwitchの実行に必要
+<Microsoft DirectX 9.0 SDK (December 2004)>
+<Windows Software Development Kit (SDK) for Windows Server 2008 and .NET Framework 3.5>
 ※DirectShowを使うためbaseclassesが必要
 ※コンパイルした環境によって、Microsoft Visual C++ 2008 再頒布可能パッケージ などが必要になります。
-※UIの英文字フォントに http://rs125.org さんの defactica を使わせていただいています。
-
-■ ビルド方法
-のちほど。
 
 ■ リリースファイル一覧
-[datas]             サンプルのワークスペース、コンテンツファイル
-basic.fx            fxファイル
-cursor.png          カーソルのイメージ
-defactica.ttf       フォントファイル
-switch.exe          実行ファイル
-switch-config.dtd   基本設定ファイルのDTD
-switch-config.xml   基本設定ファイル
+[datas]                サンプルワークスペースデータ
+[fx]                   エフェクトファイル
+[images]               外部参照イメージファイル
+airSvvitch.air         AdobeAIR1.5用運営アプリケーションパッケージ
+conversion_yuv2rgb.fx  fxファイル
+defactica.ttf          フォントファイル(copyright(c)2004 RS125 All rights reserved.)
+switch.exe             実行ファイル
+switch-config.xml      基本設定ファイル
+workspace.xml          コンテンツ定義ファイル
 
-airSvvitch.air      ユーザインターフェースのAIRアプリです。
+
+■ サンプル実行方法
+リリースパッケージを解凍してできたディレクトリの中にある、switch.exeを実行してください。
+左上に黒いウィンドウが表示され、やがて動画が表示されればテストOKです。
+表示されずにすぐプロセスが終了してしまったり、ダイアログが表示される場合は、
+Visual C++ 2008再配布パッケージ等をインストールする必要があります。
+
+最新の詳細情報は以下を参照してください。
+
+http://sourceforge.jp/projects/switch/wiki/FrontPage
+
 
 ■ 更新履歴
-0.3
+0.6
+・細かいバグフィックス
+・使用中のファイルを上書きできるようになってからコピーする機能追加
+・airSvvitchのUIレイアウト変更
+・リモート同期機能の追加
+
+0.5
+・細かいバグフィックス
+・プレビュー画像のメモリ化(ファイルを作らなくした)
+・動画の音声の再生タイミングの変更
+・キャプチャ機能にステージをキャプチャする機能を追加
+・エフェクトファイルをfxフォルダに移動
+・ログファイルを出力しないモードを追加(log.fileを<file />にする)
+・素材無しメディアが再生されても落ちないように修正
+・USBメモリなどのデバイスの取り外しを検出するように追加
+・airSwitchでは、IPアドレスを127.0.0.xにするとローカルモードで動作します
+
+0.4c
+・スケジュールによるコンテンツ切替時のリーク分を対処
+・プレビュー用の画像サイズを縮小化
+・airSwitchのAdobeAIRを2.0beta→1.5に戻しました
+
+0.4b
+・AMDのデュアルコアCPUで時計がずれるのを修正
+・FFmpeg再生時のスレッド構成を3スレッド->2スレッドに修正
+・音声再生処理でリングバッファを使っていますが、循環して音が再生されてしまうのをなんとなく修正
+
+0.4a
+・リムーバブルディスクを接続したときに45秒待つように修正
+・AMDのデュアルコアCPUで時間測定系の数値がおかしいのを修正
+・0.4にて、新しいDirectX SDKでコンパイルされていたので、今回はDecember 2004でコンパイルしています。
+
+0.4
+・コンテンツの終了待ち処理に不具合がありフリッカ状態になってしまうのを修正
+・リムーバブルディスクによるインポート時に落ちることがあるのを修正
+・シェーダの関数名をそれっぽく修正0.3
 ・試験的に音声トラックのサポート
 ・テロップ機能のサポート
 ・スケジュール機能のサポート
