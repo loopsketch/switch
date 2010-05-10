@@ -120,11 +120,11 @@ void SwitchRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerR
 }
 
 void SwitchRequestHandler::doRequest() {
-	_log.information(Poco::format("request from %s", request().clientAddress().toString()));
+	//_log.information(Poco::format("request from %s", request().clientAddress().toString()));
 	string encoded;
 	URI::encode(request().getURI(), "/", encoded);
 	URI uri(encoded);
-	_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
+	//_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
 	//vector<string> params;
 	//svvitch::split(uri.getPath().substr(1), '?', params, 2);
 	vector<string> urls;
@@ -239,6 +239,23 @@ void SwitchRequestHandler::set(const string& name) {
 				scene->setTransition(transition);
 				map<string, string> params;
 				params["transition"] = transition;
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (name == "status") {
+				string name = form().get("n");
+				string value = form().get("v");
+				bool result = false;
+				if (!name.empty()) {
+					if (value.empty()) {
+						scene->removeStatus(name);
+					} else {
+						scene->setStatus(name, value);
+					}
+					result = true;
+				}
+				map<string, string> params;
+				params["status"] = result?"true":"false";
 				sendJSONP(form().get("callback", ""), params);
 				return;
 

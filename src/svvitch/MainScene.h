@@ -164,9 +164,11 @@ private:
 
 	bool copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck = false);
 
-	/** リモートディレクトリのコピー */
-	bool copyRemoteDir(const string& remote, const string& root);
+	void setRemoteStatus(const string& remote, const string& name, const string& value);
 
+	/** リモートディレクトリのコピー */
+/*	bool copyRemoteDir(const string& remote, const string& root);
+*/
 	/** 次再生コンテンツを準備(アクティブ版) */
 	ActiveMethod<bool, PlayParameters, MainScene> activePrepareNextContent;
 
@@ -222,6 +224,9 @@ public:
 
 	/** 遅延更新ファイルを追加します */
 	void addDelayedUpdateFile(File& file);
+
+	/** 遅延更新ファイルを更新します */
+	void updateDelayedFiles();
 
 	/** workspace更新 */
 	bool updateWorkspace();
