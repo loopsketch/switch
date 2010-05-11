@@ -51,6 +51,7 @@ class MainScene: public Scene
 private:
 	Poco::FastMutex _lock;
 	Poco::FastMutex _workspaceLock;
+	Poco::FastMutex _delayedUpdateLock;
 
 	ui::UserInterfaceManager& _uim;
 	Path& _workspaceFile;
@@ -224,6 +225,9 @@ public:
 
 	/** 遅延更新ファイルを追加します */
 	void addDelayedUpdateFile(File& file);
+
+	/** 遅延更新ファイルを追加します */
+	void removeDelayedUpdateFile(File& file);
 
 	/** 遅延更新ファイルを更新します */
 	void updateDelayedFiles();

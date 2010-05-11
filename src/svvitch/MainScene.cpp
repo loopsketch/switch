@@ -570,29 +570,41 @@ bool MainScene::switchContent() {
 }
 
 void MainScene::addDelayedUpdateFile(File& file) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);	
 	_delayUpdateFiles.push_back(file);
 	Path path(file.path());
 	setStatus("delayed-update", path.getFileName());
 	_log.information(Poco::format("add delayed update: %s", file.path()));
 }
 
+void MainScene::removeDelayedUpdateFile(File& file) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);	
+	vector<File>::iterator it = std::find(_delayUpdateFiles.begin(), _delayUpdateFiles.end(), file);
+	if (it != _delayUpdateFiles.end()) {
+
+		_delayUpdateFiles.erase(it);
+		_log.information(Poco::format("remove delayed update: %s", file.path()));
+	}
+}
+
 void MainScene::updateDelayedFiles() {
 	if (_delayUpdateFiles.empty()) {
 		removeStatus("delayed-update");
 	} else {
+		Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);
 		for (vector<File>::iterator it = _delayUpdateFiles.begin(); it != _delayUpdateFiles.end();) {
 			string path = (*it).path();
 			int pos = path.size() - 5;
 			if ((*it).exists() && pos >= 0 && path.substr(pos) == ".part") {
 				File dst(path.substr(0, pos));
 				try {
-					if (dst.exists()) {
+					if ((*it).exists() && dst.exists()) {
 						dst.remove();
 						(*it).renameTo(dst.path());
 						_log.information(Poco::format("delayed file updated: %s", dst.path()));
 
 					} else {
-						(*it).remove();
+						if ((*it).exists()) (*it).remove();
 						_log.warning(Poco::format("delayed updating file none: %s", path));
 					}
 					it = _delayUpdateFiles.erase(it);

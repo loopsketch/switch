@@ -75,6 +75,7 @@ void SwitchPartHandler::handlePart(const MessageHeader& header, std::istream& is
 		File uploadDir("uploads");
 		if (!uploadDir.exists()) uploadDir.createDirectories();
 		File f(uploadDir.path() + "/" + fileName + ".part");
+		if (f.exists()) f.remove();
 		try {
 			Poco::FileOutputStream os(f.path());
 			int size = Poco::StreamCopier::copyStream(is, os, 512 * 1024);
@@ -459,8 +460,13 @@ void SwitchRequestHandler::upload() {
 					_log.warning(Poco::format("failed upload file[%s]: %s", src.path(), ex.displayText()));
 					MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 					if (scene) {
+						File tempFile(f.path() + ".part");
+						if (tempFile.exists()) {
+							scene->removeDelayedUpdateFile(tempFile);
+							tempFile.remove();
+						}
 						try {
-							src.renameTo(f.path() + ".part");
+							src.renameTo(tempFile.path());
 							scene->addDelayedUpdateFile(src);
 						} catch (Poco::FileException& ex1) {
 							result = false;
