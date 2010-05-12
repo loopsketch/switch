@@ -1471,6 +1471,27 @@ void MainScene::draw2() {
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99ffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+
+		string delayedUpdate = getStatus("delayed-update");
+		if (delayedUpdate.empty()) {
+			string remoteCopy = getStatus("remote-copy");
+			if (!remoteCopy.empty()) {
+				if (remoteCopy == "10") {
+					int x = config().subRect.right - 168;
+					int y = config().subRect.bottom - 16;
+					_renderer.drawFontTextureText(x, y, 12, 16, 0x993399ff, "[remoteCopyed]");
+				} else {
+					int x = config().subRect.right - 180;
+					int y = config().subRect.bottom - 16;
+					DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
+					_renderer.drawFontTextureText(x, y, 12, 16, col, "[remoteCopying]");
+				}
+			}
+		} else {
+			int x = config().subRect.right - 204;
+			int y = config().subRect.bottom - 16;
+			_renderer.drawFontTextureText(x, y, 12, 16, 0x99ff9933, "[delayedUpdating]");
+		}
 	}
 
 	{
