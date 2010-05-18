@@ -440,7 +440,7 @@ void SwitchRequestHandler::upload() {
 		try {
 			if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
 			Path dst(config().dataRoot, Path(path).toString());
-			File parent(dst.parent());
+			File parent(dst.makeDirectory());
 			if (!parent.exists()) parent.createDirectories();
 			File f(dst);
 			_log.information(Poco::format("upload: %s", f.path()));
@@ -448,7 +448,7 @@ void SwitchRequestHandler::upload() {
 			File("uploads").list(list);
 			boolean result = true;
 			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
-				File src = *it;
+				File& src = *it;
 				try {
 					if (f.exists()) {
 						f.remove();
