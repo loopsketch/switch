@@ -18,9 +18,11 @@
 #include <Poco/ConsoleChannel.h>
 #include <Poco/NullChannel.h>
 #include <Poco/FileChannel.h>
+#include <Poco/FileStream.h>
 #include <Poco/FormattingChannel.h>
 #include <Poco/format.h>
 #include <Poco/Logger.h>
+#include <Poco/LineEndingConverter.h>
 #include <Poco/Thread.h>
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
@@ -606,13 +608,28 @@ Configuration& config() {
 void saveConfiguration() {
 	_log.information("save configuration");
 	try {
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("switch-config.xml");
+		File f("switch-config.xml");
+		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration(f.path());
 		if (xml) {
-			xml->setInt("stage.brightness", _conf.brightness);
-			xml->setBool("stage.viewStatus", _conf.viewStatus);
-			xml->save("switch-config.xml");
-			xml->release();
-			_log.information("saveed configuration");
+			bool update = false;
+			if (xml->getInt("stage.brightness", -1) != _conf.brightness) {
+				xml->setInt("stage.brightness", _conf.brightness);
+				update = true;
+			}
+			if (xml->getBool("stage.viewStatus", !_conf.viewStatus) != _conf.viewStatus) {
+				xml->setBool("stage.viewStatus",  _conf.viewStatus);
+				update = true;
+			}
+			if (update) {
+				File old("switch-config.xml.old");
+				if (old.exists()) old.remove();
+				f.renameTo(old.path());
+				Poco::FileOutputStream fos("switch-config.xml");
+				Poco::OutputLineEndingConverter os(fos, Poco::LineEnding::NEWLINE_CRLF);
+				xml->save(os);
+				xml->release();
+				_log.information("saved configuration");
+			}
 		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
