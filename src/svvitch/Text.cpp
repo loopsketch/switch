@@ -86,6 +86,12 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			_textFont = mif.getProperty("font");
 			if (_textFont.empty()) _textFont = config().textFont;
 			_textHeight = mif.getNumProperty("fh", config().textHeight);
+			_c1 = mif.getHexProperty("c1", 0xffffffff);
+			_c2 = mif.getHexProperty("c2", 0xffcccccc);
+			_b1 = mif.getHexProperty("b1", 0x00cccccc);
+			_b2 = mif.getHexProperty("b2", 0xff000000);
+			_borderSize1 = mif.getFloatProperty("bs1", 4);
+			_borderSize2 = mif.getFloatProperty("bs2", 4);
 			string style = mif.getProperty("style");
 			if (style == "bold") {
 				_textStyle = Gdiplus::FontStyleBold;
@@ -481,19 +487,24 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	size_t len = wcslen(wtext.c_str());
 	GraphicsPath path;
 	path.AddString(wtext.c_str(), len, ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), Color(0xff, 0xff, 0xff), Color(0xcc, 0xcc, 0xcc), LinearGradientModeVertical);
-	SolidBrush borderBrush1(Color(0, 0xcc, 0xcc, 0xcc));
-	SolidBrush borderBrush2(Color::Black);
-	Pen pen1(&borderBrush1, 8);
-	Pen pen2(&borderBrush2, 4);
-	pen1.SetLineJoin(LineJoinRound);
-	pen2.SetLineJoin(LineJoinRound);
-	g.DrawPath(&pen1, &path);
-	g.DrawPath(&pen2, &path);
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), _c1, _c2, LinearGradientModeVertical);
+	if (_borderSize1 + _borderSize2 > 0) {
+		SolidBrush borderBrush1(_b1);
+		Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
+		pen1.SetLineJoin(LineJoinRound);
+		g.DrawPath(&pen1, &path);
+	}
+	SolidBrush borderBrush2(_b2);
+	Pen pen2(&borderBrush2, _borderSize2);
+	if (_borderSize2 > 0) {
+		pen2.SetLineJoin(LineJoinRound);
+		g.DrawPath(&pen2, &path);
+	}
     g.FillPath(&foreBrush, &path);
 
 	// pen1‚ÌƒTƒCƒY‚Årect‚ðŽæ“¾
-	path.Widen(&pen2);
+	if (_borderSize2 > 0) path.Widen(&pen2);
+
 	path.GetBounds(&rect);
 	g.Flush();
 	SAFE_DELETE(ff);

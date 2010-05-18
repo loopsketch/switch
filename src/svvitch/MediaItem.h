@@ -95,6 +95,12 @@ public:
 		return num;
 	}
 
+	const DWORD getHexProperty(const string& key, const DWORD& defaultValue) const {
+		Poco::UInt64 num = defaultValue;
+		Poco::NumberParser::tryParseHex64(getProperty(key), num);
+		return num;
+	}
+
 	const double getFloatProperty(const string& key, const double& defaultValue) const {
 		double num = defaultValue;
 		Poco::NumberParser::tryParseFloat(getProperty(key), num);

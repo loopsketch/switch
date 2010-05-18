@@ -15,6 +15,12 @@ private:
 	string _textFont;
 	Gdiplus::FontStyle _textStyle;
 	int _textHeight;
+	Gdiplus::Color _c1;
+	Gdiplus::Color _c2;
+	Gdiplus::Color _b1;
+	Gdiplus::REAL _borderSize1;
+	Gdiplus::Color _b2;
+	Gdiplus::REAL _borderSize2;
 	int _ax;
 	int _tw;
 	int _th;
