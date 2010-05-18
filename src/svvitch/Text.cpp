@@ -488,7 +488,7 @@ void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	GraphicsPath path;
 	path.AddString(wtext.c_str(), len, ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
 	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), _c1, _c2, LinearGradientModeVertical);
-	if (_borderSize1 + _borderSize2 > 0) {
+	if (_borderSize1 + _borderSize2 > F(0)) {
 		SolidBrush borderBrush1(_b1);
 		Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
 		pen1.SetLineJoin(LineJoinRound);
