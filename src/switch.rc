@@ -72,8 +72,8 @@ CAPTION "ÉoÅ[ÉWÉáÉìèÓïÒ switch"
 FONT 9, "MS UI Gothic"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
-    LTEXT           "switch, Version 0.2",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2009",IDC_STATIC,42,26,114,8
+    LTEXT           "switch, Version 0.7",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2009-2010",IDC_STATIC,42,26,114,8
     DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
 END
 
