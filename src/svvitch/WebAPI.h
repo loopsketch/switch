@@ -96,6 +96,12 @@ private:
 	/** コピー */
 	void copy();
 
+	/** バージョン */
+	void version();
+
+	/** クライアントにファイルを送信します */
+	bool sendFile(Path& path);
+
 	/** mapをJSONP形式で送信します */
 	void sendJSONP(const string& functionName, const map<string, string>& json);
 

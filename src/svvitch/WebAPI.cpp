@@ -129,33 +129,45 @@ void SwitchRequestHandler::doRequest() {
 	//vector<string> params;
 	//svvitch::split(uri.getPath().substr(1), '?', params, 2);
 	vector<string> urls;
-	svvitch::split(uri.getPath().substr(1), '/', urls, 2);
+	svvitch::split(uri.getPath().substr(1), '/', urls, 3);
 	// for (vector<string>::iterator it = urls.begin(); it != urls.end(); it++) {
 	//	_log.information(Poco::format("url %s", string(*it)));
 	// }
-	int count = urls.size();
-	if (!urls.empty()) {
-		if        (urls[0] == "switch") {
+	if (urls.size() > 1) {
+		string displayID = urls[0];
+		if        (urls[1] == "switch") {
 			switchContent();
-		} else if (urls[0] == "update") {
+		} else if (urls[1] == "update") {
 			updateWorkspace();
-		} else if (urls[0] == "set") {
-			if (urls.size() == 2) set(urls[1]);
-		} else if (urls[0] == "get") {
-			if (urls.size() == 2) get(urls[1]);
-		} else if (urls[0] == "files") {
+		} else if (urls[1] == "set") {
+			if (urls.size() == 3) set(urls[2]);
+		} else if (urls[1] == "get") {
+			if (urls.size() == 3) get(urls[2]);
+		} else if (urls[1] == "files") {
 			files();
-		} else if (urls[0] == "upload") {
+		} else if (urls[1] == "upload") {
 			upload();
-		} else if (urls[0] == "download") {
+		} else if (urls[1] == "download") {
 			download();
-		} else if (urls[0] == "copy") {
+		} else if (urls[1] == "copy") {
 			copy();
+		} else if (urls[1] == "version") {
+			version();
+		}
+
+	} else {
+		_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
+		Path src("docs", uri.getPath().substr(1));
+		File f(src);
+		if (f.exists()) {
+			if (f.isDirectory()) src = src.makeDirectory().append("index.html");
+			sendFile(src);
 		}
 	}
 
 	if (!response().sent()) {
-		sendResponse(HTTPResponse::HTTP_NOT_FOUND, Poco::format("not found: %s", request().getURI()));
+		string s = Poco::format("<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL %s was not found on this server.</p><hr><address>switch %s</address></body></html>", request().getURI(), svvitch::version());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, s);
 	}
 }
 
@@ -388,45 +400,8 @@ void SwitchRequestHandler::download() {
 		string path = form().get("path", "");
 		if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
 		Path src(config().dataRoot, Path(path).toString());
-		File f(src);
-		_log.information(Poco::format("download: %s", f.path()));
-		Poco::FileInputStream is(src.toString());
-		if (is.good()) {
-			string ext = src.getExtension();
-			File::FileSize length = f.getSize();
-			response().setContentLength(static_cast<int>(length));
-			if (ext == "png") {
-				response().setContentType("image/png");
-			} else if (ext == "jpg" || ext == "jpeg") {
-				response().setContentType("image/jpeg");
-			} else if (ext == "bmp") {
-				response().setContentType("image/bmp");
-			} else if (ext == "mpg" || ext == "mpeg") {
-				response().setContentType("video/mpeg");
-			} else if (ext == "mp4" || ext == "f4v" || ext == "264") {
-				response().setContentType("video/mp4");
-			} else if (ext == "mov") {
-				response().setContentType("video/quicktime");
-			} else if (ext == "flv") {
-				response().setContentType("video/x-flv");
-			} else if (ext == "swf") {
-				response().setContentType("application/x-shockwave-flash");
-			} else if (ext == "txt") {
-				response().setContentType("text/plain");
-			} else if (ext == "xml") {
-				response().setContentType("text/xml");
-			} else {
-				response().setContentType("application/octet-stream");
-			}
-			response().setChunkedTransferEncoding(false);
-			Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
-			is.close();
-		} else {
-			throw Poco::OpenFileException(src.toString());
-		}
-	} catch (Poco::FileException& ex) {
-		_log.warning(ex.displayText());
-		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+		_log.information(Poco::format("download: %s", src.toString()));
+		sendFile(src);
 	} catch (Poco::PathSyntaxException& ex) {
 		_log.warning(ex.displayText());
 		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
@@ -498,6 +473,66 @@ void SwitchRequestHandler::copy() {
 	}
 }
 
+void SwitchRequestHandler::version() {
+	map<string, string> params;
+	params["version"] = svvitch::version();
+	sendJSONP(form().get("callback", ""), params);
+}
+
+/** クライアントにファイルを送信します */
+bool SwitchRequestHandler::sendFile(Path& path) {
+	try {
+		Poco::FileInputStream is(path.toString());
+		if (is.good()) {
+			string ext = path.getExtension();
+			File f(path);
+			File::FileSize length = f.getSize();
+			response().setContentLength(static_cast<int>(length));
+			if (ext == "png") {
+				response().setContentType("image/png");
+			} else if (ext == "jpg" || ext == "jpeg") {
+				response().setContentType("image/jpeg");
+			} else if (ext == "bmp") {
+				response().setContentType("image/bmp");
+			} else if (ext == "gif") {
+				response().setContentType("image/gif");
+			} else if (ext == "mpg" || ext == "mpeg") {
+				response().setContentType("video/mpeg");
+			} else if (ext == "mp4" || ext == "f4v" || ext == "264") {
+				response().setContentType("video/mp4");
+			} else if (ext == "wmv") {
+				response().setContentType("video/x-ms-wmv"); 
+			} else if (ext == "mov") {
+				response().setContentType("video/quicktime");
+			} else if (ext == "flv") {
+				response().setContentType("video/x-flv");
+			} else if (ext == "swf") {
+				response().setContentType("application/x-shockwave-flash");
+			} else if (ext == "pdf") {
+				response().setContentType("application/pdf");
+			} else if (ext == "txt") {
+				response().setContentType("text/plain");
+			} else if (ext == "htm" || ext == "html") {
+				response().setContentType("text/html");
+			} else if (ext == "xml") {
+				response().setContentType("text/xml");
+			} else {
+				response().setContentType("application/octet-stream");
+			}
+			response().setChunkedTransferEncoding(false);
+			Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
+			is.close();
+			return true;
+		} else {
+			throw Poco::OpenFileException(path.toString());
+		}
+	} catch (Poco::FileException& ex) {
+		_log.warning(ex.displayText());
+		//sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	}
+	return false;
+}
+
 void SwitchRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
 	response().setChunkedTransferEncoding(true);
 	response().setContentType("text/javascript; charset=UTF-8");
@@ -534,6 +569,11 @@ void SwitchRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const s
 
 	string statusCode(Poco::NumberFormatter::format(static_cast<int>(response().getStatus())));
 	response().setChunkedTransferEncoding(true);
-	response().setContentType("text/plain");
-	response().send() << Poco::format("%s - %s", statusCode, message);
+	if (message.find("<html>") == string::npos) {
+		response().setContentType("text/plain");
+		response().send() << Poco::format("%s - %s", statusCode, message);
+	} else {
+		response().setContentType("text/html");
+		response().send() << message;
+	}
 }
