@@ -18,6 +18,9 @@ using Poco::MD5Engine;
 using Poco::DigestOutputStream;
 using Poco::StreamCopier;
 
+const string svvitch::version() {
+	return "0.8";
+}
 
 void svvitch::sjis_utf8(const string& in, string& out) {
 	wstring wstring;

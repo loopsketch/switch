@@ -13,6 +13,9 @@ using Poco::Path;
 
 
 namespace svvitch {
+	/** ƒo[ƒWƒ‡ƒ“ */
+	const string version();
+
 	/** SJIS>UTF-8‚É•ÏŠ· */
 	void sjis_utf8(const string& in, string& out);
 
