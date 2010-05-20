@@ -6,7 +6,6 @@
 #include <Poco/FileStream.h>
 #include <Poco/format.h>
 #include <Poco/LineEndingConverter.h>
-#include <Poco/Logger.h>
 #include <Poco/NullChannel.h>
 #include <Poco/FileChannel.h>
 #include <Poco/FormattingChannel.h>
@@ -15,7 +14,8 @@
 #include "Utils.h"
 
 
-Configuration::Configuration() {
+Configuration::Configuration(): _log(Poco::Logger::get(""))
+{
 }
 
 Configuration::~Configuration() {
@@ -36,8 +36,7 @@ bool Configuration::initialize() {
 			logFile = new Poco::FileChannel(path);
 		}
 		fc->setChannel(logFile);
-		Poco::Logger& log = Poco::Logger::get("");
-		log.setChannel(fc);
+		_log.setChannel(fc);
 		// ローカル時刻指定
 		fc->setProperty(Poco::FileChannel::PROP_TIMES, "local");
 		// アーカイブファイル名への付加文字列[number/timestamp] (日付)
@@ -50,7 +49,7 @@ bool Configuration::initialize() {
 		fc->setProperty(Poco::FileChannel::PROP_PURGEAGE, xml->getString("log.purgeage", "5days"));
 		fc->release();
 		pat->release();
-		log.information("*** configuration");
+		_log.information("*** configuration");
 
 		windowTitle = xml->getString("display.title", "switch");
 		mainRect.left = xml->getInt("display.x", 0);
@@ -71,14 +70,14 @@ bool Configuration::initialize() {
 		draggable = xml->getBool("display.draggable", true);
 		mouse = xml->getBool("display.mouse", true);
 		string windowStyles(fullsceen?"fullscreen":"window");
-		log.information(Poco::format("display %dx%d@%d %s", w, h, mainRate, windowStyles));
+		_log.information(Poco::format("display %dx%d@%d %s", w, h, mainRate, windowStyles));
 		useClip = xml->getBool("display.clip.use", false);
 		clipRect.left = xml->getInt("display.clip.x1", 0);
 		clipRect.top = xml->getInt("display.clip.y1", 0);
 		clipRect.right = xml->getInt("display.clip.x2", 0);
 		clipRect.bottom = xml->getInt("display.clip.y2", 0);
 		string useClip(useClip?"use":"not use");
-		log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom));
+		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, clipRect.left, clipRect.top, clipRect.right, clipRect.bottom));
 
 		name = xml->getString("stage.name", "");
 		description = xml->getString("stage.description", "");
@@ -102,8 +101,8 @@ bool Configuration::initialize() {
 		} else {
 			splitType = 0;
 		}
-		log.information(Poco::format("stage (%ld,%ld) %ldx%ld", stageRect.left, stageRect.top, stageRect.right, stageRect.bottom));
-		log.information(Poco::format("split <%s:%d> %dx%d x%d", st, splitType, cw, ch, cycles));
+		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", stageRect.left, stageRect.top, stageRect.right, stageRect.bottom));
+		if (splitType != 0) _log.information(Poco::format("split <%s:%d> %dx%d x%d", st, splitType, cw, ch, cycles));
 
 		string engines = xml->getString("movieEngines", "ffmpeg");
 		svvitch::split(engines, ',', movieEngines);
@@ -136,9 +135,9 @@ bool Configuration::initialize() {
 //		vpCommandFile = xml->getString("vpCommand", "");
 //		monitorFile = xml->getString("monitor", "");
 		dataRoot = Path(xml->getString("data-root", "")).absolute();
-		log.information(Poco::format("data root: %s", dataRoot.toString()));
+		_log.information(Poco::format("data root: %s", dataRoot.toString()));
 		workspaceFile = Path(dataRoot, xml->getString("workspace", "workspace.xml"));
-		log.information(Poco::format("workspace: %s", workspaceFile.toString()));
+		_log.information(Poco::format("workspace: %s", workspaceFile.toString()));
 		newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
 
 		serverPort = xml->getInt("server.port", 9090);
@@ -165,8 +164,7 @@ bool Configuration::initialize() {
 }
 
 void Configuration::save() {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("save configuration");
+	_log.information("save configuration");
 	try {
 		Poco::File f("switch-config.xml");
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration(f.path());
@@ -188,11 +186,11 @@ void Configuration::save() {
 				Poco::OutputLineEndingConverter os(fos, Poco::LineEnding::NEWLINE_CRLF);
 				xml->save(os);
 				xml->release();
-				log.information("saved configuration");
+				_log.information("saved configuration");
 			}
 		}
 	} catch (Poco::Exception& ex) {
-		log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
+		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 	}
 }
 

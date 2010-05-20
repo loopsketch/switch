@@ -5,6 +5,7 @@
 #include <vector>
 #include <Poco/Path.h>
 #include <Poco/Channel.h>
+#include <Poco/Logger.h>
 
 using std::string;
 using std::wstring;
@@ -14,6 +15,9 @@ using Poco::Path;
 
 class Configuration
 {
+private:
+	Poco::Logger& _log;
+
 public:
 	Poco::Channel* logFile;
 
