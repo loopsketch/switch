@@ -89,6 +89,13 @@ public:
 		return NULL_STRING;
 	}
 
+	const string& getProperty(const string& key, const string& defaultValue) const {
+		if (_properties.find(key) != _properties.end()) {
+			return _properties[key];
+		}
+		return defaultValue;
+	}
+
 	const int getNumProperty(const string& key, const int& defaultValue) const {
 		int num = defaultValue;
 		Poco::NumberParser::tryParse(getProperty(key), num);
