@@ -4,15 +4,17 @@
 //=============================================================
 #define _WIN32_DCOM
 
+#include <Poco/Net/NetworkInterface.h>
 #include "Renderer.h"
-
 #include "Scene.h"
+#include "Utils.h"
 #include <Poco/File.h>
 #include <Poco/string.h>
 #include <Poco/format.h>
 #include <Poco/UnicodeConverter.h>
 #include <psapi.h>
 #include <errors.h>
+#include <winioctl.h>
 
 
 Renderer::Renderer():
@@ -606,6 +608,7 @@ void Renderer::renderScene(const DWORD current) {
 		}
 	}
 
+	Poco::Net::NetworkInterface::NetworkInterfaceList interfaces = Poco::Net::NetworkInterface::list();
 	MEMORYSTATUS ms;
 	ms.dwLength = sizeof(MEMORYSTATUS);
 	GlobalMemoryStatus(&ms);
@@ -637,11 +640,21 @@ void Renderer::renderScene(const DWORD current) {
 		}
 
 		if (config().viewStatus) {
-			string time = Poco::format("%02lu:%02lu:%02lu.%03lu", current / 3600000, current / 60000 % 60, current / 1000 % 60, current % 1000);
+			string time = Poco::format("%02lu:%02lu:%02lu", current / 3600000, current / 60000 % 60, current / 1000 % 60);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
-			string memory = Poco::format("ram:%03dMB/avail:%03dMB/used:%03dkB vram:%03uMB", (mem / 1024), availMem, (mem - _mem), _availableTextureMem);
+			string address;
+			if (!interfaces.empty()) {
+				for (Poco::Net::NetworkInterface::NetworkInterfaceList::const_iterator it = interfaces.begin(); it != interfaces.end(); it++) {
+					Poco::Net::NetworkInterface netIF = *it;
+					if (!netIF.address().isLoopback()) {
+						if (!address.empty()) address += "/";
+						address += netIF.address().toString();
+					}
+				}
+			}
+			string memory = Poco::format("ram>%03dMB(%03dMB) vram>%03uMB", (mem / 1024), availMem, _availableTextureMem);
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99ffffff, Poco::format("FPS:%03lu %s %s", fps, time, memory));
+			drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99669966, Poco::format("ver%s %02lufps run>%s ip>%s %s", svvitch::version(), fps, time, address, memory));
 		}
 		_device->EndScene();
 	}
