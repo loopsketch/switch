@@ -59,7 +59,7 @@ bool Configuration::initialize() {
 		int h = xml->getInt("display.height", 768);
 		mainRect.right = w;
 		mainRect.bottom = h;
-		mainRate = xml->getInt("display.rate", 0 /** D3DPRESENT_RATE_DEFAULT */);
+		mainRate = xml->getInt("display.rate", 0);
 		subRect.left = xml->getInt("display[1].x", mainRect.left);
 		subRect.top = xml->getInt("display[1].y", mainRect.top);
 		subRect.right = xml->getInt("display[1].width", mainRect.right);
@@ -117,22 +117,13 @@ bool Configuration::initialize() {
 			string s;
 			Poco::UnicodeConverter::toUTF8(L"ÇlÇr ÉSÉVÉbÉN", s);
 			textFont = xml->getString("stage.text.font", s);
-			string style = xml->getString("stage.text.style", "");
-			if (style == "bold") {
-				textStyle = Gdiplus::FontStyleBold;
-			} else if (style == "italic") {
-				textStyle = Gdiplus::FontStyleItalic;
-			} else if (style == "bolditalic") {
-				textStyle = Gdiplus::FontStyleBoldItalic;
-			} else {
-				textStyle = Gdiplus::FontStyleRegular;
-			}
+			textStyle = xml->getString("stage.text.style", "");
 			textHeight = xml->getInt("stage.text.height", stageRect.bottom - 2);
 		} else {
 			string s;
 			Poco::UnicodeConverter::toUTF8(L"ÇlÇr ÉSÉVÉbÉN", s);
 			textFont = s;
-			textStyle = Gdiplus::FontStyleRegular;
+			textStyle = "";
 			textHeight = stageRect.bottom - 2;
 		}
 

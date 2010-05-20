@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-#include <gdiplus.h>
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -44,7 +42,7 @@ public:
 	bool viewStatus;
 	int imageSplitWidth;
 	string textFont;
-	Gdiplus::FontStyle textStyle;
+	string textStyle;
 	int textHeight;
 
 	bool mouse;
