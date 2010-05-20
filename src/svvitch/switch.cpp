@@ -6,7 +6,6 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <psapi.h>
-//#include <gdiplus.h>
 #include <Dbt.h>
 
 #include <Poco/DOM/DOMParser.h>
@@ -68,7 +67,7 @@ static Configuration _conf;
 static RendererPtr _renderer;
 //static ui::UserInterfaceManagerPtr _uim;
 
-static string _interruptFile;
+//static string _interruptFile;
 
 
 //-------------------------------------------------------------
@@ -95,7 +94,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //_CrtDumpMemoryLeaks();
 #endif
 
-	if (!guiConfiguration()) return 0;
+	avcodec_register_all();
+	avdevice_register_all();
+	av_register_all();
+	_conf.initialize();
 
 	HWND hWnd;
 	MSG msg;
@@ -302,18 +304,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return exitCode;
 }
 
-
-
-//-------------------------------------------------------------
-// メッセージ処理用コールバック関数
-// 引数
-//		hWnd	: ウィンドウハンドル
-//		msg		: メッセージ
-//		wParam	: メッセージの最初のパラメータ
-//		lParam	: メッセージの2番目のパラメータ
-// 戻り値
-//		メッセージ処理結果
-//-------------------------------------------------------------
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
@@ -399,7 +389,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				vector<WCHAR> dropFile(255);
 				DragQueryFile(hDrop, 0, &dropFile[0], 256); /* 最初のファイル名を取得 */
 				DragFinish(hDrop); /* ドロップの終了処理 */
-				Poco::UnicodeConverter::toUTF8(&dropFile[0], _interruptFile);
+				//Poco::UnicodeConverter::toUTF8(&dropFile[0], _interruptFile);
 			}
 			break;
 
@@ -438,23 +428,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-// GUIの設定
-bool guiConfiguration()
-{
-	// ffmpegの初期化
-	avcodec_register_all();
-	avdevice_register_all();
-	av_register_all();
-	_conf.initialize();
-	return false;
-}
-
 Configuration& config() {
 	return _conf;
 }
 
-
-// スワップアウト
 void swapout() {
 	Poco::Logger& log = Poco::Logger::get("");
 	log.information("*** exec memory swapout");

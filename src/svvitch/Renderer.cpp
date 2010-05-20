@@ -72,7 +72,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	ZeroMemory(&_presentParams[0], sizeof(D3DPRESENT_PARAMETERS));
 	if (config().fullsceen) {
 		_presentParams[0].Windowed = FALSE;
-		_presentParams[0].FullScreen_RefreshRateInHz = config().mainRate;
+		_presentParams[0].FullScreen_RefreshRateInHz = (config().mainRate == 0)?D3DPRESENT_RATE_DEFAULT:config().mainRate;
 //		_presentParams[0].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
 		_presentParams[0].BackBufferFormat = d3ddm.Format;
 	} else {

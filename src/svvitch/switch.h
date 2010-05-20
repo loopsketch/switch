@@ -9,16 +9,8 @@ LONG WINAPI ExceptionHandler(struct _EXCEPTION_POINTERS* pExceptionInfo);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-bool guiConfiguration();
-
-/**
- * 設定オブジェクトを取得します
- */
+/** 設定オブジェクトを取得します */
 Configuration& config();
 
-/**
- * 設定保存
- */
-void saveConfiguration();
-
+/** スワップアウトを行います */
 void swapout();

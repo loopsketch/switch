@@ -51,7 +51,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 						while (!ilec.eof()) {
 							line[0] = '\0';
 							ilec.getline(line, sizeof(line));
-							if (!text.empty()) text += "     ";
+							if (!text.empty()) text += "          ";
 							if (isSJIS) {
 								// sjis
 								wstring wline;
@@ -92,7 +92,8 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			_b2 = mif.getHexProperty("b2", 0xff000000);
 			_borderSize1 = mif.getFloatProperty("bs1", 4);
 			_borderSize2 = mif.getFloatProperty("bs2", 4);
-			string style = mif.getProperty("style");
+			string style = mif.getProperty("style",  config().textStyle);
+
 			if (style == "bold") {
 				_textStyle = Gdiplus::FontStyleBold;
 			} else if (style == "italic") {
@@ -100,7 +101,7 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 			} else if (style == "bolditalic") {
 				_textStyle = Gdiplus::FontStyleBoldItalic;
 			} else {
-				_textStyle = config().textStyle;
+				_textStyle = Gdiplus::FontStyleRegular;
 			}
 
 			_x = mif.getNumProperty("x", 0);
