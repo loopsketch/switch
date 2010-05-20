@@ -685,6 +685,7 @@ void MainScene::copyRemote(const string& remote) {
 				doc->release();
 
 				setRemoteStatus(remote, "remote-copy", "3");
+				_copyRemoteFiles = remoteFiles.size();
 				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
 					_log.information(Poco::format("remote: %s", *it));
 					Path out(config().dataRoot, *it);
@@ -692,7 +693,9 @@ void MainScene::copyRemote(const string& remote) {
 					if (copyRemoteFile(remote, *it, out, true)) {
 					} else {
 					}
+					_copyRemoteFiles--;
 				}
+				_copyRemoteFiles = 0;
 
 				setRemoteStatus(remote, "remote-copy", "4");
 				File dst(config().workspaceFile);
@@ -1448,7 +1451,7 @@ void MainScene::draw2() {
 	if (config().viewStatus) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 128, 24, 32, 0x996699ff, config().name);
-		_renderer.drawTexture((config().name.size() + 1) * 24, config().subRect.bottom - 128, _description, 0, 0xccff9966, 0xccff9966, 0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture((config().name.size() + 1) * 24, config().subRect.bottom - 128, _description, 0, 0xcc6666ff, 0xcc6666ff, 0x993333cc, 0x993333cc);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 96, 12, 16, 0x99ffffff, status1);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "frame");
 		_renderer.drawFontTextureText(144, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "time");
@@ -1470,7 +1473,7 @@ void MainScene::draw2() {
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99ffffff, Poco::format("[%s] play contents:%04d copy<%d> playing<%d> next:%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d copy>%02d current>%d state>%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
 
 		string delayedUpdate = getStatus("delayed-update");
 		if (delayedUpdate.empty()) {
