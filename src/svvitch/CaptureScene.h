@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Scene.h"
-#include "ui/UserInterfaceManager.h"
+//#include "ui/UserInterfaceManager.h"
 #include "streams.h"
 #include "Dvdmedia.h"
 #include "DSVideoRenderer.h"
