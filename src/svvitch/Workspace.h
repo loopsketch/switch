@@ -4,6 +4,7 @@
 #include <Poco/HashMap.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
+#include <Poco/Path.h>
 
 #include "Container.h"
 #include "MediaItem.h"

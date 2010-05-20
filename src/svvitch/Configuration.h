@@ -1,9 +1,12 @@
 #pragma once
 
+#include <windows.h>
+#include <gdiplus.h>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <Poco/Path.h>
+#include <Poco/Channel.h>
 
 using std::string;
 using std::wstring;
@@ -14,6 +17,8 @@ using Poco::Path;
 class Configuration
 {
 public:
+	Poco::Channel* logFile;
+
 	string windowTitle;
 	string name;
 	string description;
@@ -34,9 +39,6 @@ public:
 
 	vector<string> movieEngines;
 	vector<string> scenes;
-	bool hasScene(string s) {
-		return std::find(scenes.begin(), scenes.end(), s) != scenes.end();
-	}
 
 	int brightness;
 	bool viewStatus;
@@ -59,6 +61,18 @@ public:
 	int serverPort;
 	int maxQueued;
 	int maxThreads;
+
+	bool outCastLog;
+
+	Configuration();
+
+	virtual ~Configuration();
+
+	bool initialize();
+
+	void save();
+
+	bool hasScene(string s);
 };
 
 typedef Configuration* ConfigurationPtr;

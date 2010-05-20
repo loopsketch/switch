@@ -6,7 +6,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <psapi.h>
-#include <gdiplus.h>
+//#include <gdiplus.h>
 #include <Dbt.h>
 
 #include <Poco/DOM/DOMParser.h>
@@ -14,19 +14,10 @@
 #include <Poco/DOM/Element.h>
 #include <Poco/DOM/NodeList.h>
 #include <Poco/Exception.h>
-#include <Poco/Channel.h>
-#include <Poco/ConsoleChannel.h>
-#include <Poco/NullChannel.h>
-#include <Poco/FileChannel.h>
-#include <Poco/FileStream.h>
-#include <Poco/FormattingChannel.h>
 #include <Poco/format.h>
 #include <Poco/Logger.h>
-#include <Poco/LineEndingConverter.h>
 #include <Poco/Thread.h>
-#include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
-#include <Poco/PatternFormatter.h>
 #include "Poco/Net/HTTPStreamFactory.h"
 #include <Poco/Net/HTTPServer.h>
 #include <Poco/Net/HTTPServerParams.h>
@@ -66,19 +57,16 @@ extern "C" {
 
 using Poco::AutoPtr;
 using Poco::File;
-using Poco::Util::XMLConfiguration;
 using Poco::XML::Document;
 using Poco::XML::Element;
 using std::stringbuf;
 
 static TCHAR clsName[] = TEXT("switchClass"); // クラス名
 
-static Poco::Channel* _logFile;
-static Poco::Logger& _log = Poco::Logger::get("");
 static Configuration _conf;
 
 static RendererPtr _renderer;
-static ui::UserInterfaceManagerPtr _uim;
+//static ui::UserInterfaceManagerPtr _uim;
 
 static string _interruptFile;
 
@@ -212,12 +200,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// WM_PAINTが呼ばれないようにする
 	ValidateRect(hWnd, 0);
 
+	Poco::Logger& log = Poco::Logger::get("");
 #ifdef _DEBUG
-	_log.information("*** system start (debug)");
+	log.information("*** system start (debug)");
 #else 
 	//#pragma omp parallel
 	//{
-	//	_log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
+	//	log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
 	//}
 #endif
 
@@ -229,8 +218,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 0;	// 初期化失敗
 	}
 
-	_uim = new ui::UserInterfaceManager(*_renderer);
-	_uim->initialize();
+	//_uim = new ui::UserInterfaceManager(*_renderer);
+	//_uim->initialize();
 	// シーンの生成
 	CaptureScenePtr captureScene = NULL;
 	if (_conf.hasScene("capture")) {
@@ -242,7 +231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //	workspace->parse();
 	MainScenePtr mainScene = NULL;
 	if (true) {
-		mainScene = new MainScene(*_renderer, *_uim, _conf.workspaceFile);
+		mainScene = new MainScene(*_renderer, _conf.workspaceFile);
 		_renderer->addScene("main", mainScene);
 	}
 //	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
@@ -297,19 +286,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Poco::Thread::sleep(_conf.frameIntervals);
 	}
 
-	_log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
+	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
 	server->stop();
 	// while (server->currentThreads() > 0) Sleep(200);
 	Sleep(1000);
 	SAFE_DELETE(server);
 
 	int exitCode = _renderer->getExitCode();
-	_log.information(Poco::format("shutdown system (%d)", exitCode));
+	log.information(Poco::format("shutdown system (%d)", exitCode));
 	SAFE_DELETE(_renderer);
-	SAFE_DELETE(_uim);
-	saveConfiguration();
-	_logFile->release();
-//	_log.shutdown();
+	//SAFE_DELETE(_uim);
+	_conf.save();
 	CoUninitialize();
 
 	return exitCode;
@@ -384,25 +371,25 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_MOUSEMOVE:
-			if (_uim) _uim->notifyMouseMove(LOWORD(lParam), HIWORD(lParam));
+			//if (_uim) _uim->notifyMouseMove(LOWORD(lParam), HIWORD(lParam));
 			break;
 		case WM_MOUSEWHEEL:
-			if (_uim) _uim->notifyMouseWheel((SHORT)HIWORD(wParam));
+			//if (_uim) _uim->notifyMouseWheel((SHORT)HIWORD(wParam));
 			break;
 		case WM_LBUTTONDOWN:
-			if (_uim) _uim->notifyButtonDownL(LOWORD(lParam), HIWORD(lParam));
+			//if (_uim) _uim->notifyButtonDownL(LOWORD(lParam), HIWORD(lParam));
 			::SetCapture(hWnd);
 			break;
 		case WM_LBUTTONUP:
-			if (_uim) _uim->notifyButtonUpL(LOWORD(lParam), HIWORD(lParam));
+			//if (_uim) _uim->notifyButtonUpL(LOWORD(lParam), HIWORD(lParam));
 			::ReleaseCapture();
 			break;
 		case WM_RBUTTONDOWN:
-			_uim->notifyButtonDownR(LOWORD(lParam), HIWORD(lParam));
+			//_uim->notifyButtonDownR(LOWORD(lParam), HIWORD(lParam));
 			::SetCapture(hWnd);
 			break;
 		case WM_RBUTTONUP:
-			if (_uim) _uim->notifyButtonUpR(LOWORD(lParam), HIWORD(lParam));
+			//if (_uim) _uim->notifyButtonUpR(LOWORD(lParam), HIWORD(lParam));
 			::ReleaseCapture();
 			break;
 
@@ -458,146 +445,7 @@ bool guiConfiguration()
 	avcodec_register_all();
 	avdevice_register_all();
 	av_register_all();
-
-	try {
-		XMLConfiguration* xml = new XMLConfiguration("switch-config.xml");
-		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log.pattern", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
-		pat->setProperty(Poco::PatternFormatter::PROP_TIMES, "local");
-		Poco::FormattingChannel* fc = new Poco::FormattingChannel(pat);
-		string path = xml->getString("log.file", "switch.log");
-		if (path.empty()) {
-			_logFile = new Poco::NullChannel();
-		} else {
-			_logFile = new Poco::FileChannel(path);
-		}
-		fc->setChannel(_logFile);
-		_log.setChannel(fc);
-		// ローカル時刻指定
-		fc->setProperty(Poco::FileChannel::PROP_TIMES, "local");
-		// アーカイブファイル名への付加文字列[number/timestamp] (日付)
-		fc->setProperty(Poco::FileChannel::PROP_ARCHIVE, xml->getString("log.archive", "timestamp"));
-		// 圧縮[true/false] (あり)
-		fc->setProperty(Poco::FileChannel::PROP_COMPRESS, xml->getString("log.compress", "true"));
-		// ローテーション単位[never/[day,][hh]:mm/daily/weekly/monthly/<n>minutes/hours/days/weeks/months/<n>/<n>K/<n>M] (日)
-		fc->setProperty(Poco::FileChannel::PROP_ROTATION, xml->getString("log.rotation", "daily"));
-		// 保持期間[<n>seconds/<n>minutes/<n>hours/<n>days/<n>weeks/<n>months] (5日間)
-		fc->setProperty(Poco::FileChannel::PROP_PURGEAGE, xml->getString("log.purgeage", "5days"));
-		fc->release();
-		pat->release();
-		_log.information("*** configuration");
-
-		_conf.windowTitle = xml->getString("display.title", "switch");
-		_conf.mainRect.left = xml->getInt("display.x", 0);
-		_conf.mainRect.top = xml->getInt("display.y", 0);
-		int w = xml->getInt("display.width", 1024);
-		int h = xml->getInt("display.height", 768);
-		_conf.mainRect.right = w;
-		_conf.mainRect.bottom = h;
-		_conf.mainRate = xml->getInt("display.rate", D3DPRESENT_RATE_DEFAULT);
-		_conf.subRect.left = xml->getInt("display[1].x", _conf.mainRect.left);
-		_conf.subRect.top = xml->getInt("display[1].y", _conf.mainRect.top);
-		_conf.subRect.right = xml->getInt("display[1].width", _conf.mainRect.right);
-		_conf.subRect.bottom = xml->getInt("display[1].height", _conf.mainRect.bottom);
-		_conf.subRate = xml->getInt("display[1].rate", _conf.mainRate);
-		_conf.frameIntervals = xml->getInt("display.frameIntervals", 3);
-		_conf.frame = xml->getBool("display.frame", true);
-		_conf.fullsceen = xml->getBool("display.fullscreen", true);
-		_conf.draggable = xml->getBool("display.draggable", true);
-		_conf.mouse = xml->getBool("display.mouse", true);
-		string windowStyles(_conf.fullsceen?"fullscreen":"window");
-		_log.information(Poco::format("display %dx%d@%d %s", w, h, _conf.mainRate, windowStyles));
-		_conf.useClip = xml->getBool("display.clip.use", false);
-		_conf.clipRect.left = xml->getInt("display.clip.x1", 0);
-		_conf.clipRect.top = xml->getInt("display.clip.y1", 0);
-		_conf.clipRect.right = xml->getInt("display.clip.x2", 0);
-		_conf.clipRect.bottom = xml->getInt("display.clip.y2", 0);
-		string useClip(_conf.useClip?"use":"not use");
-		_log.information(Poco::format("clip [%s] %ld,%ld %ldx%ld", useClip, _conf.clipRect.left, _conf.clipRect.top, _conf.clipRect.right, _conf.clipRect.bottom));
-
-		_conf.name = xml->getString("stage.name", "");
-		_conf.description = xml->getString("stage.description", "");
-		int cw = xml->getInt("stage.split.width", w);
-		int ch = xml->getInt("stage.split.height", h);
-		int cycles = xml->getInt("stage.split.cycles", h / ch);
-		_conf.splitSize.cx = cw;
-		_conf.splitSize.cy = ch;
-		_conf.stageRect.left = xml->getInt("stage.x", 0);
-		_conf.stageRect.top = xml->getInt("stage.y", 0);
-		_conf.stageRect.right = xml->getInt("stage.width", w * cycles);
-		_conf.stageRect.bottom = xml->getInt("stage.height", ch);
-		_conf.splitCycles = cycles;
-		string splitType = xml->getString("stage.split.type", "none");
-		if (splitType == "vertical" || splitType == "vertical-down") {
-			_conf.splitType = 1;
-		} else if (splitType == "vertical-up") {
-			_conf.splitType = 2;
-		} else if (splitType == "horizontal") {
-			_conf.splitType = 11;
-		} else {
-			_conf.splitType = 0;
-		}
-		_log.information(Poco::format("stage (%ld,%ld) %ldx%ld", _conf.stageRect.left, _conf.stageRect.top, _conf.stageRect.right, _conf.stageRect.bottom));
-		_log.information(Poco::format("split <%s:%d> %dx%d x%d", splitType, _conf.splitType, cw, ch, cycles));
-
-		string movieEngines = xml->getString("movieEngines", "ffmpeg");
-		svvitch::split(movieEngines, ',', _conf.movieEngines);
-		string scenes = xml->getString("scenes", "");
-		svvitch::split(scenes, ',', _conf.scenes);
-		_conf.brightness = xml->getInt("stage.brightness", 100);
-		_conf.viewStatus = xml->getBool("stage.viewStatus", false);
-
-		_conf.imageSplitWidth = xml->getInt("stage.imageSplitWidth", 0);
-		if (xml->hasProperty("stage.text")) {
-			string s;
-			Poco::UnicodeConverter::toUTF8(L"ＭＳ ゴシック", s);
-			_conf.textFont = xml->getString("stage.text.font", s);
-			string style = xml->getString("stage.text.style", "");
-			if (style == "bold") {
-				_conf.textStyle = Gdiplus::FontStyleBold;
-			} else if (style == "italic") {
-				_conf.textStyle = Gdiplus::FontStyleItalic;
-			} else if (style == "bolditalic") {
-				_conf.textStyle = Gdiplus::FontStyleBoldItalic;
-			} else {
-				_conf.textStyle = Gdiplus::FontStyleRegular;
-			}
-			_conf.textHeight = xml->getInt("stage.text.height", _conf.stageRect.bottom - 2);
-		} else {
-			string s;
-			Poco::UnicodeConverter::toUTF8(L"ＭＳ ゴシック", s);
-			_conf.textFont = s;
-			_conf.textStyle = Gdiplus::FontStyleRegular;
-			_conf.textHeight = _conf.stageRect.bottom - 2;
-		}
-
-		string defaultFont = xml->getString("ui.defaultFont", "");
-		wstring ws;
-		Poco::UnicodeConverter::toUTF16(defaultFont, ws);
-		_conf.defaultFont = ws;
-		_conf.asciiFont = xml->getString("ui.asciiFont", "Defactica");
-		_conf.multiByteFont = xml->getString("ui.multiByteFont", "A-OTF-ShinGoPro-Regular.ttf");
-//		_conf.vpCommandFile = xml->getString("vpCommand", "");
-//		_conf.monitorFile = xml->getString("monitor", "");
-		_conf.dataRoot = Path(xml->getString("data-root", "")).absolute();
-		_log.information(Poco::format("data root: %s", _conf.dataRoot.toString()));
-		_conf.workspaceFile = Path(_conf.dataRoot, xml->getString("workspace", "workspace.xml"));
-		_log.information(Poco::format("workspace: %s", _conf.workspaceFile.toString()));
-		_conf.newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
-
-		_conf.serverPort = xml->getInt("server.port", 9090);
-		_conf.maxQueued = xml->getInt("server.max-queued", 50);
-		_conf.maxThreads = xml->getInt("server.max-threads", 8);
-
-		xml->release();
-		return true;
-	} catch (Poco::Exception& ex) {
-		string s;
-		Poco::UnicodeConverter::toUTF8(L"設定ファイル(switch-config.xml)を確認してください\n「%s」", s);
-		wstring utf16;
-		Poco::UnicodeConverter::toUTF16(Poco::format(s, ex.displayText()), utf16);
-		::MessageBox(HWND_DESKTOP, utf16.c_str(), L"エラー", MB_OK);
-		_log.warning(ex.displayText());
-	}
+	_conf.initialize();
 	return false;
 }
 
@@ -605,40 +453,11 @@ Configuration& config() {
 	return _conf;
 }
 
-void saveConfiguration() {
-	_log.information("save configuration");
-	try {
-		File f("switch-config.xml");
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration(f.path());
-		if (xml) {
-			bool update = false;
-			if (xml->getInt("stage.brightness", -1) != _conf.brightness) {
-				xml->setInt("stage.brightness", _conf.brightness);
-				update = true;
-			}
-			if (xml->getBool("stage.viewStatus", !_conf.viewStatus) != _conf.viewStatus) {
-				xml->setBool("stage.viewStatus",  _conf.viewStatus);
-				update = true;
-			}
-			if (update) {
-				File old("switch-config.xml.old");
-				if (old.exists()) old.remove();
-				f.renameTo(old.path());
-				Poco::FileOutputStream fos("switch-config.xml");
-				Poco::OutputLineEndingConverter os(fos, Poco::LineEnding::NEWLINE_CRLF);
-				xml->save(os);
-				xml->release();
-				_log.information("saved configuration");
-			}
-		}
-	} catch (Poco::Exception& ex) {
-		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
-	}
-}
 
 // スワップアウト
 void swapout() {
-	_log.information("*** exec memory swapout");
+	Poco::Logger& log = Poco::Logger::get("");
+	log.information("*** exec memory swapout");
 	EmptyWorkingSet(GetCurrentProcess());
 	return;
 
@@ -646,10 +465,10 @@ void swapout() {
 	DWORD bsize = 0;
 	/* プロセス識別子を取得する */
 	if (EnumProcesses(idProcess, sizeof(idProcess), &bsize) == FALSE) {
-		_log.warning("failed EnumProcesses()");
+		log.warning("failed EnumProcesses()");
 		return;
 	}
-	_log.information("*** exec memory swapout");
+	log.information("*** exec memory swapout");
 	int proc_num = bsize / sizeof(DWORD);
 	WCHAR name[1024];
 	for (int i = 0; i < proc_num; i++) {
@@ -671,7 +490,7 @@ void swapout() {
 					string swapout = swapouted?"<swapouted>":"";
 					string nameUTF8;
 					Poco::UnicodeConverter::toUTF8(wstring(name), nameUTF8);
-					_log.information(Poco::format("process: %20s %05dkB%s", nameUTF8, mem, swapout));
+					log.information(Poco::format("process: %20s %05dkB%s", nameUTF8, mem, swapout));
 				}
 			}
 			CloseHandle(handle);

@@ -28,8 +28,6 @@
 #include "Image.h"
 #include "FFMovieContent.h"
 #include "Text.h"
-#include "CvContent.h"
-#include "CaptureContent.h"
 #include "DSContent.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
@@ -37,14 +35,18 @@
 
 #include "Utils.h"
 
+#include "CaptureContent.h"
+#ifdef USE_OPENCV
+#include "CvContent.h"
+#endif
 
 using Poco::XML::Document;
 using Poco::XML::Element;
 using Poco::XML::NodeList;
 
 
-MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile):
-	Scene(renderer), _uim(uim), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
+MainScene::MainScene(Renderer& renderer, Path& workspaceFile):
+	Scene(renderer), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepareContent(this, &MainScene::prepareContent),
 	activePrepareNextContent(this, &MainScene::prepareNextContent),
 	activeSwitchContent(this, &MainScene::switchContent),
@@ -54,7 +56,7 @@ MainScene::MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& wo
 	_doPrepareNext(false), _preparingNext(false), _doSwitchNext(false), _doSwitchPrepared(false), _transition(NULL),
 	_description(NULL), _playlistName(NULL), _currentName(NULL), _nextPlaylistName(NULL), _nextName(NULL),
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
-	_initializing(false), _running(false),
+	_initializing(false), _running(false), _castLog(NULL),
 	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
 	_copyRemoteFiles(0), _interrupttedContent(NULL)
 {
@@ -66,6 +68,10 @@ MainScene::~MainScene() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it = _contents.erase(it)) {
 		SAFE_DELETE(*it);
+	}
+	if (_castLog) {
+		_castLog->close();
+		SAFE_DELETE(_castLog);
 	}
 
 	delayedReleaseContainer();
@@ -139,6 +145,11 @@ bool MainScene::initialize() {
 	if (texture) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_removableIcon = texture;
+	}
+
+	if (config().outCastLog) {
+		File logDir("logs/");
+		if (!logDir.exists()) logDir.createDirectories();
 	}
 
 	_workspace = new Workspace(_workspaceFile);
@@ -476,17 +487,6 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 		case MediaTypeText:
 			break;
 
-		case MediaTypeCv:
-			{
-				CvContentPtr cv = new CvContent(_renderer);
-				if (cv->open(media)) {
-					container->add(cv);
-				} else {
-					SAFE_DELETE(cv);
-				}
-			}
-			break;
-
 		case MediaTypeCvCap:
 			{
 				CaptureContentPtr cvcap = new CaptureContent(_renderer);
@@ -498,6 +498,18 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 			}
 			break;
 
+#ifdef USE_OPENCV
+		case MediaTypeCv:
+			{
+				CvContentPtr cv = new CvContent(_renderer);
+				if (cv->open(media)) {
+					container->add(cv);
+				} else {
+					SAFE_DELETE(cv);
+				}
+			}
+			break;
+#endif
 		default:
 			_log.warning("media type: unknown");
 	}
@@ -1015,32 +1027,41 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 
 
 void MainScene::process() {
+	Poco::LocalDateTime now;
 	switch (_keycode) {
-		case 'Z':
-			if (config().brightness > 0) config().brightness--;
-			break;
-		case 'X':
-			if (config().brightness < 100) config().brightness++;
-			break;
-		case '0':
-			if (_interrupttedContent) {
-				_interrupttedContent->stop();
-				_interrupttedContent = NULL;
-			} else {
-				map<string, ContainerPtr>::iterator it = _stanbyMedias.find("000");
-				if (it != _stanbyMedias.end()) {
-					_interrupttedContent = it->second;
-					if (!_interrupttedContent->playing()) {
-						_interrupttedContent->play();
-					}
-				}
-			}
-			break;
+	case 'Z':
+		if (config().brightness > 0) config().brightness--;
+		break;
+	case 'X':
+		if (config().brightness < 100) config().brightness++;
+		break;
 	}
 	if (_brightness < config().brightness) {
 		_brightness++;
 	} else if (_brightness > config().brightness) {
 		_brightness--;
+	}
+
+	// 割り込みコンテンツ
+	string interruptted = getStatus("interruptted");
+	if (interruptted != _interruptted) {
+		_log.information(Poco::format("interruptted: %s", interruptted));
+		if (interruptted.empty()) {
+			if (_interrupttedContent) {
+				_interrupttedContent->stop();
+				_interrupttedContent = NULL;
+			}
+		} else {
+			map<string, ContainerPtr>::iterator it = _stanbyMedias.find(interruptted);
+			if (it != _stanbyMedias.end()) {
+				_interrupttedContent = it->second;
+				if (!_interrupttedContent->playing()) {
+					// 終了していたら再生しなおす
+					_interrupttedContent->play();
+				}
+			}
+		}
+		_interruptted = interruptted;
 	}
 
 	// リムーバブルメディア検出
@@ -1274,6 +1295,26 @@ void MainScene::process() {
 				removeStatus("next-playlist");
 				removeStatus("next-content-id");
 				removeStatus("next-content");
+
+				if (config().outCastLog) {
+					string d = Poco::DateTimeFormatter::format(now, "%Y%m%d");
+					if (_castLogDate != d) {
+						_castLogDate = d;
+						File dataFile("logs/cast-" + _castLogDate + ".csv");
+						if (_castLog) {
+							_castLog->close();
+							SAFE_DELETE(_castLog);
+						}
+						_castLog = new Poco::FileOutputStream();
+						_castLog->open(dataFile.path(), std::ios::out | std::ios::app);
+					}
+					if (_castLog) {
+						string time = Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT);
+						string s = time + "," + _status["current-content"] + "\r\n";
+						_castLog->write(s.c_str(), s.length());
+						_castLog->flush();
+					}
+				}
 				_playCount++;
 
 //				if (_transition) SAFE_DELETE(_transition);
@@ -1344,7 +1385,6 @@ void MainScene::process() {
 	}
 
 	// スケジュール処理
-	Poco::LocalDateTime now;
 	if (now.second() != _timeSecond) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		_timeSecond = now.second();

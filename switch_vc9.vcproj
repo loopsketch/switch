@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\Configuration.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\Container.cpp"
 				>
 			</File>

@@ -7,6 +7,7 @@
 #include <dinput.h>
 #include <Poco/ActiveMethod.h>
 #include <Poco/ActiveResult.h>
+#include <Poco/FileStream.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>
@@ -22,7 +23,6 @@
 #include "Renderer.h"
 #include "Scene.h"
 #include "Transition.h"
-#include "ui/UserInterfaceManager.h"
 #include "Workspace.h"
 
 using std::string;
@@ -53,7 +53,6 @@ private:
 	Poco::FastMutex _workspaceLock;
 	Poco::FastMutex _delayedUpdateLock;
 
-	ui::UserInterfaceManager& _uim;
 	Path& _workspaceFile;
 	WorkspacePtr _workspace;
 	WorkspacePtr _updatedWorkspace;
@@ -121,6 +120,9 @@ private:
 	bool _initializing;
 	bool _running;
 
+	string _castLogDate;
+	Poco::FileOutputStream* _castLog;
+
 	/** USBアイコン */
 	LPDIRECT3DTEXTURE9 _removableIcon;
 	float _removableIconAlpha;
@@ -138,6 +140,7 @@ private:
 
 	/** スタンバイメディア */
 	map<string, ContainerPtr> _stanbyMedias;
+	string _interruptted;
 	ContainerPtr _interrupttedContent;
 
 	/** スタンバイメディアの準備 */
@@ -175,7 +178,7 @@ private:
 
 
 public:
-	MainScene(Renderer& renderer, ui::UserInterfaceManager& uim, Path& workspaceFile);
+	MainScene(Renderer& renderer, Path& workspaceFile);
 
 	virtual ~MainScene();
 
