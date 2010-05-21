@@ -104,8 +104,11 @@ private:
 
 	Poco::HashMap<string, LPDIRECT3DTEXTURE9> _cachedTextures;
 
+	vector<string> _addresses;
+
 	vector<Scene*> _scenes;
 	Poco::HashMap<string, Scene*> _sceneMap;
+
 
 	HDC _hdc;
 	HFONT _hfontOLD;

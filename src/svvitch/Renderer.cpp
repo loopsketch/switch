@@ -218,6 +218,16 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 //		if (name == _conf->multiByteFont) _multiByteFont = ff[i].Clone();
 	}
 
+	Poco::Net::NetworkInterface::NetworkInterfaceList interfaces = Poco::Net::NetworkInterface::list();
+	if (!interfaces.empty()) {
+		for (Poco::Net::NetworkInterface::NetworkInterfaceList::const_iterator it = interfaces.begin(); it != interfaces.end(); it++) {
+			Poco::Net::NetworkInterface netIF = *it;
+			if (!netIF.address().isLoopback()) {
+				_addresses.push_back(netIF.address().toString());
+			}
+		}
+	}
+
 	_keycode = 0;
 	_shift = false;
 	_ctrl = false;
@@ -608,7 +618,6 @@ void Renderer::renderScene(const DWORD current) {
 		}
 	}
 
-	Poco::Net::NetworkInterface::NetworkInterfaceList interfaces = Poco::Net::NetworkInterface::list();
 	MEMORYSTATUS ms;
 	ms.dwLength = sizeof(MEMORYSTATUS);
 	GlobalMemoryStatus(&ms);
@@ -642,16 +651,7 @@ void Renderer::renderScene(const DWORD current) {
 		if (config().viewStatus) {
 			string time = Poco::format("%02lu:%02lu:%02lu", current / 3600000, current / 60000 % 60, current / 1000 % 60);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
-			string address;
-			if (!interfaces.empty()) {
-				for (Poco::Net::NetworkInterface::NetworkInterfaceList::const_iterator it = interfaces.begin(); it != interfaces.end(); it++) {
-					Poco::Net::NetworkInterface netIF = *it;
-					if (!netIF.address().isLoopback()) {
-						if (!address.empty()) address += "/";
-						address += netIF.address().toString();
-					}
-				}
-			}
+			string address = svvitch::join(_addresses, "/");
 			string memory = Poco::format("ram>%03dMB(%03dMB) vram>%03uMB", (mem / 1024), availMem, _availableTextureMem);
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
 			drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99669966, Poco::format("ver%s %02lufps run>%s ip>%s %s", svvitch::version(), fps, time, address, memory));
