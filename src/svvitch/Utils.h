@@ -1,5 +1,6 @@
 #pragma once
 
+#include <windows.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -13,8 +14,15 @@ using Poco::Path;
 
 
 namespace svvitch {
+
 	/** バージョン */
 	const string version();
+
+	/**
+	 * ファイルを読込んでバッファのポインタを返します。
+	 * バッファは呼出し側で解放すること。
+	 */
+	bool readFile(const string& file, LPVOID* buf);
 
 	/** SJIS>UTF-8に変換 */
 	void sjis_utf8(const string& in, string& out);

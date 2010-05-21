@@ -1,12 +1,14 @@
 #include "Utils.h"
 
-#include <windows.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <Poco/Buffer.h>
 #include <Poco/MD5Engine.h>
 #include <Poco/DigestStream.h>
 #include <Poco/File.h>
+#include <Poco/FileStream.h>
+#include <Poco/Logger.h>
 #include <Poco/format.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/UnicodeConverter.h>
@@ -18,8 +20,47 @@ using Poco::MD5Engine;
 using Poco::DigestOutputStream;
 using Poco::StreamCopier;
 
+
 const string svvitch::version() {
 	return "0.8";
+}
+
+bool svvitch::readFile(const string& fileName, LPVOID* ref) {
+	Poco::Logger& log(Poco::Logger::get(""));
+	// dicÉtÉ@ÉCÉãÇÃì«çûÇ›
+	try {
+		File file(fileName);
+		if (file.exists()) {
+			Poco::FileInputStream is(file.path());
+			if (is.good()) {
+				LPBYTE buf = new BYTE[(UINT)file.getSize()];
+				ZeroMemory(buf, (UINT)file.getSize());
+				#define	BUFFER_SIZE	(8192)
+				Poco::Buffer<char> buffer(BUFFER_SIZE);
+				std::streamsize len = 0;
+				is.read(buffer.begin(), BUFFER_SIZE);
+				std::streamsize n = is.gcount();
+				while (n > 0) {
+					CopyMemory(&buf[len], buffer.begin(), n);
+					len += n;
+					if (is) {
+						is.read(buffer.begin(), BUFFER_SIZE);
+						n = is.gcount();
+					}
+					else n = 0;
+				}
+				is.close();
+				log.information(Poco::format("load file size: %d", len));
+				*ref = (LPVOID)buf;
+				return true;
+			}
+		} else {
+			log.warning(Poco::format("file not found: %s", file.path()));
+		}
+	} catch (Poco::FileException ex) {
+		log.warning(ex.displayText());
+	}
+	return false;
 }
 
 void svvitch::sjis_utf8(const string& in, string& out) {
