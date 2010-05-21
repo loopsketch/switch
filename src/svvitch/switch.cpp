@@ -8,14 +8,8 @@
 #include <psapi.h>
 #include <Dbt.h>
 
-#include <Poco/DOM/DOMParser.h>
-#include <Poco/DOM/Document.h>
-#include <Poco/DOM/Element.h>
-#include <Poco/DOM/NodeList.h>
-#include <Poco/Exception.h>
 #include <Poco/format.h>
 #include <Poco/Logger.h>
-#include <Poco/Thread.h>
 #include <Poco/UnicodeConverter.h>
 #include "Poco/Net/HTTPStreamFactory.h"
 #include <Poco/Net/HTTPServer.h>
@@ -54,11 +48,6 @@ extern "C" {
 #define new ::new(_NORMAL_BLOCK,__FILE__,__LINE__)     // これが重要
 #endif
 
-using Poco::AutoPtr;
-using Poco::File;
-using Poco::XML::Document;
-using Poco::XML::Element;
-using std::stringbuf;
 
 static TCHAR clsName[] = TEXT("switchClass"); // クラス名
 
@@ -229,15 +218,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
-//	WorkspacePtr workspace = new Workspace(_conf.workspaceFile);
-//	workspace->parse();
 	MainScenePtr mainScene = NULL;
 	if (true) {
 		mainScene = new MainScene(*_renderer, _conf.workspaceFile);
 		_renderer->addScene("main", mainScene);
 	}
-//	UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
-//	_renderer->addScene("ui", uiScene);
+	// UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
+	// _renderer->addScene("ui", uiScene);
 
 	Poco::Net::HTTPStreamFactory::registerFactory();
 	Poco::ThreadPool::defaultPool().addCapacity(8);
