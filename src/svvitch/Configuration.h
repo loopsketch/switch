@@ -54,8 +54,8 @@ public:
 	wstring defaultFont;
 	string asciiFont;
 	string multiByteFont;
-//	string vpCommandFile;
-//	string monitorFile;
+	// string vpCommandFile;
+	// string monitorFile;
 	Path dataRoot;
 	Path workspaceFile;
 	string newsURL;
@@ -65,6 +65,7 @@ public:
 	int maxThreads;
 
 	bool outCastLog;
+
 
 	Configuration();
 

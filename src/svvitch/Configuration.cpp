@@ -185,9 +185,9 @@ void Configuration::save() {
 				Poco::FileOutputStream fos("switch-config.xml");
 				Poco::OutputLineEndingConverter os(fos, Poco::LineEnding::NEWLINE_CRLF);
 				xml->save(os);
-				xml->release();
 				_log.information("saved configuration");
 			}
+			xml->release();
 		}
 	} catch (Poco::Exception& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
