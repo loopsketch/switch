@@ -8,13 +8,13 @@ ImageContent::ImageContent(Renderer& renderer):
 }
 
 ImageContent::~ImageContent() {
-//		_log.information("Image::~Image()");
+	// _log.information("Image::~Image()");
 	initialize();
 }
 
 
 void ImageContent::initialize() {
-//		_log.information("Image::initialize()");
+	// _log.information("Image::initialize()");
 	close();
 }
 
@@ -176,8 +176,8 @@ void ImageContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-//			_dy -= 0.5f;
-//			if (_dy <= -32) _dy = 32;
+		// _dy -= 0.5f;
+		// if (_dy <= -32) _dy = 32;
 		float alpha = getF("alpha");
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		int cw = config().splitSize.cx;
@@ -309,7 +309,7 @@ void ImageContent::draw(const DWORD& frame) {
 					if (alpha > 0.0f) {
 						DWORD base = ((DWORD)(0xff * alpha) << 24) | 0x000000;
 						_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, base, base, base, base);
-						float dar = F(_iw) / _ih;
+						float dar = F(_w) / _h;
 						if (_h * dar > _w) {
 							// 画角よりディスプレイサイズは横長
 							long h = _w / dar;
