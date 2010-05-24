@@ -25,7 +25,7 @@
 #include <Poco/URIStreamOpener.h>
 #include <Poco/URI.h>
 
-#include "Image.h"
+#include "ImageContent.h"
 #include "FFMovieContent.h"
 #include "Text.h"
 #include "DSContent.h"
@@ -442,7 +442,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 	switch (media->type()) {
 		case MediaTypeImage:
 			{
-				ImagePtr image = new Image(_renderer);
+				ImageContentPtr image = new ImageContent(_renderer);
 				if (image->open(media)) {
 					container->add(image);
 				} else {
