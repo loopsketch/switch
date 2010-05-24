@@ -239,6 +239,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ImageContent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\MainScene.cpp"
 				>
 			</File>
@@ -357,7 +361,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\Image.h"
+				RelativePath=".\src\svvitch\ImageContent.h"
 				>
 			</File>
 			<File
