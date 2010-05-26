@@ -27,7 +27,7 @@
 
 #include "ImageContent.h"
 #include "FFMovieContent.h"
-#include "Text.h"
+#include "TextContent.h"
 #include "DSContent.h"
 #include "SlideTransition.h"
 #include "DissolveTransition.h"
@@ -515,13 +515,13 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 	}
 	if (media->containsFileType(MediaTypeText)) {
 		_log.information("contains text");
-		vector<TextPtr> ref;
+		vector<TextContentPtr> ref;
 		int j = 0;
 		int block = -1;
 		for (int i = 0; i < media->fileCount(); i++) {
 			MediaItemFile mif = media->files().at(i);
 			if (mif.type() == MediaTypeText) {
-				TextPtr text = new Text(_renderer);
+				TextContentPtr text = new TextContent(_renderer);
 				if (text->open(media, i)) {
 					if (block <= 0) {
 						// ŽÀ‘Ìƒ‚[ƒh

@@ -1,4 +1,4 @@
-#include "Text.h"
+#include "TextContent.h"
 
 #include <Poco/FileStream.h>
 #include <Poco/LineEndingConverter.h>
@@ -14,23 +14,23 @@
 using namespace Gdiplus;
 
 
-Text::Text(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL), _referencedText(NULL)
+TextContent::TextContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL), _referencedText(NULL)
 {
 	initialize();
 }
 
-Text::~Text() {
+TextContent::~TextContent() {
 	initialize();
 }
 
-void Text::initialize() {
+void TextContent::initialize() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_initializeLock);
 	close();
 	_dx = 0;
 	_dy = 0;
 }
 
-bool Text::open(const MediaItemPtr media, const int offset) {
+bool TextContent::open(const MediaItemPtr media, const int offset) {
 	initialize();
 	Poco::RegularExpression re("^(sjis|shift_jis|shiftjis|ms932)$", Poco::RegularExpression::RE_CASELESS + Poco::RegularExpression::RE_EXTENDED);
 
@@ -131,13 +131,13 @@ bool Text::open(const MediaItemPtr media, const int offset) {
 	return false;
 }
 
-void Text::setReference(TextPtr text) {
+void TextContent::setReference(TextContent* text) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	_referencedText = text;
 	_log.information("set reference text content");
 }
 
-void Text::play() {
+void TextContent::play() {
 	if (_move.find("roll-left-") == 0) {
 		_x = _cx + _cw;
 		_y = 0;
@@ -149,17 +149,17 @@ void Text::play() {
 	_playing = true;
 }
 
-void Text::stop() {
+void TextContent::stop() {
 	_playing = false;
 }
 
-const bool Text::finished() {
+const bool TextContent::finished() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	return !_playing;
 }
 
 /** ファイルをクローズします */
-void Text::close() {
+void TextContent::close() {
 	_mediaID.clear();
 	LPDIRECT3DTEXTURE9 old = NULL;
 	{
@@ -179,7 +179,7 @@ void Text::close() {
 }
 
 /** 1フレームに1度だけ処理される */
-void Text::process(const DWORD& frame) {
+void TextContent::process(const DWORD& frame) {
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_referencedText) {
@@ -205,7 +205,7 @@ void Text::process(const DWORD& frame) {
 }
 
 /** 描画 */
-void Text::draw(const DWORD& frame) {
+void TextContent::draw(const DWORD& frame) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_mediaID.empty() && _texture && _playing) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
@@ -350,7 +350,7 @@ void Text::draw(const DWORD& frame) {
 	}
 }
 
-void Text::drawTexture(string text) {
+void TextContent::drawTexture(string text) {
 	Rect rect(0, 0, 0, 0);
 	{
 		Bitmap bitmap(1, 1, PixelFormat32bppARGB);
@@ -453,7 +453,7 @@ void Text::drawTexture(string text) {
 	_log.information(Poco::format("texture updated: %dx%d %dx%d align: %d", _iw, _ih, _tw, _th, _ax));
 }
 
-void Text::drawText(string text, Bitmap& bitmap, Rect& rect) {
+void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	int x = 0;
 	int y = 0;
 	if (rect.GetRight() - rect.GetLeft() != 0 || rect.GetBottom() - rect.GetTop() != 0) {

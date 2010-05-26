@@ -267,7 +267,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\Text.cpp"
+				RelativePath=".\src\svvitch\TextContent.cpp"
 				>
 			</File>
 			<File
@@ -409,7 +409,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\Text.h"
+				RelativePath=".\src\svvitch\TextContent.h"
 				>
 			</File>
 			<File

@@ -5,13 +5,13 @@
 #include <gdiplus.h>
 
 
-class Text: public Content {
+class TextContent: public Content {
 private:
 	Poco::FastMutex _lock;
 	Poco::FastMutex _initializeLock;
 
 	LPDIRECT3DTEXTURE9 _texture;
-	Text* _referencedText;
+	TextContent* _referencedText;
 	string _textFont;
 	Gdiplus::FontStyle _textStyle;
 	int _textHeight;
@@ -39,15 +39,15 @@ private:
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);
 
 public:
-	Text(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
+	TextContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
 
-	~Text();
+	virtual ~TextContent();
 
 	void initialize();
 
 	bool open(const MediaItemPtr media, const int offset = 0);
 
-	void setReference(Text* text);
+	void setReference(TextContent* text);
 
 	void play();
 
@@ -67,4 +67,4 @@ public:
 	void draw(const DWORD& frame);
 };
 
-typedef Text* TextPtr;
+typedef TextContent* TextContentPtr;
