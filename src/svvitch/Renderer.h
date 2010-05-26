@@ -314,6 +314,7 @@ public:
 
 	void endFont();
 
+	bool copyTexture(LPDIRECT3DTEXTURE9 src, LPDIRECT3DTEXTURE9 dst);
 
 	const LPDIRECT3DTEXTURE9 createTexturedText(const wstring& fontFamily, const int fontSize, const DWORD c1, const DWORD c2, const int w1, const DWORD c3, const int w2, const DWORD c4, const string& text, int clipH = -1) const;
 

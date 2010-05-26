@@ -222,7 +222,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	if (!interfaces.empty()) {
 		for (Poco::Net::NetworkInterface::NetworkInterfaceList::const_iterator it = interfaces.begin(); it != interfaces.end(); it++) {
 			Poco::Net::NetworkInterface netIF = *it;
-			if (!netIF.address().isLoopback()) {
+			if (!netIF.address().isLoopback() && netIF.address().toString() != "0.1.0.4") {
 				_addresses.push_back(netIF.address().toString());
 			}
 		}
@@ -1009,7 +1009,7 @@ void Renderer::drawTextureWithAngle(const float dx, const float dy, const float 
 
 LPD3DXEFFECT Renderer::createEffect(const string path) {
 	std::wstring wfile;
-	Poco::UnicodeConverter::toUTF16(string("fx/conversion_yuv2rgb.fx"), wfile);
+	Poco::UnicodeConverter::toUTF16(path, wfile);
 	LPD3DXBUFFER errors = NULL;
 	LPD3DXEFFECT fx = NULL;
 	HRESULT hr = D3DXCreateEffectFromFile(_device, wfile.c_str(), 0, 0, D3DXSHADER_DEBUG, 0, &fx, &errors);
@@ -1107,6 +1107,17 @@ void Renderer::endFont() {
 	_hdc = NULL;
 	_hfont = NULL;
 	_hfontOLD = NULL;
+}
+
+bool Renderer::copyTexture(LPDIRECT3DTEXTURE9 src, LPDIRECT3DTEXTURE9 dst) {
+	LPDIRECT3DSURFACE9 ss = NULL;
+	src->GetSurfaceLevel(0, &ss);
+	LPDIRECT3DSURFACE9 ds = NULL;
+	dst->GetSurfaceLevel(0, &ds);
+	HRESULT hr = _device->StretchRect(ss, NULL, ds, NULL, D3DTEXF_POINT);
+	SAFE_RELEASE(ss);
+	SAFE_RELEASE(ds);
+	return SUCCEEDED(hr);
 }
 
 const LPDIRECT3DTEXTURE9 Renderer::createTexturedText(const wstring& fontFamily, const int fontSize, const DWORD c1, const DWORD c2, const int w1, const DWORD c3, const int w2, const DWORD c4, const string& text, int clipH) const {

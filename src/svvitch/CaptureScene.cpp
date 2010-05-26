@@ -358,14 +358,8 @@ void CaptureScene::draw1() {
 			hr = device->SetRenderTarget(0, orgRT);
 			SAFE_RELEASE(orgRT);
 		} else if (_useStageCapture) {
-			LPDIRECT3DSURFACE9 src,dst;
-			LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-			capture->GetSurfaceLevel(0, &src);
-			_cameraImage->GetSurfaceLevel(0, &dst);
-			hr = device->StretchRect(src, NULL, dst, NULL, D3DTEXF_POINT);
-			if FAILED(hr) _log.warning("failed copy texture");
-			SAFE_RELEASE(src);
-			SAFE_RELEASE(dst);
+			_renderer.copyTexture(_renderer.getCaptureTexture(), _cameraImage);
+		} else {
 		}
 	}
 }

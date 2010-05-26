@@ -211,6 +211,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\DiffDetectScene.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\DissolveTransition.cpp"
 				>
 			</File>
@@ -326,6 +330,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\CvContent.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\DiffDetectScene.h"
 				>
 			</File>
 			<File
