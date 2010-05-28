@@ -436,12 +436,12 @@ void FFMovieContent::draw(const DWORD& frame) {
 					if (sh <= 0) sh = 1;
 					for (int sy = 0; sy < sh; sy++) {
 						int ox = (sy % 2) * cw * 8 + config().stageRect.left;
-						int oy = (sy / 2) * ch * 4 + config().stageRect.top;
-//							int ox = (sy % 2) * cw * 8;
-//							int oy = (sy / 2) * ch * 4;
+						int oy = (sy / 2) * ch * config().splitCycles + config().stageRect.top;
+						// int ox = (sy % 2) * cw * 8;
+						// int oy = (sy / 2) * ch * 4;
 						for (int sx = 0; sx < sw; sx++) {
-							int dx = (sx / 4) * cw;
-							int dy = ch * 3 - (sx % 4) * ch;
+							int dx = (sx / config().splitCycles) * cw;
+							int dy = ch * (config().splitCycles - 1) - (sx % config().splitCycles) * ch;
 							_vf->draw(ox + dx, oy + dy, cw, ch, 0, col, sx * cw, sy * ch, cw, ch);
 //							_renderer.drawTexture(ox + dx, oy + dy, cw, ch, sx * cw, sy * ch, cw, ch, _target, col, col, col, col);
 						}
