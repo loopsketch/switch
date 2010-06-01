@@ -699,7 +699,6 @@ void MainScene::copyRemote(const string& remote) {
 								file = file.substr(0, file.find("?"));
 							}
 							if (file.find("switch-data:/") == 0) {
-								//file = Path(config().dataRoot, file.substr(13)).toString();
 								file = file.substr(13);
 								vector<string>::iterator it = std::find(remoteFiles.begin(), remoteFiles.end(), file);
 								if (it == remoteFiles.end()) remoteFiles.push_back(file);
@@ -708,6 +707,20 @@ void MainScene::copyRemote(const string& remote) {
 						files->release();
 					}
 					items->release();
+				}
+				Element* fonts = doc->documentElement()->getChildElement("fonts");
+				if (fonts) {
+					NodeList* file = fonts->getElementsByTagName("file");
+					for (int i = 0; i < file->length(); i++) {
+						Element* e = (Element*)file->item(i);
+						string file = e->innerText();
+						if (file.find("switch-data:/") == 0) {
+							file = file.substr(13);
+							vector<string>::iterator it = std::find(remoteFiles.begin(), remoteFiles.end(), file);
+							if (it == remoteFiles.end()) remoteFiles.push_back(file);
+						}
+					}
+					file->release();
 				}
 				doc->release();
 
