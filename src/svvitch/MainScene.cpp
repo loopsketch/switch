@@ -45,8 +45,8 @@ using Poco::XML::Element;
 using Poco::XML::NodeList;
 
 
-MainScene::MainScene(Renderer& renderer, Path& workspaceFile):
-	Scene(renderer), _workspaceFile(workspaceFile), _workspace(NULL), _updatedWorkspace(NULL),
+MainScene::MainScene(Renderer& renderer):
+	Scene(renderer), _workspace(NULL), _updatedWorkspace(NULL),
 	activePrepareContent(this, &MainScene::prepareContent),
 	activePrepareNextContent(this, &MainScene::prepareNextContent),
 	activeSwitchContent(this, &MainScene::switchContent),
@@ -152,7 +152,7 @@ bool MainScene::initialize() {
 		if (!logDir.exists()) logDir.createDirectories();
 	}
 
-	_workspace = new Workspace(_workspaceFile);
+	_workspace = new Workspace(config().workspaceFile);
 	if (_workspace->parse()) {
 		preparedStanbyMedia();
 	} else {

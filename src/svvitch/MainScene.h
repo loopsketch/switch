@@ -53,7 +53,6 @@ private:
 	Poco::FastMutex _workspaceLock;
 	Poco::FastMutex _delayedUpdateLock;
 
-	Path& _workspaceFile;
 	WorkspacePtr _workspace;
 	WorkspacePtr _updatedWorkspace;
 
@@ -178,7 +177,7 @@ private:
 
 
 public:
-	MainScene(Renderer& renderer, Path& workspaceFile);
+	MainScene(Renderer& renderer);
 
 	virtual ~MainScene();
 

@@ -23,7 +23,6 @@
 #include "DiffDetectScene.h"
 //#include "UserInterfaceScene.h"
 #include "Utils.h"
-#include "Workspace.h"
 #include "WebAPI.h"
 //#include "ui/UserInterfaceManager.h"
 
@@ -221,7 +220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 	MainScenePtr mainScene = NULL;
 	if (true) {
-		mainScene = new MainScene(*_renderer, _conf.workspaceFile);
+		mainScene = new MainScene(*_renderer);
 		_renderer->addScene("main", mainScene);
 	}
 	if (_conf.hasScene("diff")) {
