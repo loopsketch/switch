@@ -145,6 +145,9 @@ private:
 	/** スタンバイメディアの準備 */
 	void preparedStanbyMedia();
 
+	/** フォントの準備 */
+	void preparedFont(WorkspacePtr workspace);
+
 	void run();
 
 	/** 切替用コンテンツの準備 */

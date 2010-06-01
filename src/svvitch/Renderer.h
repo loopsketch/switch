@@ -305,6 +305,14 @@ public:
 	 */
 	void getPrivateFontFamily(string fontName, Gdiplus::FontFamily** ff);
 
+	/** フォントファミリ一覧取得 */
+	void getPrivateFontFamilies(vector<string>& fonts);
+
+	/**
+	 * フォントファイル追加
+	 */
+	bool addPrivateFontFile(string file);
+
 	/**
 	 * GDIを使った文字列描画の開始
 	 */

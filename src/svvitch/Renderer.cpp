@@ -186,23 +186,24 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 
 	// ÉtÉHÉìÉgì«çûÇ›
 	_fc = new Gdiplus::PrivateFontCollection();
-	Poco::File dir(".");
-	vector<Poco::File> files;
-	dir.list(files);
-	for (vector<Poco::File>::iterator it = files.begin(); it != files.end(); it++) {
-		Poco::File f = *it;
-		int find = Poco::toLower(f.path()).find(".ttf");
-		if (find >= 0 && find == f.path().length() - 4) {
-			wstring wfile;
-			Poco::UnicodeConverter::toUTF16(f.path(), wfile);
-			_fc->AddFontFile(wfile.c_str());
+	Poco::File dir("fonts");
+	if (dir.exists()) {
+		vector<Poco::File> files;
+		dir.list(files);
+		for (vector<Poco::File>::iterator it = files.begin(); it != files.end(); it++) {
+			Poco::File f = *it;
+			int find = Poco::toLower(f.path()).find(".ttf");
+			if (find >= 0 && find == f.path().length() - 4) {
+				addPrivateFontFile(f.path());
+			} else {
+				find = Poco::toLower(f.path()).find(".ttc");
+				if (find >= 0 && find == f.path().length() - 4) {
+					addPrivateFontFile(f.path());
+				}
+			}
 		}
-		find = Poco::toLower(f.path()).find(".ttc");
-		if (find >= 0 && find == f.path().length() - 4) {
-			wstring wfile;
-			Poco::UnicodeConverter::toUTF16(f.path(), wfile);
-			_fc->AddFontFile(wfile.c_str());
-		}
+	} else {
+		_log.warning("not found 'fonts' directory");
 	}
 
 	int count = 0;
@@ -1045,6 +1046,31 @@ void Renderer::getPrivateFontFamily(string fontName, Gdiplus::FontFamily** resul
 			return;
 		}
 	}
+}
+
+void Renderer::getPrivateFontFamilies(vector<string>& fonts) {
+	fonts.clear();
+	int count = 0;
+	Gdiplus::FontFamily ff[32];
+	_fc->GetFamilies(32, ff, &count);
+	for (int i = 0; i < 32 && i < count; i++) {
+		WCHAR name[64] = L"";
+		ff[i].GetFamilyName(name);
+		string utf8;
+		Poco::UnicodeConverter::toUTF8(name, utf8);
+		fonts.push_back(utf8);
+	}
+}
+
+bool Renderer::addPrivateFontFile(string file) {
+	wstring wfile;
+	Poco::UnicodeConverter::toUTF16(file, wfile);
+	Gdiplus::Status status = _fc->AddFontFile(wfile.c_str());
+	if (status != Gdiplus::Ok) {
+		_log.warning(Poco::format("failed add private font: %s", file));
+		return false;
+	}
+	return true;
 }
 
 /**

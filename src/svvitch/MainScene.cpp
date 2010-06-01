@@ -155,6 +155,7 @@ bool MainScene::initialize() {
 	_workspace = new Workspace(config().workspaceFile);
 	if (_workspace->parse()) {
 		preparedStanbyMedia();
+		preparedFont(_workspace);
 	} else {
 		_log.warning("failed parse workspace");
 	}
@@ -168,6 +169,19 @@ bool MainScene::initialize() {
 	_autoStart = false;
 	_log.information("*created main-scene");
 	return true;
+}
+
+void MainScene::preparedFont(WorkspacePtr workspace) {
+	if (workspace) {
+		vector<string> fonts = workspace->getFonts();
+		for (vector<string>::iterator it = fonts.begin(); it != fonts.end(); it++) {
+			_renderer.addPrivateFontFile(*it);
+		}
+		_renderer.getPrivateFontFamilies(fonts);
+		for (vector<string>::iterator it = fonts.begin(); it != fonts.end(); it++) {
+			_log.information(Poco::format("font: %s", (*it)));
+		}
+	}
 }
 
 void MainScene::preparedStanbyMedia() {
@@ -634,11 +648,12 @@ void MainScene::updateDelayedFiles() {
 
 bool MainScene::updateWorkspace() {
 	_log.information("update workspace");
-	if (_workspace->checkUpdate()) {
+	if (_workspace && _workspace->checkUpdate()) {
 		WorkspacePtr workspace = new Workspace(_workspace->file());
 		if (workspace->parse()) {
 			_log.information("updated workspace. repreparing next contents");
 			_updatedWorkspace = workspace;
+			preparedFont(workspace);
 			return true;
 		} else {
 			_log.warning("failed update workspace.");

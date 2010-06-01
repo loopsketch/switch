@@ -240,6 +240,24 @@ bool Workspace::parse() {
 				}
 				nodes->release();
 			}
+
+			nodes = doc->documentElement()->getElementsByTagName("fonts");
+			if (nodes) {
+				for (int i = 0; i < nodes->length(); i++) {
+					Element* fonts = (Element*)nodes->item(i);
+					NodeList* files = fonts->getElementsByTagName("file");
+					for (int j = 0; j < files->length(); j++) {
+						Element* e = (Element*)files->item(j);
+						string path = e->innerText();
+						if (path.find("switch-data:/") == 0) {
+							Path p(config().dataRoot, path.substr(13));
+							path = p.parse(p.toString()).toString();
+						}
+						_fonts.push_back(path);
+					}
+				}
+			}
+
 			nodes = doc->documentElement()->getElementsByTagName("deletes");
 			if (nodes) {
 				int tzd = Poco::Timezone::tzd();
@@ -351,6 +369,10 @@ const PlayListPtr Workspace::getPlaylist(string id) {
 		return it->second;
 	}
 	return NULL;
+}
+
+const vector<string> Workspace::getFonts() {
+	return _fonts;
 }
 
 const int Workspace::getScheduleCount() {

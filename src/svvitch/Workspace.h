@@ -32,6 +32,8 @@ private:
 	vector<PlayListPtr> _playlist;
 	Poco::HashMap<string, PlayListPtr> _playlistMap;
 
+	vector<string> _fonts;
+
 	vector<SchedulePtr> _schedule;
 
 	void release();
@@ -58,6 +60,8 @@ public:
 	const PlayListPtr getPlaylist(int i);
 
 	const PlayListPtr getPlaylist(string id);
+
+	const vector<string> getFonts();
 
 	const int getScheduleCount();
 
