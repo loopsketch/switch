@@ -7,13 +7,10 @@
 #include "FPSCounter.h"
 
 
-class DiffDetectScene: public Scene, Poco::Runnable
+class DiffDetectScene: public Scene
 {
 private:
 	Poco::FastMutex _lock;
-
-	Poco::Thread _thread;
-	Poco::Runnable* _worker;
 
 	int _w;
 	int _h;
@@ -24,23 +21,22 @@ private:
 	int _previewH;
 
 	DWORD _frame;
+	bool _first;
 	float _subtract;
 
 	LPDIRECT3DTEXTURE9 _frame1;
 	LPDIRECT3DTEXTURE9 _frame2;
-	LPDIRECT3DTEXTURE9 _result;
+	LPDIRECT3DTEXTURE9 _frame3;
+	LPDIRECT3DTEXTURE9 _result1;
+	LPDIRECT3DTEXTURE9 _result2;
 	LPD3DXEFFECT _fx;
-	LPBYTE _gray;
-
-	DWORD _faceDetectTime;
-
-	FPSCounter _fpsCounter;
 
 
-	// èàóùÉXÉåÉbÉh
-	void run();
+	void drawAverage(VERTEX* dst, DWORD& col);
 
-	void drawDiff();
+	void drawOpenning(VERTEX* dst, DWORD& col);
+
+	void drawDiff(VERTEX* dst, DWORD& col);
 
 public:
 	DiffDetectScene(Renderer& renderer);
@@ -48,6 +44,8 @@ public:
 	~DiffDetectScene();
 
 	virtual bool initialize();
+
+	LPDIRECT3DTEXTURE9 getResult();
 
 	virtual void process();
 
