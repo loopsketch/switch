@@ -458,6 +458,8 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 			{
 				ImageContentPtr image = new ImageContent(_renderer);
 				if (image->open(media)) {
+					image->setPosition(config().stageRect.left, config().stageRect.top);
+					image->setBounds(config().stageRect.right, config().stageRect.bottom);
 					container->add(image);
 				} else {
 					SAFE_DELETE(image);
