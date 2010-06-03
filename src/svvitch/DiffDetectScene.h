@@ -21,8 +21,7 @@ private:
 	int _previewH;
 
 	DWORD _frame;
-	bool _first;
-	float _subtract;
+	int _samples;
 
 	LPDIRECT3DTEXTURE9 _frame1;
 	LPDIRECT3DTEXTURE9 _frame2;
@@ -34,7 +33,7 @@ private:
 
 	void drawAverage(VERTEX* dst, DWORD& col);
 
-	void drawOpenning(VERTEX* dst, DWORD& col);
+	void drawEdge(VERTEX* dst, DWORD& col);
 
 	void drawDiff(VERTEX* dst, DWORD& col);
 
