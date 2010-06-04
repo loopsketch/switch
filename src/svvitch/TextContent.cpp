@@ -116,6 +116,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			//_dx = mif.getFloatProperty("dx", F(0));
 			//_dy = mif.getFloatProperty("dy", F(0));
 			_align = mif.getProperty("align");
+			_fitBounds = mif.getProperty("fit") == "true";
 			string pos = Poco::format("(%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy);
 			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
 		} else {
@@ -222,9 +223,8 @@ void TextContent::draw(const DWORD& frame) {
 				device->GetScissorRect(&scissorRect);
 				float x = _x + _ax;
 				float y = _y;
-				int dhh = ch * config().splitCycles;
-				int dh = (dhh / ch * cw);
-				int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % dhh;
+				int dh = (640 / ch * cw);
+				int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % 640;
 				int cww = 0;
 				int chh = (ch > _ih)?_ih:ch;
 				int clipX = _cx;
@@ -245,23 +245,28 @@ void TextContent::draw(const DWORD& frame) {
 						SetRect(&rect, rect.left, rect.top, dx + cxx, rect.bottom);
 					}
 					device->SetScissorRect(&rect);
+//					if ((sx + cw - dxx) >= _tw) {
 					if ((sx + cw - dxx) >= _tw) {
 						// ソースの横がはみ出る()
 						cww = _tw - sx;
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, 0, col, col, col, col);
+						// _renderer.drawFontTextureText(dx + dxx, y + dy, 10, 10, 0xffff0000, Poco::format("%d,%d %d %d %d %d", sx, sy, cw, dxx, _tw, cww));
 						sx = 0;
 						sy += _ih;
 						if (sy < _th) {
 							// srcを折り返してdstの残りに描画
 							if (_th - sy < ch) chh = _th - sy;
 							_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _texture, 0, col, col, col, col);
+							// _renderer.drawFontTextureText(dx + dxx + cww, y + dy, 12, 12, 0xff00ff00, Poco::format("t%d,%d", sx, sy));
 							sx += cw - cww;
 							ix += cw;
 							dxx = cww + cw - cww;
+//							if (ix >= _iw) _log.information(Poco::format("image check1: %d,%d %d", dx, dy, dxx));
 						} else {
 							// dstの途中でsrcが全て終了
 							dxx = _iw - ix;
 							ix = _iw;
+//							if (ix >= _iw) _log.information(Poco::format("image check2: %d,%d %d", dx, dy, dxx));
 						}
 					} else {
 
@@ -274,15 +279,20 @@ void TextContent::draw(const DWORD& frame) {
 							cww = _tw - sx;
 						}
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _texture, 0, col, col, col, col);
+						// _renderer.drawFontTextureText(dx + dxx, y + dy, 12, 12, 0xffffcc00, Poco::format("%d,%d", sx, sy));
 						sx += cww;
 						ix += cww;
+//						dxx = cww;
 					}
 					if (ix >= _iw) {
 						break;
+//						dxx = cw - cww;
+//						sx = 0;
+//						ix = 0;
 					}
 					dxx = 0;
 					dy += ch;
-					if (dy >= dhh) {
+					if (dy >= 640) {
 						dx += cw;
 						dy = 0;
 					}
@@ -301,15 +311,12 @@ void TextContent::draw(const DWORD& frame) {
 				int sw = config().stageRect.right / cw;
 				int sh = config().stageRect.bottom / ch;
 				for (int sy = 0; sy < sh; sy++) {
-					//int ox = (sy % 2) * cw * 8 + (L(_y / ch) % 2) * cw * 8 + config().stageRect.left;
-					//int oy = (sy / 2) * ch * config().splitCycles + (L(_y / ch) / 2) * ch * config().splitCycles + config().stageRect.top;
 					int ox = (sy % 2) * cw * 8 + (L(_y / ch) % 2) * cw * 8 + config().stageRect.left;
-					int oy = (sy / 2) * ch * config().splitCycles + (L(_y / ch) / 2) * ch * config().splitCycles + config().stageRect.top;
+					int oy = (sy / 2) * ch * 4 + (L(_y / ch) / 2) * ch * 4 + config().stageRect.top;
 					for (int sx = 0; sx < sw; sx++) {
-						// if (_x >= sx * cw + cw || _x + _tw < sx * cw) continue;
-						int dx = (sx / config().splitCycles) * cw;
-						int dy = ch * (config().splitCycles - 1) - (sx % config().splitCycles) * ch;
-						if (ox + dx > sw * cw) break;
+//						if (_x >= sx * cw + cw || _x + _tw < sx * cw) continue;
+						int dx = (sx / 4) * cw;
+						int dy = ch * 3 - (sx % 4) * ch;
 						RECT rect = {ox + dx, oy + dy, ox + dx + cw, oy + dy + ch};
 						device->SetScissorRect(&rect);
 						int tx = sx * cw -_x;
@@ -317,19 +324,27 @@ void TextContent::draw(const DWORD& frame) {
 						int tcw = cww;
 						int tch = chh;
 						if (_tw - tx < cww) tcw = _tw - tx;
-						// if (_th - ty < chh) tch = _th - ty;
+//						if (_th - ty < chh) tch = _th - ty;
 						if (tcw > 0 && tch > 0) _renderer.drawTexture(ox + dx, oy + dy, tcw, tch, tx, ty, tcw, tch, _texture, 0, col, col, col, col);
 					}
 				}
 				device->SetScissorRect(&scissorRect);
-				// _renderer.drawFontTextureText(0, conf->subRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("text: %d,%d", tx, ty));
+//				_renderer.drawFontTextureText(0, conf->subRect.bottom - 40, 12, 16, 0xffcccccc, Poco::format("text: %d,%d", tx, ty));
 			}
 			break;
 		default:
 			{
 				float alpha = getF("alpha");
 				DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-				_renderer.drawTexture(_x, _y, _texture, col, col, col, col);
+				if (_fitBounds) {
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+					_renderer.drawTexture(_x, _y, _w, _h, _texture, col, col, col, col);
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+				} else {
+					_renderer.drawTexture(_x, _y, _texture, col, col, col, col);
+				}
 				_x+=_dx;
 				if (_x < -_tw) _x = config().stageRect.right;
 				_y+=_dy;
@@ -342,6 +357,35 @@ void TextContent::draw(const DWORD& frame) {
 			_renderer.drawTexture(700, 600 + sy, 324, 20, _texture, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
 		}
 	}
+}
+
+int TextContent::getTextWidth() {
+	return _iw;
+}
+
+int TextContent::getTextHeight() {
+	return _ih;
+}
+
+void TextContent::setFitBounds(bool fit) {
+	_fitBounds = fit;
+}
+
+void TextContent::setFontHeight(int height) {
+	_textHeight = height;
+//_textFont = mif.getProperty("font");
+//if (_textFont.empty()) _textFont = config().textFont;
+//_c1 = mif.getHexProperty("c1", 0xffffffff);
+//_c2 = mif.getHexProperty("c2", 0xffcccccc);
+//_b1 = mif.getHexProperty("b1", 0x00cccccc);
+//_b2 = mif.getHexProperty("b2", 0xff000000);
+//_borderSize1 = mif.getFloatProperty("bs1", 4);
+//_borderSize2 = mif.getFloatProperty("bs2", 4);
+//string style = mif.getProperty("style",  config().textStyle);
+//	_textStyle = Gdiplus::FontStyleBold;
+//	_textStyle = Gdiplus::FontStyleItalic;
+//	_textStyle = Gdiplus::FontStyleBoldItalic;
+//	_textStyle = Gdiplus::FontStyleRegular;
 }
 
 void TextContent::drawTexture(string text) {

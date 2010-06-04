@@ -34,6 +34,7 @@ private:
 	float _dx;
 	float _dy;
 	string _align;
+	bool _fitBounds;
 	Gdiplus::FontFamily _ff[16];
 
 	void initialize();
@@ -58,7 +59,16 @@ public:
 	/** ファイルをクローズします */
 	void close();
 
+	int getTextWidth();
+
+	int getTextHeight();
+
+	void setFontHeight(int height);
+
+	void setFitBounds(bool fit);
+
 	void drawTexture(string text);
+
 
 	/** 1フレームに1度だけ処理される */
 	void process(const DWORD& frame);
