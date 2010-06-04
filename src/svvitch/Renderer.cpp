@@ -145,8 +145,8 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	//	D3DSURFACE_DESC desc;
 	//	HRESULT hr = _renderTarget->GetDesc(&desc);
 	//	if (SUCCEEDED(hr)) _log.information(Poco::format("render target: %ux%u %d", desc.Width, desc.Height, (int)desc.Format));
-	int w = config().mainRect.right;
-	int h = config().mainRect.bottom;
+	int w = config().stageRect.right;
+	int h = config().stageRect.bottom;
 	switch(config().splitType) {
 	case 1:
 		{
@@ -156,6 +156,8 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 		}
 		break;
 	case 2:
+		w = config().mainRect.right;
+		h = config().mainRect.bottom;
 		;
 	}
 	int cw = w * config().captureQuality;
@@ -602,7 +604,17 @@ void Renderer::renderScene(const DWORD current) {
 					} else if (config().captureFilter == "gaussianquad") {
 						filter = D3DTEXF_GAUSSIANQUAD;
 					}
-					_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, filter);
+					if (config().splitType == 0) {
+						int x = config().stageRect.left;
+						int y = config().stageRect.top;
+						int w = config().stageRect.right;
+						int h = config().stageRect.bottom;
+						RECT rect;
+						::SetRect(&rect, x, y, x + w, y + h);
+						_device->StretchRect(backBuffer, &rect, dst, NULL, filter);
+					} else {
+						_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, filter);
+					}
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");
