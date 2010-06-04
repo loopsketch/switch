@@ -1495,12 +1495,33 @@ void MainScene::draw1() {
 void MainScene::draw2() {
 	if (_renderer.getDisplayAdapters() > 1) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-		_renderer.drawTexture(0, 50, 256, 192, capture, 0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
-		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		if (capture) {
+			D3DSURFACE_DESC desc;
+			HRESULT hr = capture->GetLevelDesc(0, &desc);
+			int x = config().subRect.left;
+			int y = config().subRect.top;
+			int w = config().subRect.right;
+			int h = config().subRect.bottom - 128;
+			float a1 = F(desc.Width) / desc.Height;
+			float a2 = F(w) / h;
+			if (a1 >= a2) {
+				// ‰¡’·
+				int dh = w / a1;
+				y = (h - dh) / 2;
+				h = dh;
+			} else {
+				// c’·
+				int dw = h / a1;
+				x = (w - dw) / 2;
+				w = dw;
+			}
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			_renderer.drawTexture(x, y, w, h, capture, 0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
+			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		}
 	}
 
 	string status1;
