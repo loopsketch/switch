@@ -256,14 +256,19 @@ void SwitchRequestHandler::set(const string& name) {
 				return;
 
 			} else if (name == "status") {
+				bool result = false;
 				string name = form().get("n");
 				string value = form().get("v");
-				bool result = false;
+				ScenePtr targetScene = scene;
+				string s = form().get("s");
+				if (!s.empty()) {
+					targetScene = _renderer.getScene(s);
+				}
 				if (!name.empty()) {
 					if (value.empty()) {
-						scene->removeStatus(name);
+						targetScene->removeStatus(name);
 					} else {
-						scene->setStatus(name, value);
+						targetScene->setStatus(name, value);
 					}
 					result = true;
 				}
@@ -322,7 +327,12 @@ void SwitchRequestHandler::get(const string& name) {
 				return;
 
 			} else if (name == "status") {
-				map<string, string> status = scene->getStatus();
+				ScenePtr targetScene = scene;
+				string s = form().get("s");
+				if (!s.empty()) {
+					targetScene = _renderer.getScene(s);
+				}
+				map<string, string> status = targetScene->getStatus();
 				map<string, string> params;
 				for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
 					params[it->first] = Poco::format("\"%s\"", it->second);
