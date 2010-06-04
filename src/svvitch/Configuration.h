@@ -36,6 +36,8 @@ public:
 	RECT clipRect;
 	RECT stageRect;
 	int splitType;
+	float captureQuality;
+	string captureFilter;
 	SIZE splitSize;
 	int splitCycles;
 

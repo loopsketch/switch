@@ -10,6 +10,7 @@
 #include <Poco/FileChannel.h>
 #include <Poco/FormattingChannel.h>
 #include <Poco/PatternFormatter.h>
+#include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
 #include "Utils.h"
 
@@ -110,6 +111,8 @@ bool Configuration::initialize() {
 		svvitch::split(scenesParams, ',', scenes);
 		brightness = xml->getInt("stage.brightness", 100);
 		viewStatus = xml->getBool("stage.viewStatus", false);
+		captureQuality = xml->getDouble("stage.captureQuality", 0.25f);
+		captureFilter = Poco::toLower(xml->getString("stage.captureQuality[@filter]", ""));
 
 		imageSplitWidth = xml->getInt("stage.imageSplitWidth", 0);
 		if (xml->hasProperty("stage.text")) {

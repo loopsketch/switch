@@ -158,13 +158,8 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	case 2:
 		;
 	}
-	int cw = w;
-	int ch = h;
-	if (cw > 480) {
-		float aspect = F(h) / w;
-		cw = 480;
-		ch = L(cw * aspect);
-	}
+	int cw = w * config().captureQuality;
+	int ch = h * config().captureQuality;
 	_captureTexture = createRenderTarget(cw, ch);
 	if (_captureTexture) {
 		D3DSURFACE_DESC desc;
@@ -595,7 +590,19 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
+					D3DTEXTUREFILTERTYPE filter = D3DTEXF_NONE;
+					if (config().captureFilter == "point") {
+						filter = D3DTEXF_POINT;
+					} else if (config().captureFilter == "linear") {
+						filter = D3DTEXF_ANISOTROPIC;
+					} else if (config().captureFilter == "anisotropic") {
+						filter = D3DTEXF_ANISOTROPIC;
+					} else if (config().captureFilter == "pyramidalquad") {
+						filter = D3DTEXF_PYRAMIDALQUAD;
+					} else if (config().captureFilter == "gaussianquad") {
+						filter = D3DTEXF_GAUSSIANQUAD;
+					}
+					_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, filter);
 					SAFE_RELEASE(dst);
 				} else {
 					_log.warning("failed get capture surface");
