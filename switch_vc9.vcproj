@@ -243,6 +243,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\HTTPServerBase.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\ImageContent.cpp"
 				>
 			</File>
@@ -366,6 +370,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\FPSCounter.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\HTTPServerBase.h"
 				>
 			</File>
 			<File
