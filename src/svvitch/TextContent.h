@@ -12,8 +12,9 @@ private:
 
 	LPDIRECT3DTEXTURE9 _texture;
 	TextContent* _referencedText;
+	string _text;
 	string _textFont;
-	Gdiplus::FontStyle _textStyle;
+	string _textStyle;
 	int _textHeight;
 	Gdiplus::Color _c1;
 	Gdiplus::Color _c2;
@@ -63,7 +64,19 @@ public:
 
 	int getTextHeight();
 
+	void setColor(DWORD c1, DWORD c2);
+
+	void setBorder1(int size, DWORD col);
+
+	void setBorder2(int size, DWORD col);
+
+	void setFont(string font);
+
 	void setFontHeight(int height);
+
+	void setTextStyle(string style);
+
+	void setAlign(string align);
 
 	void setFitBounds(bool fit);
 

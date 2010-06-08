@@ -92,17 +92,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_b2 = mif.getHexProperty("b2", 0xff000000);
 			_borderSize1 = mif.getFloatProperty("bs1", 4);
 			_borderSize2 = mif.getFloatProperty("bs2", 4);
-			string style = mif.getProperty("style",  config().textStyle);
-
-			if (style == "bold") {
-				_textStyle = Gdiplus::FontStyleBold;
-			} else if (style == "italic") {
-				_textStyle = Gdiplus::FontStyleItalic;
-			} else if (style == "bolditalic") {
-				_textStyle = Gdiplus::FontStyleBoldItalic;
-			} else {
-				_textStyle = Gdiplus::FontStyleRegular;
-			}
+			_textStyle = mif.getProperty("style", config().textStyle);
 
 			_x = mif.getNumProperty("x", 0);
 			_y = mif.getNumProperty("y", 0);
@@ -349,7 +339,6 @@ void TextContent::draw(const DWORD& frame) {
 				if (_x < -_tw) _x = config().stageRect.right;
 				_y+=_dy;
 			}
-
 		}
 	} else {
 		if (get("prepare") == "true") {
@@ -371,24 +360,48 @@ void TextContent::setFitBounds(bool fit) {
 	_fitBounds = fit;
 }
 
+void TextContent::setColor(DWORD c1, DWORD c2) {
+	_c1 = c1;
+	_c2 = c2;
+}
+
+void TextContent::setBorder1(int size, DWORD col) {
+	_borderSize1 = size;
+	_b1 = col;
+}
+
+void TextContent::setBorder2(int size, DWORD col) {
+	_borderSize2 = size;
+	_b2 = col;
+}
+
+void TextContent::setFont(string font) {
+	_textFont = font;
+}
+
 void TextContent::setFontHeight(int height) {
 	_textHeight = height;
-//_textFont = mif.getProperty("font");
-//if (_textFont.empty()) _textFont = config().textFont;
-//_c1 = mif.getHexProperty("c1", 0xffffffff);
-//_c2 = mif.getHexProperty("c2", 0xffcccccc);
-//_b1 = mif.getHexProperty("b1", 0x00cccccc);
-//_b2 = mif.getHexProperty("b2", 0xff000000);
-//_borderSize1 = mif.getFloatProperty("bs1", 4);
-//_borderSize2 = mif.getFloatProperty("bs2", 4);
-//string style = mif.getProperty("style",  config().textStyle);
-//	_textStyle = Gdiplus::FontStyleBold;
-//	_textStyle = Gdiplus::FontStyleItalic;
-//	_textStyle = Gdiplus::FontStyleBoldItalic;
-//	_textStyle = Gdiplus::FontStyleRegular;
+}
+
+void TextContent::setTextStyle(string style) {
+	_textStyle = style;
+}
+
+void TextContent::setAlign(string align) {
+	_align = align;
+
+	if (_align == "center") {
+		_ax = (_w - _iw) / 2;
+	} else if (_align == "right") {
+		_ax = _w - _iw;
+	} else {
+		_ax = 0;
+	}
+	_log.information(Poco::format("align change: %dx%d %dx%d align: %d", _iw, _ih, _tw, _th, _ax));
 }
 
 void TextContent::drawTexture(string text) {
+	_text = text;
 	Rect rect(0, 0, 0, 0);
 	{
 		Bitmap bitmap(1, 1, PixelFormat32bppARGB);
@@ -494,6 +507,7 @@ void TextContent::drawTexture(string text) {
 void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	int x = 0;
 	int y = 0;
+	int h = rect.GetBottom() - rect.GetTop();
 	if (rect.GetRight() - rect.GetLeft() != 0 || rect.GetBottom() - rect.GetTop() != 0) {
 		x = -rect.GetLeft();
 	}
@@ -524,12 +538,23 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 		_log.information(Poco::format("installed font: %s", name));
 	}
 	size_t len = wcslen(wtext.c_str());
+	Gdiplus::FontStyle style;
+	if (_textStyle == "bold") {
+		style = Gdiplus::FontStyleBold;
+	} else if (_textStyle == "italic") {
+		style = Gdiplus::FontStyleItalic;
+	} else if (_textStyle == "bolditalic") {
+		style = Gdiplus::FontStyleBoldItalic;
+	} else {
+		style = Gdiplus::FontStyleRegular;
+	}
+
 	GraphicsPath path;
-	path.AddString(wtext.c_str(), len, ff, _textStyle, _textHeight, Point(x, y), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, _textHeight), _c1, _c2, LinearGradientModeVertical);
-	if (_borderSize1 + _borderSize2 > F(0)) {
-		SolidBrush borderBrush1(_b1);
-		Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
+	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y), StringFormat::GenericDefault());
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, h), _c1, _c2, LinearGradientModeVertical);
+	SolidBrush borderBrush1(_b1);
+	Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
+	if (_borderSize1 > F(0)) {
 		pen1.SetLineJoin(LineJoinRound);
 		g.DrawPath(&pen1, &path);
 	}
@@ -542,8 +567,7 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
     g.FillPath(&foreBrush, &path);
 
 	// pen1‚ÌƒTƒCƒY‚Årect‚ðŽæ“¾
-	if (_borderSize2 > 0) path.Widen(&pen2);
-
+	if (_borderSize1 > 0) path.Widen(&pen1);
 	path.GetBounds(&rect);
 	g.Flush();
 	SAFE_DELETE(ff);
