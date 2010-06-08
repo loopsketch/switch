@@ -66,6 +66,8 @@ public:
 	const int getScheduleCount();
 
 	const SchedulePtr getSchedule(int i);
+
+	const string signature() const;
 };
 
 

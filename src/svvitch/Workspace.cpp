@@ -388,3 +388,6 @@ const SchedulePtr Workspace::getSchedule(int i) {
 	return NULL;
 }
 
+const string Workspace::signature() const {
+	return _signature;
+}
