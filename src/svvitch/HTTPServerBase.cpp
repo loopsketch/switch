@@ -170,7 +170,7 @@ bool BaseRequestHandler::sendFile(Path& path) {
 }
 
 void BaseRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
-	response().setChunkedTransferEncoding(true);
+	//response().setChunkedTransferEncoding(true);
 	response().setContentType("text/javascript; charset=UTF-8");
 	response().add("CacheControl", "no-cache");
 	response().add("Expires", "-1");
@@ -195,7 +195,7 @@ void BaseRequestHandler::writeResult(const int code, const string& description) 
 	writer.setNewLine("\r\n");
 	writer.setOptions(XMLWriter::WRITE_XML_DECLARATION | XMLWriter::PRETTY_PRINT);
 
-	response().setChunkedTransferEncoding(true);
+	//response().setChunkedTransferEncoding(true);
 	response().setContentType("text/xml; charset=UTF-8");
 	writer.writeNode(response().send(), doc);
 }
@@ -204,12 +204,17 @@ void BaseRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const str
 	response().setStatusAndReason(status, message);
 
 	string statusCode(Poco::NumberFormatter::format(static_cast<int>(response().getStatus())));
-	response().setChunkedTransferEncoding(true);
+	//response().setChunkedTransferEncoding(true);
 	if (message.find("<html>") == string::npos) {
-		response().setContentType("text/plain");
-		response().send() << Poco::format("%s - %s", statusCode, message);
+		response().setContentType("text/plain; charset=UTF-8");
+		if (status == HTTPResponse::HTTP_OK) {
+			response().send() << message << std::endl;
+		} else {
+			response().send() << Poco::format("%s - %s", statusCode, message) << std::endl;
+		}
 	} else {
-		response().setContentType("text/html");
+		response().setContentType("text/html; charset=UTF-8");
 		response().send() << message;
 	}
+	response().send().flush();
 }

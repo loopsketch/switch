@@ -582,6 +582,18 @@ void Renderer::renderScene(const DWORD current) {
 	}
 	_drawLock.unlock();
 
+	D3DTEXTUREFILTERTYPE filter = D3DTEXF_NONE;
+	if (config().captureFilter == "point") {
+		filter = D3DTEXF_POINT;
+	} else if (config().captureFilter == "linear") {
+		filter = D3DTEXF_ANISOTROPIC;
+	} else if (config().captureFilter == "anisotropic") {
+		filter = D3DTEXF_ANISOTROPIC;
+	} else if (config().captureFilter == "pyramidalquad") {
+		filter = D3DTEXF_PYRAMIDALQUAD;
+	} else if (config().captureFilter == "gaussianquad") {
+		filter = D3DTEXF_GAUSSIANQUAD;
+	}
 	if (_displayAdpters > 1) {
 		swapChain1->Present(NULL, NULL, NULL, NULL, 0);
 
@@ -592,18 +604,6 @@ void Renderer::renderScene(const DWORD current) {
 				LPDIRECT3DSURFACE9 dst = NULL;
 				hr = _captureTexture->GetSurfaceLevel(0, &dst);
 				if (SUCCEEDED(hr)) {
-					D3DTEXTUREFILTERTYPE filter = D3DTEXF_NONE;
-					if (config().captureFilter == "point") {
-						filter = D3DTEXF_POINT;
-					} else if (config().captureFilter == "linear") {
-						filter = D3DTEXF_ANISOTROPIC;
-					} else if (config().captureFilter == "anisotropic") {
-						filter = D3DTEXF_ANISOTROPIC;
-					} else if (config().captureFilter == "pyramidalquad") {
-						filter = D3DTEXF_PYRAMIDALQUAD;
-					} else if (config().captureFilter == "gaussianquad") {
-						filter = D3DTEXF_GAUSSIANQUAD;
-					}
 					if (config().splitType == 0) {
 						int x = config().stageRect.left;
 						int y = config().stageRect.top;
@@ -694,27 +694,25 @@ void Renderer::renderScene(const DWORD current) {
 				if SUCCEEDED(hr) {
 					LPDIRECT3DSURFACE9 dst = NULL;
 					hr = _captureTexture->GetSurfaceLevel(0, &dst);
-					if SUCCEEDED(hr) {
-						RECT rect;
-						rect.left = config().stageRect.left;
-						rect.top = config().stageRect.top;
-						rect.right = config().stageRect.right;
-						rect.bottom = config().stageRect.bottom;
-						switch(config().splitType) {
-						case 1:
-						case 2:
-							{
-								int dw = config().splitSize.cx * config().splitCycles;
-								rect.left = config().mainRect.left;
-								rect.top = config().mainRect.top;
-								rect.right = (config().stageRect.right + dw) / dw * config().splitSize.cx;
-								rect.bottom = config().stageRect.bottom * config().splitCycles;
-							}
-							break;
-						default:
-							break;
+					if (SUCCEEDED(hr)) {
+						if (config().splitType == 0) {
+							int x = config().stageRect.left;
+							int y = config().stageRect.top;
+							int w = config().stageRect.right;
+							int h = config().stageRect.bottom;
+							RECT rect;
+							::SetRect(&rect, x, y, x + w, y + h);
+							_device->StretchRect(backBuffer, &rect, dst, NULL, filter);
+						} else {
+							//{
+							//	int dw = config().splitSize.cx * config().splitCycles;
+							//	rect.left = config().mainRect.left;
+							//	rect.top = config().mainRect.top;
+							//	rect.right = (config().stageRect.right + dw) / dw * config().splitSize.cx;
+							//	rect.bottom = config().stageRect.bottom * config().splitCycles;
+							//}
+							_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, filter);
 						}
-						_device->StretchRect(backBuffer, &rect, dst, NULL, D3DTEXF_LINEAR); // D3DTEXF_NONE
 						SAFE_RELEASE(dst);
 					} else {
 						_log.warning("failed get capture surface");
