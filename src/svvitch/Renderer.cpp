@@ -695,24 +695,26 @@ void Renderer::renderScene(const DWORD current) {
 					LPDIRECT3DSURFACE9 dst = NULL;
 					hr = _captureTexture->GetSurfaceLevel(0, &dst);
 					if (SUCCEEDED(hr)) {
-						if (config().splitType == 0) {
-							int x = config().stageRect.left;
-							int y = config().stageRect.top;
-							int w = config().stageRect.right;
-							int h = config().stageRect.bottom;
-							RECT rect;
-							::SetRect(&rect, x, y, x + w, y + h);
-							_device->StretchRect(backBuffer, &rect, dst, NULL, filter);
-						} else {
-							//{
-							//	int dw = config().splitSize.cx * config().splitCycles;
-							//	rect.left = config().mainRect.left;
-							//	rect.top = config().mainRect.top;
-							//	rect.right = (config().stageRect.right + dw) / dw * config().splitSize.cx;
-							//	rect.bottom = config().stageRect.bottom * config().splitCycles;
-							//}
-							_device->StretchRect(backBuffer, &(config().mainRect), dst, NULL, filter);
+						RECT rect;
+						rect.left = config().stageRect.left;
+						rect.top = config().stageRect.top;
+						rect.right = config().stageRect.left + config().stageRect.right;
+						rect.bottom = config().stageRect.top + config().stageRect.bottom;
+						switch(config().splitType) {
+						case 1:
+						case 2:
+							{
+								int dw = config().splitSize.cx * config().splitCycles;
+								rect.left = config().mainRect.left;
+								rect.top = config().mainRect.top;
+								rect.right = config().mainRect.left + (config().stageRect.right + dw) / dw * config().splitSize.cx;
+								rect.bottom = config().mainRect.top + config().stageRect.bottom * config().splitCycles;
+							}
+							break;
+						default:
+							break;
 						}
+						_device->StretchRect(backBuffer, &rect, dst, NULL, filter);
 						SAFE_RELEASE(dst);
 					} else {
 						_log.warning("failed get capture surface");
