@@ -763,7 +763,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 	modified.makeLocal(tzd);
 	long size = 0;
 	try {
-		Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, path));
+		Poco::URI uri(Poco::format("%s/files?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		string result;
 		Poco::StreamCopier::copyToString(*is.get(), result);
@@ -805,7 +805,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		File outDir(out.parent());
 		outDir.createDirectories();
 
-		Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, path));
+		Poco::URI uri(Poco::format("%s/download?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		Poco::FileOutputStream os(tempFile.path());
 		long readSize = Poco::StreamCopier::copyStream(*is.get(), os, 512 * 1024);
@@ -832,7 +832,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 
 void MainScene::setRemoteStatus(const string& remote, const string& name, const string& value) {
 	try {
-		Poco::URI uri(Poco::format("http://%s/set/status?n=%s&v=%s", remote, name, value));
+		Poco::URI uri(Poco::format("%s/set/status?n=%s&v=%s", remote, name, value));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		//return true;
 	} catch (Poco::Exception& ex) {
@@ -1578,7 +1578,7 @@ void MainScene::draw2() {
 					int x = config().subRect.right - 180;
 					int y = config().subRect.bottom - 16;
 					DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
-					_renderer.drawFontTextureText(x, y, 12, 16, col, "[remoteCopying]");
+					_renderer.drawFontTextureText(x, y, 12, 16, col, "[remoteCopy]");
 				}
 			}
 		} else {
