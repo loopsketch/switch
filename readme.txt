@@ -55,6 +55,9 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+0.9b
+・airSvvitchのsync機能のステータス表示を追加
+
 0.9a
 ・airSvvitchのプラットフォームをAIR2.0に更新
 ・sync機能が動作しないのを修正
