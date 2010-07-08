@@ -242,6 +242,16 @@ void SwitchRequestHandler::get(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
+			} else if (name == "display-status") {
+				map<string, string> status = scene->getStatus();
+				map<string, string>::const_iterator it = status.find("remote-copy");
+				map<string, string> params;
+				if (it != status.end()) {
+					params[it->first] = Poco::format("\"%s\"", it->second);
+				}
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
 			} else if (name == "status") {
 				ScenePtr targetScene = scene;
 				string s = form().get("s", "");
