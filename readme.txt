@@ -55,6 +55,12 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+0.9c
+・ディスプレイの状態だけを取得するWebAPIを追加
+・ディスプレイ選択の表にディスプレイとの接続状況を表示する欄を追加
+・プレイリストとメディアリストに追加したときに最後に追加されフォーカスが移動するように修正
+・その他、airSvvitchにて細かいバグフィックス。
+
 0.9b
 ・airSvvitchのsync機能のステータス表示を追加
 
