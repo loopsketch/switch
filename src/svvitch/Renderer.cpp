@@ -516,8 +516,8 @@ void Renderer::drawUnlock() {
  *  Sceneをレンダリングします
  */
 void Renderer::renderScene(const DWORD current) {
-	PerformanceTimer timer;
-	timer.start();
+	//PerformanceTimer timer;
+	//timer.start();
 	_current = current;
 	if (hasAddDrives() && _current - _lastDeviceChanged > 45000) {
 		// 最後のデバイス変化から規定時間経過
@@ -733,9 +733,9 @@ void Renderer::renderScene(const DWORD current) {
 	SAFE_RELEASE(swapChain1);
 	SAFE_RELEASE(swapChain2);
 
-	if (timer.getTime() < 6) {
-		Poco::Thread::sleep(10);
-	}
+	//if (timer.getTime() < 6) {
+	//	Poco::Thread::sleep(5);
+	//}
 }
 
 const UINT Renderer::getTextureMem() const {
