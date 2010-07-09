@@ -16,6 +16,7 @@ private:
 	string _textFont;
 	string _textStyle;
 	int _textHeight;
+	int _desent;
 	Gdiplus::Color _c1;
 	Gdiplus::Color _c2;
 	Gdiplus::Color _b1;
@@ -72,7 +73,7 @@ public:
 
 	void setFont(string font);
 
-	void setFontHeight(int height);
+	void setFontHeight(int height, int desent = 0);
 
 	void setTextStyle(string style);
 

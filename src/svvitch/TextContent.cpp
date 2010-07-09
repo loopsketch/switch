@@ -38,6 +38,33 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 	if (offset != -1 && offset < media->fileCount()) {
 		MediaItemFile mif =  media->files().at(offset);
 		if (mif.type() == MediaTypeText) {
+			_textFont = mif.getProperty("font");
+			if (_textFont.empty()) _textFont = config().textFont;
+			_textHeight = mif.getNumProperty("fh", config().textHeight);
+			_c1 = mif.getHexProperty("c1", 0xffffffff);
+			_c2 = mif.getHexProperty("c2", 0xffcccccc);
+			_b1 = mif.getHexProperty("b1", 0x00cccccc);
+			_b2 = mif.getHexProperty("b2", 0xff000000);
+			_borderSize1 = mif.getFloatProperty("bs1", 4);
+			_borderSize2 = mif.getFloatProperty("bs2", 4);
+			_textStyle = mif.getProperty("style", config().textStyle);
+
+			_x = mif.getNumProperty("x", 0);
+			_y = mif.getNumProperty("y", 0);
+			_w = mif.getNumProperty("w", config().stageRect.right);
+			_h = mif.getNumProperty("h", config().stageRect.bottom);
+			_cx = mif.getNumProperty("cx", _x);
+			_cy = mif.getNumProperty("cy", _y);
+			_cw = mif.getNumProperty("cw", _w);
+			_ch = mif.getNumProperty("ch", _h);
+			_move = mif.getProperty("move");
+			//_dx = mif.getFloatProperty("dx", F(0));
+			//_dy = mif.getFloatProperty("dy", F(0));
+			_align = mif.getProperty("align");
+			_fitBounds = mif.getProperty("fit") == "true";
+			string pos = Poco::format("(%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy);
+			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
+
 			if (!mif.file().empty() && mif.file().find("$") == string::npos) {
 				string text;
 				try {
@@ -65,7 +92,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 							}
 							linenum++;
 						}
-						_log.information(Poco::format("lines: %d", linenum));
+						_log.information(Poco::format("lines: %d %s", linenum, text));
 
 						drawTexture(text);
 						valid = true;
@@ -83,32 +110,6 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 				_log.information("text template mode");
 				valid = true;
 			}
-			_textFont = mif.getProperty("font");
-			if (_textFont.empty()) _textFont = config().textFont;
-			_textHeight = mif.getNumProperty("fh", config().textHeight);
-			_c1 = mif.getHexProperty("c1", 0xffffffff);
-			_c2 = mif.getHexProperty("c2", 0xffcccccc);
-			_b1 = mif.getHexProperty("b1", 0x00cccccc);
-			_b2 = mif.getHexProperty("b2", 0xff000000);
-			_borderSize1 = mif.getFloatProperty("bs1", 4);
-			_borderSize2 = mif.getFloatProperty("bs2", 4);
-			_textStyle = mif.getProperty("style", config().textStyle);
-
-			_x = mif.getNumProperty("x", 0);
-			_y = mif.getNumProperty("y", 0);
-			_w = mif.getNumProperty("w", config().stageRect.right);
-			_h = mif.getNumProperty("h", config().stageRect.bottom);
-			_cx = mif.getNumProperty("cx", _x);
-			_cy = mif.getNumProperty("cy", _y);
-			_cw = mif.getNumProperty("cw", _w);
-			_ch = mif.getNumProperty("ch", _h);
-			_move = mif.getProperty("move");
-			//_dx = mif.getFloatProperty("dx", F(0));
-			//_dy = mif.getFloatProperty("dy", F(0));
-			_align = mif.getProperty("align");
-			_fitBounds = mif.getProperty("fit") == "true";
-			string pos = Poco::format("(%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy);
-			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
 		} else {
 			_log.warning("failed type error");
 		}
@@ -337,7 +338,7 @@ void TextContent::draw(const DWORD& frame) {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				} else {
-					_renderer.drawTexture(_x, _y, _texture, col, col, col, col);
+					_renderer.drawTexture(_x + _ax, _y, _texture, col, col, col, col);
 				}
 				_x+=_dx;
 				if (_x < -_tw) _x = config().stageRect.right;
@@ -383,8 +384,9 @@ void TextContent::setFont(string font) {
 	_textFont = font;
 }
 
-void TextContent::setFontHeight(int height) {
+void TextContent::setFontHeight(int height, int desent) {
 	_textHeight = height;
+	_desent = desent;
 }
 
 void TextContent::setTextStyle(string style) {
@@ -555,7 +557,7 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 
 	GraphicsPath path;
 	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, h), _c1, _c2, LinearGradientModeVertical);
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, rect.GetBottom() + rect.GetTop()), _c1, _c2, LinearGradientModeVertical);
 	SolidBrush borderBrush1(_b1);
 	Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
 	if (_borderSize1 > F(0)) {
