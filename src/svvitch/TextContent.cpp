@@ -146,6 +146,9 @@ void TextContent::stop() {
 
 const bool TextContent::finished() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (_move.empty()) {
+		return true;
+	}
 	return !_playing;
 }
 
@@ -189,7 +192,8 @@ void TextContent::process(const DWORD& frame) {
 			if (_x < (_cx - _iw)) {
 				// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
 				_dx = 0;
-				_playing = false;
+				_move.clear();
+				//_playing = false;
 			}
 		}
 	}
