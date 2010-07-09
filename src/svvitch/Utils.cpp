@@ -179,7 +179,7 @@ string svvitch::formatJSON(const map<string, string>& json) {
 string svvitch::formatJSONArray(const vector<string>& list) {
 	vector<string> params;
 	for (vector<string>::const_iterator it = list.begin(); it != list.end(); it++) {
-		params.push_back(*it);
+		params.push_back("\"" + (*it) + "\"");
 	}
 	return Poco::format("[%s]", svvitch::join(params, ","));
 }

@@ -235,6 +235,10 @@ void SwitchRequestHandler::get(const string& name) {
 			} else if (name == "fonts") {
 				vector<string> fonts;
 				scene->renderer().getPrivateFontFamilies(fonts);
+				vector<string> arrays;
+				for (vector<string>::iterator it = fonts.begin(); it != fonts.end(); it++) {
+				}
+
 				map<string, string> params;
 				params["fonts"] = svvitch::formatJSONArray(fonts);
 				sendJSONP(form().get("callback", ""), params);
@@ -320,9 +324,9 @@ string SwitchRequestHandler::fileToJSON(const Path path) {
 			string subName = Path(f.path()).getFileName();
 			if (subName.length() > 1 && subName.at(0) != '.' && subName.at(0) != '$') {
 				if (f.isDirectory()) {
-					files.push_back(Poco::format("\"%s/\"", subName));
+					files.push_back(subName + "/");
 				} else {
-					files.push_back(Poco::format("\"%s\"", subName));
+					files.push_back(subName);
 				}
 			}
 		}

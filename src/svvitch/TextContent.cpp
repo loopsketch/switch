@@ -41,6 +41,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_textFont = mif.getProperty("font");
 			if (_textFont.empty()) _textFont = config().textFont;
 			_textHeight = mif.getNumProperty("fh", config().textHeight);
+			_desent = 0;
 			_c1 = mif.getHexProperty("c1", 0xffffffff);
 			_c2 = mif.getHexProperty("c2", 0xffcccccc);
 			_b1 = mif.getHexProperty("b1", 0x00cccccc);
