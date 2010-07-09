@@ -27,6 +27,8 @@ public:
 
 	virtual ~Scene();
 
+	Renderer& renderer();
+
 	virtual bool initialize();
 
 	/** •\¦/”ñ•\¦‚Ìİ’è */

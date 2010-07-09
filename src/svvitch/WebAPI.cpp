@@ -232,6 +232,14 @@ void SwitchRequestHandler::get(const string& name) {
 				}
 				return;
 
+			} else if (name == "fonts") {
+				vector<string> fonts;
+				scene->renderer().getPrivateFontFamilies(fonts);
+				map<string, string> params;
+				params["fonts"] = svvitch::formatJSONArray(fonts);
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
 			} else if (name == "text") {
 				string playlistID = form().get("pl", "");
 				string text = scene->getPlaylistText(playlistID);

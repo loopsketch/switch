@@ -8,6 +8,9 @@ Scene::Scene(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(rendere
 Scene::~Scene() {
 }
 
+Renderer& Scene::renderer() {
+	return _renderer;
+}
 
 bool Scene::initialize() {
 	return false;
