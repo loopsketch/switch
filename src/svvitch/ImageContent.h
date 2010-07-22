@@ -26,7 +26,7 @@ private:
 	PerformanceTimer _playTimer;
 
 public:
-	ImageContent(Renderer& renderer);
+	ImageContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~ImageContent();
 

@@ -125,15 +125,37 @@ void Content::set(const string& key, const unsigned int& value) {
 	set(key, s);
 }
 
-const string& Content::get(const string& key) const {
+const string& Content::get(const string& key, const string& defaultValue) const {
 	HashMap<string, string>::ConstIterator it = _properties.find(key);
 	if (it != _properties.end()) {
 		return it->second;
 	}
-	return NULL_STRING;
+	return defaultValue;
 }
 
-const float Content::getF(const string& key, const float& defaultValude) const {
+const DWORD Content::getDW(const string& key, const DWORD& defaultValue) const {
+	const string value = get(key);
+	if (!value.empty()) {
+		try {
+			return (DWORD)Poco::NumberParser::parse64(value);
+		} catch (Poco::SyntaxException& ex) {
+		}
+	}
+	return defaultValue;
+}
+
+const int Content::getI(const string& key, const int& defaultValue) const {
+	const string value = get(key);
+	if (!value.empty()) {
+		try {
+			return Poco::NumberParser::parse(value);
+		} catch (Poco::SyntaxException& ex) {
+		}
+	}
+	return defaultValue;
+}
+
+const float Content::getF(const string& key, const float& defaultValue) const {
 	const string value = get(key);
 	if (!value.empty()) {
 		try {
@@ -141,5 +163,5 @@ const float Content::getF(const string& key, const float& defaultValude) const {
 		} catch (Poco::SyntaxException& ex) {
 		}
 	}
-	return defaultValude;
+	return defaultValue;
 }

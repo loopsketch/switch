@@ -1,8 +1,8 @@
 #include "ImageContent.h"
 
 
-ImageContent::ImageContent(Renderer& renderer):
-	Content(renderer), _target(NULL), _finished(true), _playing(false)
+ImageContent::ImageContent(Renderer& renderer, float x, float y, float w, float h):
+	Content(renderer, x, y, w, h), _target(NULL), _finished(true), _playing(false)
 {
 	initialize();
 }
@@ -48,7 +48,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 						if SUCCEEDED(hr) {
 							_iw += desc.Width;
 							textures.push_back(t);
-//								_log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
+							// _log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
 						}
 						SAFE_RELEASE(dst);
 					}
@@ -73,7 +73,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
 	int i = (_iw + _tw - 1) / _tw;
 	_th = _ih * i;
-	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_X8R8G8B8);
+	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_A8R8G8B8);
 	if (_target) {
 		_renderer.colorFill(_target, 0x00000000);
 		LPDIRECT3DSURFACE9 dst = NULL;

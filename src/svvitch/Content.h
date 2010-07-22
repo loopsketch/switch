@@ -20,7 +20,7 @@ using Poco::ActiveMethod;
 class Content
 {
 private:
-	const string NULL_STRING;
+	//static const string NULL_STRING;
 
 protected:
 	Poco::Logger& _log;
@@ -61,7 +61,6 @@ public:
 
 	virtual const bool finished();
 
-	/** ファイルをクローズします */
 	virtual void close();
 
 	ActiveMethod<void, void, Content> activeClose;
@@ -98,7 +97,11 @@ public:
 
 	void set(const string& key, const unsigned int& value);
 
-	const string& get(const string& key) const;
+	const string& get(const string& key, const string& defaultValue = "") const;
+
+	const DWORD getDW(const string& key, const DWORD& defaultValue = 0) const;
+
+	const int getI(const string& key, const int& defaultValue = 0) const;
 
 	const float getF(const string& key, const float& defaultValue = 0) const;
 };

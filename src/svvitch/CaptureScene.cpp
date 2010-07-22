@@ -3,7 +3,7 @@
 #include <Poco/UnicodeConverter.h>
 
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
-	_frame(0), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
+	_frame(0), _useStageCapture(false), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL), _gray(NULL)
 {
@@ -20,6 +20,7 @@ CaptureScene::~CaptureScene() {
 bool CaptureScene::initialize() {
 	_log.information("*initialize CaptureScene");
 
+	SetRect(&_clip, 0, 0, _deviceW, _deviceH);
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("capture-config.xml");
 		_useStageCapture = xml->getBool("device[@useStageCapture]", false);
@@ -44,6 +45,11 @@ bool CaptureScene::initialize() {
 		} else if (type == "yuv2") {
 			_deviceVideoType = MEDIASUBTYPE_YUY2;
 		}
+		int cx = xml->getInt("device[@cx]", 0);
+		int cy = xml->getInt("device[@cy]", 0);
+		int cw = xml->getInt("device[@cw]", _deviceW);
+		int ch = xml->getInt("device[@ch]", _deviceH);
+		SetRect(&_clip, cx, cy, cw, ch);
 
 		_previewX = xml->getInt("preview.x", 0);
 		_previewY = xml->getInt("preview.y", 0);
@@ -56,10 +62,11 @@ bool CaptureScene::initialize() {
 	}
 
 	if (_useStageCapture || createFilter()) {
-		_cameraImage = _renderer.createRenderTarget(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
-		_surface = _renderer.createLockableSurface(_deviceW, _deviceH, D3DFMT_A8R8G8B8);
-		_gray = new BYTE[_deviceW * _deviceH];
-		_log.information(Poco::format("camera image: %dx%d %s-mode %s", _deviceW, _deviceH, string(_useStageCapture?"stage":"capture"), string(_cameraImage?"OK":"NG")));
+		_cameraImage = _renderer.createRenderTarget(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
+		_surface = _renderer.createLockableSurface(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
+		_gray = new BYTE[_clip.right * _clip.bottom];
+		string s = Poco::format("clip:%ld,%ld,%ld,%ld", _clip.left, _clip.top, _clip.right, _clip.bottom);
+		_log.information(Poco::format("camera image: %dx%d(%s) %s-mode %s", _deviceW, _deviceH, s, string(_useStageCapture?"stage":"capture"), string(_cameraImage?"OK":"NG")));
 		return true;
 	}
 	return false;
@@ -315,7 +322,7 @@ void CaptureScene::process() {
 		D3DLOCKED_RECT lockedRect = {0};
 		if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
 			LPBYTE src = (LPBYTE)lockedRect.pBits;
-			long len = _deviceW * _deviceH * 4;
+			long len = _clip.right * _clip.bottom * 4;
 			long pos = 0;
 			for (long i = 0; i < len; i += 4) {
 				_gray[pos++] = src[i + 1];
@@ -350,9 +357,9 @@ void CaptureScene::draw1() {
 			LPDIRECT3DSURFACE9 surface;
 			_cameraImage->GetSurfaceLevel(0, &surface);
 			hr = device->SetRenderTarget(0, surface);
-			device->Clear(0, NULL, D3DCLEAR_TARGET, 0, 1.0f, 0);
+			device->Clear(0, NULL, D3DCLEAR_TARGET, 0xff000000, 1.0f, 0);
 			DWORD col = 0xffffffff;
-			_vr->draw(0, 0, desc.Width, desc.Height, 0, _flipMode, col, col, col, col);
+			_vr->draw(-_clip.left, -_clip.top, _deviceW, _deviceH, 0, _flipMode, col, col, col, col);
 			SAFE_RELEASE(surface);
 
 			hr = device->SetRenderTarget(0, orgRT);
@@ -375,7 +382,7 @@ void CaptureScene::draw2() {
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
-			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, s);
+			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, s);
 		} else if (_useStageCapture) {
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
@@ -383,9 +390,9 @@ void CaptureScene::draw2() {
 			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, "STAGE RECORDING");
+			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, "STAGE RECORDING");
 		} else {
-			_renderer.drawFontTextureText(_previewX, _previewY, 8, 12, 0xccff6666, "NO SIGNAL");
+			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, "NO SIGNAL");
 		}
 	}
 }

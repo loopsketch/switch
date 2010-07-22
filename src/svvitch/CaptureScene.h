@@ -21,6 +21,7 @@ private:
 	int _deviceFPS;
 	int _flipMode;
 	GUID _deviceVideoType;
+	RECT _clip;
 
 	int _previewX;
 	int _previewY;
