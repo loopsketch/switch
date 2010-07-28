@@ -865,6 +865,15 @@ const LPDIRECT3DTEXTURE9 Renderer::getCaptureTexture() const {
 	return _captureTexture;
 }
 
+
+void Renderer::drawLine(const int x1, const int y1, const DWORD c1, const int x2, const int y2, const DWORD c2) {
+	VERTEX v[] = {
+		{F(x1), F(y1), F(0), F(1), c1, F(0), F(0)},
+		{F(x2), F(y2), F(0), F(1), c2, F(0), F(0)}
+	};
+	_device->DrawPrimitiveUP(D3DPT_LINELIST, 1, v, sizeof(VERTEX));
+}
+
 /**
  * テクスチャを指定位置に描画します
  */

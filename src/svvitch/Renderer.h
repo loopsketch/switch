@@ -270,6 +270,9 @@ public:
 	 */
 	const LPDIRECT3DTEXTURE9 getCaptureTexture() const;
 
+	// 線を描画
+	void drawLine(const int x1, const int y1, const DWORD c1, const int x2, const int y2, const DWORD c2);
+
 	/**
 	 * テクスチャを指定位置に描画します
 	 */
