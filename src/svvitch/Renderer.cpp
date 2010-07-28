@@ -765,9 +765,9 @@ const LPDIRECT3DTEXTURE9 Renderer::createTexture(const int w, const int h, const
 	LPDIRECT3DTEXTURE9 texture = NULL;
 	HRESULT hr = _device->CreateTexture(w, h, 1, 0, format, D3DPOOL_MANAGED, &texture, NULL);
 	if (SUCCEEDED(hr)) {
-//		D3DSURFACE_DESC desc;
-//		hr = texture->GetLevelDesc(0, &desc);		
-//		if (SUCCEEDED(hr)) _log.information(Poco::format("create texture: %ux%u", desc.Width, desc.Height));
+	// D3DSURFACE_DESC desc;
+	// hr = texture->GetLevelDesc(0, &desc);		
+	// if (SUCCEEDED(hr)) _log.information(Poco::format("create texture: %ux%u", desc.Width, desc.Height));
 	} else if (D3DERR_INVALIDCALL == hr) {
 		_log.warning(Poco::format("failed create texture: %dx%d", w, h));
 	} else if (D3DERR_OUTOFVIDEOMEMORY == hr) {
