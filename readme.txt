@@ -55,6 +55,9 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+0.9d
+・同期時に親ディレクトリが無い場合に同期できないのを修正
+
 0.9c
 ・ディスプレイの状態だけを取得するWebAPIを追加
 ・ディスプレイ選択の表にディスプレイとの接続状況を表示する欄を追加

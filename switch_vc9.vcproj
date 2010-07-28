@@ -146,7 +146,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmbase.lib dxguid.lib dinput8.lib d3dx9.lib d3d9.lib winmm.lib Quartz.lib Gdiplus.lib imm32.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmt.lib PocoNetmt.lib libgcc.a libcoldname.a libmingwex.a libz.a libavcodec.a libavutil.a libavformat.a libavdevice.a libswscale.a libmp3lame.a"
+				AdditionalDependencies="strmbase.lib dxguid.lib dinput8.lib d3dx9.lib d3d9.lib winmm.lib Quartz.lib Gdiplus.lib imm32.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmt.lib PocoNetmt.lib"
 				AdditionalLibraryDirectories="libs"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -362,6 +362,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\FFMovieContent.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\FFmpeg.h"
 				>
 			</File>
 			<File
