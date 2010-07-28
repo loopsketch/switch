@@ -4,16 +4,7 @@
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
 
-#ifndef UINT64_C
-#define UINT64_C(c) (c ## ULL)
-#endif
-extern "C" {
-#define inline _inline
-#include <libavutil/avstring.h>
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-}
+#include "FFmpeg.h"
 
 #include "Renderer.h"
 
