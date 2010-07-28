@@ -60,7 +60,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 					if (_ih < desc.Height) _ih = desc.Height;
 					textures.push_back(texture);
 				}
-//					_log.information(Poco::format("opened texture: %s", mif.file()));
+				// _log.information(Poco::format("opened texture: %s", mif.file()));
 			} else {
 				_log.warning(Poco::format("failed open: %s", mif.file()));
 				valid = false;
@@ -69,13 +69,13 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	}
 	_log.information(Poco::format("tiled texture size: %dx%d", _iw, _ih));
 	if (!valid) return false;
-//		_tw = 1024;
+	// _tw = 1024;
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
 	int i = (_iw + _tw - 1) / _tw;
 	_th = _ih * i;
-	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_A8R8G8B8);
+	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_X8R8G8B8);
 	if (_target) {
-		_renderer.colorFill(_target, 0x00000000);
+		_renderer.colorFill(_target, 0xff000000);
 		LPDIRECT3DSURFACE9 dst = NULL;
 		HRESULT hr = _target->GetSurfaceLevel(0, &dst);
 		if (SUCCEEDED(hr)) {

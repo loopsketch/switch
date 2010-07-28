@@ -22,7 +22,7 @@ using Poco::StreamCopier;
 
 
 const string svvitch::version() {
-	return "0.9c";
+	return "0.9d";
 }
 
 bool svvitch::readFile(const string& fileName, LPVOID* ref) {

@@ -718,9 +718,9 @@ void MainScene::copyRemote(const string& remote) {
 						string file = e->innerText();
 						if (file.find("switch-data:/") == 0) {
 							file = file.substr(13);
-							vector<string>::iterator it = std::find(remoteFiles.begin(), remoteFiles.end(), file);
-							if (it == remoteFiles.end()) remoteFiles.push_back(file);
 						}
+						vector<string>::iterator it = std::find(remoteFiles.begin(), remoteFiles.end(), file);
+						if (it == remoteFiles.end()) remoteFiles.push_back(file);
 					}
 					file->release();
 				}
@@ -729,17 +729,15 @@ void MainScene::copyRemote(const string& remote) {
 				setRemoteStatus(remote, "remote-copy", "3");
 				_copyRemoteFiles = remoteFiles.size();
 				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
-					_log.information(Poco::format("remote: %s", *it));
-					Path out(config().dataRoot, *it);
+					Path out(config().dataRoot, Path(*it).toString());
+					_log.information(Poco::format("remote: %s", out.toString()));
 					setRemoteStatus(remote, "remote-copy", "3:" + out.getFileName());
 					if (copyRemoteFile(remote, *it, out, true)) {
 					} else {
 					}
 					_copyRemoteFiles--;
 				}
-				_copyRemoteFiles = 0;
-
-				setRemoteStatus(remote, "remote-copy", "4");
+				_copyRemoteFiles = 0;				setRemoteStatus(remote, "remote-copy", "4");
 				File dst(config().workspaceFile);
 				if (dst.exists()) dst.remove();
 				File src(remoteWorkspace);
@@ -754,6 +752,8 @@ void MainScene::copyRemote(const string& remote) {
 			_log.warning(ex.displayText());
 		}
 	}
+	File tmp(remoteWorkspace);
+	if (tmp.exists()) tmp.remove();
 	setRemoteStatus(remote, "remote-copy", "10");
 }
 
@@ -767,7 +767,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		string result;
 		Poco::StreamCopier::copyToString(*is.get(), result);
-		_log.debug(Poco::format("result: %s", result));
+		//_log.debug(Poco::format("result: %s", result));
 		map<string, string> m;
 		svvitch::parseJSON(result, m);
 		svvitch::parseJSON(m["files"], m);
@@ -798,13 +798,12 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		_log.warning(Poco::format("failed remote files: %s", ex.displayText()));
 	}
 
+	File parent(Path(out.toString()).makeDirectory());
+	if (!parent.exists()) parent.createDirectories();
 	bool updating = false;
 	File tempFile(out.toString() + ".part");
 	if (tempFile.exists()) tempFile.remove();
 	try {
-		File outDir(out.parent());
-		outDir.createDirectories();
-
 		Poco::URI uri(Poco::format("%s/download?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
 		Poco::FileOutputStream os(tempFile.path());
@@ -818,7 +817,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		_log.information(Poco::format("remote file copy %s %ld %ld", path, size, readSize));
 		return true;
 	} catch (Poco::FileException& ex) {
-		_log.warning(Poco::format("failed remote copy: %s", ex.displayText()));
+		_log.warning(Poco::format("failed file: %s", ex.displayText()));
 		if (updating && tempFile.exists()) {
 			addDelayedUpdateFile(tempFile);
 			setRemoteStatus(remote, "delayed-update", out.getFileName());
