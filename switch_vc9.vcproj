@@ -126,7 +126,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="src;includes\ffmpeg_"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_FLASH"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -240,6 +240,14 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\FFVideoDecoder.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\FlashContent.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\FlashWnd.cpp"
 				>
 			</File>
 			<File
@@ -370,6 +378,14 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\FFVideoDecoder.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\FlashContent.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\FlashWnd.h"
 				>
 			</File>
 			<File

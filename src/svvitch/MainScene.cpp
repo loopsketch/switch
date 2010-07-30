@@ -39,6 +39,9 @@
 #ifdef USE_OPENCV
 #include "CvContent.h"
 #endif
+#ifdef USE_FLASH
+#include "FlashContent.h"
+#endif
 
 using Poco::XML::Document;
 using Poco::XML::Element;
@@ -501,6 +504,17 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 			break;
 
 		case MediaTypeText:
+			break;
+
+		case MediaTypeFlash:
+			{
+				FlashContentPtr flash = new FlashContent(_renderer);
+				if (flash->open(media)) {
+					container->add(flash);
+				} else {
+					SAFE_DELETE(flash);
+				}
+			}
 			break;
 
 		case MediaTypeCvCap:

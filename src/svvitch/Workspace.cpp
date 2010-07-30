@@ -117,6 +117,8 @@ bool Workspace::parse() {
 								files.push_back(MediaItemFile(MediaTypeImage, file, params));
 							} else if (e->tagName() == "text") {
 								files.push_back(MediaItemFile(MediaTypeText, file, params));
+							} else if (e->tagName() == "flash") {
+								files.push_back(MediaItemFile(MediaTypeFlash, file, params));
 							}
 						}
 						movies->release();
@@ -127,6 +129,8 @@ bool Workspace::parse() {
 							typeCode = MediaTypeMovie;
 						} else if (type == "image") {
 							typeCode = MediaTypeImage;
+						} else  if (type == "flash") {
+							typeCode = MediaTypeFlash;
 						} else  if (type == "cv") {
 							typeCode = MediaTypeCv;
 						} else  if (type == "cvcap") {

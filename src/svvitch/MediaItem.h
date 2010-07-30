@@ -20,6 +20,7 @@ enum MediaType {
 	MediaTypeMovie,
 	MediaTypeImage,
 	MediaTypeText,
+	MediaTypeFlash,
 	MediaTypeCv,
 	MediaTypeCvCap,
 	MediaTypeGame,
