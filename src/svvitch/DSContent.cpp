@@ -23,10 +23,10 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 
 	HRESULT hr;
 	//hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-	if (FAILED(hr)) {
-		_log.warning(Poco::format("failed CoInitializeEx: hr=0x%lx", ((unsigned long)hr)));
-		return false;
-	}
+	//if (FAILED(hr)) {
+	//	_log.warning(Poco::format("failed CoInitializeEx: hr=0x%lx", ((unsigned long)hr)));
+	//	return false;
+	//}
 	hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&_gb);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed create filter graph: hr=0x%lx", ((unsigned long)hr)));
