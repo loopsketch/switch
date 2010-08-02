@@ -8,10 +8,11 @@
 //#define _ATL_NO_AUTOMATIC_NAMESPACE
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
 
-#include <atlbase.h>
-#include <atlwin.h>
+//#include <atlbase.h>
+//#include <atlwin.h>
 #include "FlashContent.h"
 #include <Poco/UnicodeConverter.h>
+#include "Utils.h"
 
 
 FlashContent::FlashContent(Renderer& renderer): Content(renderer), _window(NULL), _flash(NULL), _cookie(0)
@@ -41,22 +42,22 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning("failed not created flash object");
 		return false;
 	}
-	hr = _flash->QueryInterface(IID_IConnectionPointContainer, (void**)&_cpc);
-	if FAILED(hr) {
-		_log.warning("failed not query IConnectionPointContainer");
-		return false;
-	}
-	hr = _cpc->FindConnectionPoint(DIID__IShockwaveFlashEvents, &_cp);
-	if FAILED(hr) {
-		_log.warning("failed not found IShockwaveFlashEvents");
-		return false;
-	}
+	//hr = _flash->QueryInterface(IID_IConnectionPointContainer, (void**)&_cpc);
+	//if FAILED(hr) {
+	//	_log.warning("failed not query IConnectionPointContainer");
+	//	return false;
+	//}
+	//hr = _cpc->FindConnectionPoint(DIID__IShockwaveFlashEvents, &_cp);
+	//if FAILED(hr) {
+	//	_log.warning("failed not found IShockwaveFlashEvents");
+	//	return false;
+	//}
 	_log.information("check-1");
-	hr = _cp->Advise((_IShockwaveFlashEvents*)this, &_cookie);
-	if FAILED(hr) {
-		_log.warning("failed not advise cookie");
-		return false;
-	}
+	//hr = _cp->Advise((_IShockwaveFlashEvents*)this, &_cookie);
+	//if FAILED(hr) {
+	//	_log.warning("failed not advise cookie");
+	//	return false;
+	//}
 
 	_log.information("check-2");
 	hr = _flash->put_WMode(L"transparent");
@@ -65,11 +66,11 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		return false;
 	}
 	_log.information("check-3");
-	hr = AtlAxAttachControl(_flash, _window, 0);
-	if FAILED(hr) {
-		_log.warning("failed not attached window");
-		return false;
-	}
+	//hr = AtlAxAttachControl(_flash, _window, 0);
+	//if FAILED(hr) {
+	//	_log.warning("failed not attached window");
+	//	return false;
+	//}
 	//get the view object
 	hr = _flash->QueryInterface(__uuidof(IViewObject),(void**)&_viewobject);
 	if FAILED(hr) {
@@ -77,15 +78,12 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		return false;
 	}
 	//create stream to Marshal view object into render thread
-	_stream = NULL;
-	hr = CoMarshalInterThreadInterfaceInStream(__uuidof(IViewObject), _viewobject, &_stream);
-	if FAILED(hr) {
-		_log.warning("failed not create stream");
-		return false;
-	}
-
-	//sanity check
-	//cont->RTviewobject = NULL;
+	//_stream = NULL;
+	//hr = CoMarshalInterThreadInterfaceInStream(__uuidof(IViewObject), _viewobject, &_stream);
+	//if FAILED(hr) {
+	//	_log.warning("failed not create stream");
+	//	return false;
+	//}
 
 	//we want it to always loop
 	hr = _flash->put_Loop(true);
@@ -93,11 +91,10 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 
 	//load the movie
 	MediaItemFile mif = media->files()[0];
-	string file = Path(mif.file()).absolute(config().dataRoot).toString();
-	wstring wfile;
-	Poco::UnicodeConverter::toUTF16(file, wfile);
-	//hr = _flash->put_Movie(_bstr_t(wfile.c_str()));
-	hr = _flash->put_Movie(L"test.swf");
+	string file = Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX).substr(1);
+	string sjis;
+	svvitch::utf8_sjis(file, sjis);
+	hr = _flash->put_Movie(_bstr_t(sjis.c_str()));
 	if FAILED(hr) {
 		_log.warning(Poco::format("failed put movie: %s", file));
 		return false;
