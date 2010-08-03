@@ -283,7 +283,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
 	server->stop();
 	DWORD time = last;
-	while (time - last < 1000) {
+	while (time - last < 500) {
 		_renderer->peekMessage();
 		::QueryPerformanceCounter(&current);
 		time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);

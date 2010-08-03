@@ -1,5 +1,6 @@
 #pragma once
 
+#include "flash.h"
 //#include <windows.h>
 //#include <queue>
 #include <Poco/Mutex.h>
@@ -7,7 +8,6 @@
 #include <Poco/Runnable.h>
 
 #include "Content.h"
-#include "flash.h"
 
 
 using std::queue;
@@ -16,7 +16,7 @@ using std::string;
 #define NOTIMPLEMENTED return E_NOTIMPL
 
 
-class FlashContent: public Content, public _IShockwaveFlashEvents {
+class FlashContent: public Content, public _IShockwaveFlashEvents, public ICallFactory {
 private:
 	Poco::FastMutex _lock;
 
@@ -44,7 +44,7 @@ private:
 	//the RenderThread's version of the view object
 	//IViewObject *RTviewobject;
 
-	string _file;
+	//string _file;
 
 public:
 	FlashContent(Renderer& renderer);
@@ -91,6 +91,9 @@ public:
     HRESULT STDMETHODCALLTYPE OnProgress(long percentDone);
     HRESULT STDMETHODCALLTYPE FSCommand(BSTR command, BSTR args);
 	HRESULT STDMETHODCALLTYPE FlashCall(BSTR request);
+
+	//ICallFactory
+	virtual HRESULT STDMETHODCALLTYPE CreateCall(REFIID riid, IUnknown *pCtrlUnk, REFIID riid2, IUnknown **ppv);
 
 	//IDispatch proto
     virtual HRESULT STDMETHODCALLTYPE GetTypeInfoCount( 
