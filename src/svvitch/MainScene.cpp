@@ -506,6 +506,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 		case MediaTypeText:
 			break;
 
+#ifdef USE_FLASH
 		case MediaTypeFlash:
 			{
 				FlashContentPtr flash = new FlashContent(_renderer);
@@ -516,6 +517,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 				}
 			}
 			break;
+#endif
 
 		case MediaTypeCvCap:
 			{
