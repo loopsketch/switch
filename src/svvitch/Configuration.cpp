@@ -20,8 +20,14 @@ Configuration::Configuration(): _log(Poco::Logger::get(""))
 }
 
 Configuration::~Configuration() {
-	logFile->release();
+	release();
+}
+
+void Configuration::release() {
 //	_log.shutdown();
+	if (logFile) {
+		logFile->release(); logFile = NULL;
+	}
 }
 
 bool Configuration::initialize() {

@@ -40,7 +40,7 @@ private:
 public:
 	DiffDetectScene(Renderer& renderer);
 
-	~DiffDetectScene();
+	virtual ~DiffDetectScene();
 
 	virtual bool initialize();
 

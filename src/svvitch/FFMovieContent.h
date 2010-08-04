@@ -50,7 +50,7 @@ private:
 public:
 	FFMovieContent(Renderer& renderer);
 
-	~FFMovieContent();
+	virtual ~FFMovieContent();
 
 
 	void initialize();

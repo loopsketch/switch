@@ -338,6 +338,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ControlSite.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\CvContent.h"
 				>
 			</File>

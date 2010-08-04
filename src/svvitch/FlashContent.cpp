@@ -12,7 +12,7 @@
 
 
 FlashContent::FlashContent(Renderer& renderer): Content(renderer),
-	_window(NULL), _flash(NULL), _cpc(NULL), _cp(NULL), _cookie(0), _viewobject(NULL), _stream(NULL), _state(-1)
+	_window(NULL), _flash(NULL), _cp(NULL), _cookie(0), _viewobject(NULL), _stream(NULL), _state(-1)
 {
 	initialize();
 }
@@ -21,7 +21,6 @@ FlashContent::~FlashContent() {
 	close();
 	if (_cookie != 0 && _cp) _cp->Unadvise(_cookie);
 	SAFE_RELEASE(_cp);
-	SAFE_RELEASE(_cpc);
 	SAFE_RELEASE(_flash);
 	if (_window) DestroyWindow(_window);
 }
@@ -37,29 +36,36 @@ void FlashContent::initialize() {
 		_log.warning("failed not created flash object");
 		return;
 	}
-	hr = _flash->QueryInterface(IID_IConnectionPointContainer, (void**)&_cpc);
+	IConnectionPointContainer* cpc = NULL;
+	hr = _flash->QueryInterface(IID_IConnectionPointContainer, (void**)&cpc);
 	if FAILED(hr) {
 		_log.warning("failed not query IConnectionPointContainer");
 		return;
 	}
-	hr = _cpc->FindConnectionPoint(DIID__IShockwaveFlashEvents, &_cp);
+	hr = cpc->FindConnectionPoint(DIID__IShockwaveFlashEvents, &_cp);
 	if FAILED(hr) {
 		_log.warning("failed not found IShockwaveFlashEvents");
 		return;
 	}
-	_log.information("check-1");
-	hr = _cp->Advise((_IShockwaveFlashEvents*)this, &_cookie);
-	if FAILED(hr) {
-		_log.warning("failed not advise cookie");
-		return;
-	}
-	_log.information("check-2");
+	SAFE_RELEASE(cpc);
+	//_log.information("check-1");
+	//hr = _cp->Advise((_IShockwaveFlashEvents*)this, &_cookie);
+	//if FAILED(hr) {
+	//	_log.warning("failed not advise cookie");
+	//	return;
+	//}
+	//_log.information("check-2");
 	hr = AtlAxAttachControl(_flash, _window, 0);
 	if FAILED(hr) {
 		_log.warning("failed not attached window");
 		return;
 	}
 	//get the view object
+	hr = _flash->put_WMode(L"transparent");
+	if FAILED(hr) {
+		_log.warning("failed WMode");
+		return;
+	}
 	hr = _flash->QueryInterface(__uuidof(IViewObject),(void**)&_viewobject);
 	if FAILED(hr) {
 		_log.warning("failed not query viewobject");
@@ -78,34 +84,34 @@ void FlashContent::initialize() {
 bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	if (!_flash) return false;
 
-	HRESULT hr = _flash->DisableLocalSecurity();
-	if FAILED(hr) {
-		_log.warning("failed DisableLocalSecurity");
-	}
-	_flash->PutWMode(L"transparent");
-	//HRESULT hr = _flash->put_WMode(L"transparent");
+	//HRESULT hr = _flash->DisableLocalSecurity();
 	//if FAILED(hr) {
-	//	_log.warning("failed WMode");
-	//	return false;
+	//	_log.warning("failed DisableLocalSecurity");
 	//}
-	_flash->PutEmbedMovie(VARIANT_TRUE);
-	//_flash->put_EmbedMovie(true);
+	//hr = _flash->put_EmbedMovie(VARIANT_TRUE);
 
 	//we want it to always loop
-	hr = _flash->put_Loop(true);
+	HRESULT hr = _flash->put_Loop(VARIANT_TRUE);
 
 	//load the movie
 	_log.information(Poco::format("ready state before: %ld", _flash->ReadyState));
 	MediaItemFile mif = media->files()[0];
-	string file = Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX).substr(1);
-	wstring wfile;
-	Poco::UnicodeConverter::toUTF16(file, wfile);
-	_flash->PutMovie(_bstr_t(wfile.c_str()));
+	//string file = "file://" + Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX).substr(1);
+	string file = Path(mif.file()).absolute(config().dataRoot).toString();
+	string sjis;
+	svvitch::utf8_sjis(file, sjis);
+	hr = _flash->put_Movie(_bstr_t(sjis.c_str()));
+	//wstring wfile;
+	//Poco::UnicodeConverter::toUTF16(file, wfile);
+	//hr = _flash->put_Movie(_bstr_t(wfile.c_str()));
 	if FAILED(hr) {
 		_log.warning(Poco::format("failed put movie: %s", file));
 		return false;
 	}
 	_log.information(Poco::format("ready state after: %ld", _flash->ReadyState));
+	long totalFrames = 0;
+	hr = _flash->get_TotalFrames(&totalFrames);
+	_log.information(Poco::format("total frames: %ld", totalFrames));
 	//since these are always going to be local media,  force wait until ready state is loaded
 	//for (_state = -1; (!hr) && (_state != 4);) {
 	//	hr = _flash->get_ReadyState(&_state);
@@ -191,20 +197,31 @@ void FlashContent::draw(const DWORD& frame) {
 HRESULT STDMETHODCALLTYPE FlashContent::OnReadyStateChange(long newState) {
 	_state = newState;
 	// 0:“Çž’† 1:–¢‰Šú‰» 2:“ÇžŠ®—¹ 3:§Œä‰Â”\ 4:Š®—¹
-	_log.information(Poco::format("flash state: %ld", _state));
+	//_log.information(Poco::format("flash state: %ld", _state));
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE FlashContent::OnProgress(long percentDone) {
-	_log.information(Poco::format("flash progress: %ld", percentDone));
+	//_log.information(Poco::format("flash progress: %ld", percentDone));
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE FlashContent::FSCommand(BSTR command, BSTR args) {
+	//std::wstring wc(command);
+	//std::wstring wa(args);
+	//string s1;
+	//Poco::UnicodeConverter::toUTF8(wc, s1);
+	//string s2;
+	//Poco::UnicodeConverter::toUTF8(wa, s2);
+	//_log.information(Poco::format("flash fscommand: %s", s1, s2));
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE FlashContent::FlashCall(BSTR request) {
+	//std::wstring wreq(request);
+	//string req;
+	//Poco::UnicodeConverter::toUTF8(wreq, req);
+	//_log.information(Poco::format("flash call: %s", req));
 	return S_OK;
 }
 
@@ -233,21 +250,41 @@ HRESULT STDMETHODCALLTYPE FlashContent::GetIDsOfNames(REFIID riid, LPOLESTR __RP
 }
 
 HRESULT STDMETHODCALLTYPE FlashContent::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS __RPC_FAR *pDispParams, VARIANT __RPC_FAR *pVarResult, EXCEPINFO __RPC_FAR *pExcepInfo, UINT __RPC_FAR *puArgErr) {
-	return S_OK;
+	switch (dispIdMember) {
+	case 0x7a6:			
+		break;
+	case 0x96:			
+		if ((pDispParams->cArgs == 2) &&
+			(pDispParams->rgvarg[0].vt == VT_BSTR) &&
+			(pDispParams->rgvarg[1].vt == VT_BSTR))
+		{
+			FSCommand(pDispParams->rgvarg[1].bstrVal, pDispParams->rgvarg[0].bstrVal);
+		}
+		break;
+	case DISPID_READYSTATECHANGE:					
+		break;
+	default:			
+		return DISP_E_MEMBERNOTFOUND;
+	} 
+	
+	return NOERROR;
 }
 
 //IUnknown Impl
 HRESULT STDMETHODCALLTYPE FlashContent::QueryInterface(REFIID riid, void ** ppvObject) {
 	if (IsEqualGUID(riid, DIID__IShockwaveFlashEvents)) {
+		_log.information("query _IShockwaveFlashEvents");
 		*ppvObject = (void*)dynamic_cast<_IShockwaveFlashEvents*>(this);
 	//} else if (IsEqualGUID(riid, IID_ICallFactory)) {
 	//	*ppvObject = (void*)dynamic_cast<ICallFactory*>(this);
 	//} else if (IsEqualGUID(riid, IID_IMarshal)) {
-	//	*ppvObject = (void*)dynamic_cast<IMarshal*>(this);
+		*ppvObject = (void*)dynamic_cast<IMarshal*>(this);
 	} else if (IsEqualGUID(riid, IID_IDispatch)) {
-		*ppvObject = (void*)dynamic_cast<IDispatch*>(this);
-	//} else if (IsEqualGUID(riid, IID_IUnknown)) {
-	//	*ppvObject = (void*)dynamic_cast<IUnknown*>(this);
+		_log.information("query IDispatch");
+		*ppvObject = (void*)dynamic_cast<IDispatch*>((_IShockwaveFlashEvents*)this);
+	} else if (IsEqualGUID(riid, IID_IUnknown)) {
+		_log.information("query IUnknown");
+		*ppvObject = (void*)dynamic_cast<IUnknown*>((_IShockwaveFlashEvents*)this);
 	} else {
 		string serial;
 		for (int i = 0; i < 8; i++) {

@@ -57,7 +57,7 @@ private:
 public:
 	CaptureScene(Renderer& renderer);
 
-	~CaptureScene();
+	virtual ~CaptureScene();
 
 	virtual bool initialize();
 

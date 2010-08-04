@@ -78,6 +78,8 @@ public:
 	void save();
 
 	bool hasScene(string s);
+
+	void release();
 };
 
 typedef Configuration* ConfigurationPtr;

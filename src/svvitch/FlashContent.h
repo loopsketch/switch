@@ -27,7 +27,6 @@ private:
 
 	HWND _window;
 	IShockwaveFlash* _flash;
-	IConnectionPointContainer* _cpc;
 	IConnectionPoint* _cp;
 
 	//Event Advise cookie (mmmmmmm cookies)
@@ -45,11 +44,13 @@ private:
 	//IViewObject *RTviewobject;
 
 	//string _file;
+	LPDIRECT3DTEXTURE9 _image;
+	LPDIRECT3DSURFACE9 _surface;
 
 public:
 	FlashContent(Renderer& renderer);
 
-	~FlashContent();
+	virtual ~FlashContent();
 
 	// 
 	void run();

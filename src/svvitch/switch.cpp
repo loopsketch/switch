@@ -295,6 +295,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SAFE_DELETE(_renderer);
 	//SAFE_DELETE(_uim);
 	_conf.save();
+	_conf.release();
 	CoUninitialize();
 
 	return exitCode;

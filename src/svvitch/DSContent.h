@@ -27,7 +27,7 @@ private:
 public:
 	DSContent(Renderer& renderer);
 
-	~DSContent();
+	virtual ~DSContent();
 
 
 	void initialize();

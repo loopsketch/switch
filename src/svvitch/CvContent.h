@@ -68,7 +68,7 @@ private:
 public:
 	CvContent(Renderer& renderer);
 
-	~CvContent();
+	virtual ~CvContent();
 
 
 	void saveConfiguration();
