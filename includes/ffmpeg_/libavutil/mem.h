@@ -27,9 +27,8 @@
 #define AVUTIL_MEM_H
 
 #include "attributes.h"
-#include "avutil.h"
 
-#if defined(__ICC) && _ICC < 1200 || defined(__SUNPRO_C)
+#if defined(__ICC) || defined(__SUNPRO_C)
     #define DECLARE_ALIGNED(n,t,v)      t __attribute__ ((aligned (n))) v
     #define DECLARE_ASM_CONST(n,t,v)    const t __attribute__ ((aligned (n))) v
 #elif defined(__TI_COMPILER_VERSION__)
@@ -63,7 +62,7 @@
 #endif
 
 /**
- * Allocate a block of size bytes with alignment suitable for all
+ * Allocates a block of size bytes with alignment suitable for all
  * memory accesses (including vectors if available on the CPU).
  * @param size Size in bytes for the memory block to be allocated.
  * @return Pointer to the allocated block, NULL if the block cannot
@@ -73,9 +72,9 @@
 void *av_malloc(unsigned int size) av_malloc_attrib av_alloc_size(1);
 
 /**
- * Allocate or reallocate a block of memory.
- * If ptr is NULL and size > 0, allocate a new block. If
- * size is zero, free the memory block pointed to by ptr.
+ * Allocates or reallocates a block of memory.
+ * If ptr is NULL and size > 0, allocates a new block. If
+ * size is zero, frees the memory block pointed to by ptr.
  * @param size Size in bytes for the memory block to be allocated or
  * reallocated.
  * @param ptr Pointer to a memory block already allocated with
@@ -87,7 +86,7 @@ void *av_malloc(unsigned int size) av_malloc_attrib av_alloc_size(1);
 void *av_realloc(void *ptr, unsigned int size) av_alloc_size(2);
 
 /**
- * Free a memory block which has been allocated with av_malloc(z)() or
+ * Frees a memory block which has been allocated with av_malloc(z)() or
  * av_realloc().
  * @param ptr Pointer to the memory block which should be freed.
  * @note ptr = NULL is explicitly allowed.
@@ -97,9 +96,9 @@ void *av_realloc(void *ptr, unsigned int size) av_alloc_size(2);
 void av_free(void *ptr);
 
 /**
- * Allocate a block of size bytes with alignment suitable for all
+ * Allocates a block of size bytes with alignment suitable for all
  * memory accesses (including vectors if available on the CPU) and
- * zero all the bytes of the block.
+ * zeroes all the bytes of the block.
  * @param size Size in bytes for the memory block to be allocated.
  * @return Pointer to the allocated block, NULL if it cannot be allocated.
  * @see av_malloc()
@@ -107,7 +106,7 @@ void av_free(void *ptr);
 void *av_mallocz(unsigned int size) av_malloc_attrib av_alloc_size(1);
 
 /**
- * Duplicate the string s.
+ * Duplicates the string s.
  * @param s string to be duplicated
  * @return Pointer to a newly allocated string containing a
  * copy of s or NULL if the string cannot be allocated.
@@ -115,7 +114,7 @@ void *av_mallocz(unsigned int size) av_malloc_attrib av_alloc_size(1);
 char *av_strdup(const char *s) av_malloc_attrib;
 
 /**
- * Free a memory block which has been allocated with av_malloc(z)() or
+ * Frees a memory block which has been allocated with av_malloc(z)() or
  * av_realloc() and set the pointer pointing to it to NULL.
  * @param ptr Pointer to the pointer to the memory block which should
  * be freed.
