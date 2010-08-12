@@ -13,7 +13,7 @@
 #import "C:\\WINDOWS\\system32\\macromed\\Flash\\Flash10e.ocx" named_guids
 #pragma warning(default: 4192)
 
-using ShockwaveFlashObjects::ShockwaveFlash;
-using ShockwaveFlashObjects::IShockwaveFlash;
-using ShockwaveFlashObjects::DIID__IShockwaveFlashEvents;
-using ShockwaveFlashObjects::_IShockwaveFlashEvents;
+using namespace ShockwaveFlashObjects;
+
+
+typedef HRESULT (__stdcall *DllGetClassObjectFunc)(REFCLSID rclsid, REFIID riid, LPVOID * ppv);

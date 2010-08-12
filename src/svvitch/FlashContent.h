@@ -1,6 +1,5 @@
 #pragma once
 
-#include "flash.h"
 //#include <windows.h>
 //#include <queue>
 #include <Poco/Mutex.h>
@@ -8,52 +7,33 @@
 #include <Poco/Runnable.h>
 
 #include "Content.h"
+#include "ControlSite.h"
 
 
 using std::queue;
 using std::string;
 
-#define NOTIMPLEMENTED return E_NOTIMPL
 
-
-class FlashContent: public Content, public _IShockwaveFlashEvents, public ICallFactory {
+class FlashContent: public Content {
 private:
 	Poco::FastMutex _lock;
 
-	Poco::Thread _thread;
-	Poco::Runnable* _worker;
-
-	int _ref; // 参照カウント
-
-	HWND _window;
-	IShockwaveFlash* _flash;
-	IConnectionPoint* _cp;
-
-	//Event Advise cookie (mmmmmmm cookies)
-	DWORD _cookie;
-
-	//IUnknown *unk;
-	IViewObject* _viewobject;
-	IStream* _stream;
-	long _state;
-
-	//the stream interface to marshal the viewobject into the Rendering Thread
-	//IStream *pStream;
-
-	//the RenderThread's version of the view object
-	//IViewObject *RTviewobject;
+	HMODULE _module;
+	ControlSite* _controlSite;
+	IOleObject* _ole;
+	ShockwaveFlashObjects::IShockwaveFlash* _flash;
+	IOleInPlaceObjectWindowless* _windowless;
+	IViewObject* _view;
 
 	//string _file;
-	LPDIRECT3DTEXTURE9 _image;
+	LPDIRECT3DTEXTURE9 _buf;
 	LPDIRECT3DSURFACE9 _surface;
 
 public:
-	FlashContent(Renderer& renderer);
+	FlashContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~FlashContent();
 
-	// 
-	void run();
 
 	void initialize();
 
@@ -85,44 +65,6 @@ public:
 	void process(const DWORD& frame);
 
 	void draw(const DWORD& frame);
-
-
-	//DShockwaveFlashEvents
-    HRESULT STDMETHODCALLTYPE OnReadyStateChange(long newState);
-    HRESULT STDMETHODCALLTYPE OnProgress(long percentDone);
-    HRESULT STDMETHODCALLTYPE FSCommand(BSTR command, BSTR args);
-	HRESULT STDMETHODCALLTYPE FlashCall(BSTR request);
-
-	//ICallFactory
-	virtual HRESULT STDMETHODCALLTYPE CreateCall(REFIID riid, IUnknown *pCtrlUnk, REFIID riid2, IUnknown **ppv);
-
-	//IDispatch proto
-    virtual HRESULT STDMETHODCALLTYPE GetTypeInfoCount( 
-        /* [out] */ UINT __RPC_FAR *pctinfo);
-    virtual HRESULT STDMETHODCALLTYPE GetTypeInfo( 
-        /* [in] */ UINT iTInfo,
-        /* [in] */ LCID lcid,
-        /* [out] */ ITypeInfo __RPC_FAR *__RPC_FAR *ppTInfo);
-    virtual HRESULT STDMETHODCALLTYPE GetIDsOfNames( 
-        /* [in] */ REFIID riid,
-        /* [size_is][in] */ LPOLESTR __RPC_FAR *rgszNames,
-        /* [in] */ UINT cNames,
-        /* [in] */ LCID lcid,
-        /* [size_is][out] */ DISPID __RPC_FAR *rgDispId);
-    virtual /* [local] */ HRESULT STDMETHODCALLTYPE Invoke( 
-        /* [in] */ DISPID dispIdMember,
-        /* [in] */ REFIID riid,
-        /* [in] */ LCID lcid,
-        /* [in] */ WORD wFlags,
-        /* [out][in] */ DISPPARAMS __RPC_FAR *pDispParams,
-        /* [out] */ VARIANT __RPC_FAR *pVarResult,
-        /* [out] */ EXCEPINFO __RPC_FAR *pExcepInfo,
-        /* [out] */ UINT __RPC_FAR *puArgErr);
-
-	//IUnknown proto
-	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void ** ppvObject);
-	ULONG STDMETHODCALLTYPE AddRef();
-	ULONG STDMETHODCALLTYPE Release();
 };
 
 typedef FlashContent* FlashContentPtr;

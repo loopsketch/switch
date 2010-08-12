@@ -21,6 +21,7 @@
 #include "CaptureScene.h"
 #include "MainScene.h"
 #include "DiffDetectScene.h"
+//#include "FlashScene.h"
 //#include "UserInterfaceScene.h"
 #include "Utils.h"
 #include "WebAPI.h"
@@ -223,6 +224,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		mainScene = new MainScene(*_renderer);
 		_renderer->addScene("main", mainScene);
 	}
+	//if (_conf.hasScene("flash")) {
+	//	FlashScenePtr flashScene = new FlashScene(*_renderer);
+	//	flashScene->initialize();
+	//	_renderer->addScene("flash", flashScene);
+	//}
 	if (_conf.hasScene("diff")) {
 		DiffDetectScenePtr diffScene = new DiffDetectScene(*_renderer);
 		diffScene->initialize();
@@ -298,6 +304,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	_conf.release();
 	CoUninitialize();
 
+	UnregisterClass(clsName, wcex.hInstance);
 	return exitCode;
 }
 

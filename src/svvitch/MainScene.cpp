@@ -14,7 +14,7 @@
 #include <Poco/Exception.h>
 #include <Poco/string.h>
 #include <Poco/NumberFormatter.h>
-#include "Poco/NumberParser.h">
+#include <Poco/NumberParser.h>
 #include <Poco/UnicodeConverter.h>
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/LocalDateTime.h>
@@ -456,13 +456,17 @@ bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID
 bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText) {
 	updateDelayedFiles();
 	//_log.information(Poco::format("file: %d", media->fileCount()));
+	float x = F(config().stageRect.left);
+	float y = F(config().stageRect.top);
+	float w = F(config().stageRect.right);
+	float h = F(config().stageRect.bottom);
 	switch (media->type()) {
 		case MediaTypeImage:
 			{
 				ImageContentPtr image = new ImageContent(_renderer);
 				if (image->open(media)) {
-					image->setPosition(config().stageRect.left, config().stageRect.top);
-					image->setBounds(config().stageRect.right, config().stageRect.bottom);
+					image->setPosition(x, y);
+					image->setBounds(w, h);
 					container->add(image);
 				} else {
 					SAFE_DELETE(image);
@@ -477,8 +481,8 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 					if (engine == "ffmpeg") {
 						FFMovieContentPtr movie = new FFMovieContent(_renderer);
 						if (movie->open(media)) {
-							movie->setPosition(config().stageRect.left, config().stageRect.top);
-							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
+							movie->setPosition(x, y);
+							movie->setBounds(w, h);
 							// movie->set("aspect-mode", "fit");
 							container->add(movie);
 							break;
@@ -488,8 +492,6 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 					} else if (engine == "directshow") {
 						DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
-							movie->setPosition(config().stageRect.left, config().stageRect.top);
-							movie->setBounds(config().stageRect.right, config().stageRect.bottom);
 							// movie->set("aspect-mode", "fit");
 							container->add(movie);
 							break;
@@ -509,7 +511,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 #ifdef USE_FLASH
 		case MediaTypeFlash:
 			{
-				FlashContentPtr flash = new FlashContent(_renderer);
+				FlashContentPtr flash = new FlashContent(_renderer, x, y, w, h);
 				if (flash->open(media)) {
 					container->add(flash);
 				} else {
