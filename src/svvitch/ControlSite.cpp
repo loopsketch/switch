@@ -19,11 +19,11 @@ HRESULT STDMETHODCALLTYPE ControlSite::QueryInterface(REFIID riid, LPVOID* ppv) 
 		return S_OK;
 	} else if (riid == IID_IServiceProvider) {
 		//_log.information("query IServiceProvider");
-		return E_NOINTERFACE;
+		return E_NOTIMPL;
 
 	} else if (riid == IID_ICallFactory) {
 		_log.information("query ICallFactory");
-		return E_NOINTERFACE;
+		return E_NOTIMPL;
 
 	} else if (riid == IID_IOleWindow) {
 		_log.information("query IOleWindow");
@@ -75,55 +75,69 @@ ULONG STDMETHODCALLTYPE ControlSite::AddRef() {
 
 ULONG STDMETHODCALLTYPE ControlSite::Release() {
 	int ref = --_ref;
-	if (ref == 0) delete this;
+	if (ref == 0) {
+		_log.information("release ControlSite");
+		delete this;
+	}
 	return ref;
 }
 
 
 HRESULT STDMETHODCALLTYPE ControlSite::SaveObject(void) {
+	_log.information("SaveObject");
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::GetMoniker(DWORD dwAssign, DWORD dwWhichMoniker,IMoniker** ppmk) {
+	_log.information("GetMoniker");
 	*ppmk = NULL;
 	return E_NOTIMPL;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::GetContainer(IOleContainer** theContainerP) {
+	_log.information("GetContainer");
 	return E_NOINTERFACE;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::ShowObject(void) {
+	_log.information("ShowObject");
 	return E_NOTIMPL;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::OnShowWindow(BOOL) {
+	_log.information("OnShowWindow");
 	return E_NOTIMPL;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::RequestNewObjectLayout(void) {
+	_log.information("RequestNewObjectLayout");
 	return E_NOTIMPL;
 }
 
 
 HRESULT STDMETHODCALLTYPE ControlSite::GetWindow(HWND __RPC_FAR* theWnndow) {
+	_log.information("GetWindow");
 	return E_FAIL;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::ContextSensitiveHelp(BOOL fEnterMode) {
+	_log.information("ContextSensitiveHelp");
     return S_OK;
 }
 
 
 HRESULT STDMETHODCALLTYPE ControlSite::CanInPlaceActivate(void) {
+	_log.information("CanInPlaceActivate");
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::OnInPlaceActivate(void) {
+	_log.information("OnInPlaceActivate");
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::OnUIActivate(void) {
+	_log.information("OnUIActivate");
 	return S_OK;
 }
 
@@ -131,7 +145,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::GetWindowContext(IOleInPlaceFrame __RPC_F
 	_log.information("GetWindowContext");
 	//if (m_pFlashPlayer)
 	{
-		RECT rcRect = {0};
+		RECT rcRect = {0, 0, 640, 480};
 		//RECT rcRect = m_pFlashPlayer->GetRect();
 
 		*lprcPosRect = rcRect;
@@ -153,6 +167,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::GetWindowContext(IOleInPlaceFrame __RPC_F
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::Scroll(SIZE scrollExtant) {
+	_log.information("Scroll");
 	return S_OK;
 }
 
@@ -234,15 +249,15 @@ HRESULT STDMETHODCALLTYPE ControlSite::ReleaseDC(HDC hDC) {
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(LPCRECT pRect, BOOL fErase) {	
-	_log.information("InvalidateRect");
 	if (pRect == NULL) {
 		//m_pFlashPlayer->m_rcDirtyRect = m_pFlashPlayer->GetRect();
 		//m_pFlashPlayer->m_bFlashDirty = true;
 	//} else if (!m_pFlashPlayer->m_bFlashDirty) {
 		//SetRect(&m_pFlashPlayer->m_rcDirtyRect, pRect->left, pRect->top, pRect->right - pRect->left, pRect->bottom - pRect->top);
 		//m_pFlashPlayer->m_bFlashDirty = true;
+		_log.information(Poco::format("InvalidateRect [%s]", std::string(fErase?"erase":"not erase")));
 	} else {			
-		
+		_log.information(Poco::format("InvalidateRect %ld,%ld,%ld,%ld  [%s]", pRect->left, pRect->top, pRect->right, pRect->bottom, std::string(fErase?"erase":"not erase")));		
 	}		
 
 	return S_OK;

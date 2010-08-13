@@ -10,7 +10,7 @@
 #endif // !UNICODE
 
 #pragma warning(disable: 4192)
-#import "C:\\WINDOWS\\system32\\macromed\\Flash\\Flash10e.ocx" named_guids
+#import "C:\\WINDOWS\\system32\\macromed\\Flash\\Flash10i.ocx" named_guids
 #pragma warning(default: 4192)
 
 using namespace ShockwaveFlashObjects;
