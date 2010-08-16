@@ -104,6 +104,10 @@ void MainScene::delayedReleaseContainer() {
 }
 
 bool MainScene::initialize() {
+	avcodec_register_all();
+	avdevice_register_all();
+	av_register_all();
+
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
 	_contents.push_back(new Container(_renderer)); // 2ŒÂ‚ÌContainer

@@ -27,18 +27,6 @@
 #include "WebAPI.h"
 //#include "ui/UserInterfaceManager.h"
 
-#ifndef UINT64_C
-#define UINT64_C(c) (c ## ULL)
-#endif
-extern "C" {
-#define inline _inline
-#include <libavutil/avstring.h>
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavdevice/avdevice.h>
-#include <libswscale/swscale.h>
-}
-
 //#ifndef _DEBUG
 //#include <omp.h>
 //#endif
@@ -70,8 +58,7 @@ static RendererPtr _renderer;
 // 戻り値
 //		成功したら0以外の値
 //-------------------------------------------------------------
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 //	_CrtSetBreakAlloc(4141);
@@ -84,10 +71,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //_CrtDumpMemoryLeaks();
 #endif
 
-	avcodec_register_all();
-	avdevice_register_all();
-	av_register_all();
 	_conf.initialize();
+	Poco::Logger& log = Poco::Logger::get("");
+#ifdef _DEBUG
+	log.information("*** system start (debug)");
+#else 
+	//#pragma omp parallel
+	//{
+	//	log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
+	//}
+#endif
+	vector<string> args;
+	svvitch::split(lpCmdLine, ' ', args);
+	for (vector<string>::iterator it = args.begin(); it != args.end(); it++) {
+		string opt = Poco::toLower(*it);
+		if (opt == "-w") {
+			it++;
+			if (it != args.end()) {
+				long t = Poco::NumberParser::parse(*it);
+				log.information(Poco::format("startup waiting: %lds", t));
+				Poco::Thread::sleep(t * 1000);
+			}
+		}
+	}
 
 	HWND hWnd;
 	MSG msg;
@@ -191,16 +197,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// WM_PAINTが呼ばれないようにする
 	ValidateRect(hWnd, 0);
-
-	Poco::Logger& log = Poco::Logger::get("");
-#ifdef _DEBUG
-	log.information("*** system start (debug)");
-#else 
-	//#pragma omp parallel
-	//{
-	//	log.information(Poco::format("*** system start (omp threads x%d)", omp_get_num_threads()));
-	//}
-#endif
 
 	// レンダラーの初期化
 	_renderer = new Renderer();	
