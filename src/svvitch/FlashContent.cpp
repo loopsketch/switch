@@ -1,6 +1,6 @@
 #ifdef USE_FLASH
 
-//#define _ATL_APARTMENT_THREADED
+#define _ATL_APARTMENT_THREADED
 //#define _ATL_FREE_THREADED
 //#define _ATL_NO_AUTOMATIC_NAMESPACE
 //#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
@@ -34,10 +34,11 @@ FlashContent::~FlashContent() {
 }
 
 void FlashContent::initialize() {
+	HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	_controlSite = new ControlSite();
 	//_controlSite->Init(this);
 
-	HRESULT hr;
+	//HRESULT hr;
 	_module = LoadLibraryA("C:\\WINDOWS\\system32\\macromed\\Flash\\flash10i.ocx");
 	if (_module == NULL) {
 		_module = LoadLibraryA("flash.ocx");
@@ -119,11 +120,11 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		//file = "file://" + Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX);
 		file = Path(mif.file()).absolute(config().dataRoot).toString();
 	}
-	string sjis;
-	svvitch::utf8_sjis(file, sjis);
-	//wstring wfile;
-	//Poco::UnicodeConverter::toUTF16(file, wfile);
-	HRESULT hr = _flash->put_Movie(_bstr_t(sjis.c_str()));   
+	//string sjis;
+	//svvitch::utf8_sjis(file, sjis);
+	wstring wfile;
+	Poco::UnicodeConverter::toUTF16(file, wfile);
+	HRESULT hr = _flash->put_Movie(_bstr_t(wfile.c_str()));   
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed movie: %s", file));
 		return false;
@@ -133,7 +134,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
 	if SUCCEEDED(hr) {
 		RECT rect;
-		::SetRect(&rect, L(_x), L(_y), L(_w), L(_h));
+		::SetRect(&rect, 0, 0, 640, 480);
 		hr = inPlaceObject->SetObjectRects(&rect, &rect);
 		if (FAILED(hr)) {
 			_log.warning("failed SetObjectRects");
@@ -146,7 +147,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 
 	set("alpha", 1.0f);
 	_duration = _flash->GetTotalFrames();
-	_flash->StopPlay();
+	//_flash->StopPlay();
 	//_duration = media->duration() * 60 / 1000;
 	_current = 0;
 	_mediaID = media->id();
@@ -159,7 +160,9 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
  */
 void FlashContent::play() {
 	_playing = true;
-	//if (_flash) _flash->Play();
+	if (_flash) {
+		HRESULT hr = _flash->Play();
+	}
 }
 
 /**
@@ -167,7 +170,9 @@ void FlashContent::play() {
  */
 void FlashContent::stop() {
 	_playing = false;
-	//if (_flash) _flash->Stop();
+	if (_flash) {
+		HRESULT hr = _flash->Stop();
+	}
 }
 
 bool FlashContent::useFastStop() {
@@ -200,11 +205,7 @@ void FlashContent::close() {
 }
 
 void FlashContent::process(const DWORD& frame) {
-	if (_flash && _playing && _buf) {
-		if (_flash->IsPlaying() == VARIANT_FALSE) {
-			HRESULT hr = _flash->Play();
-			if FAILED(hr) _log.warning("failed play");
-		}
+	if (_flash && _buf) {
 		LPDIRECT3DSURFACE9 surface = NULL;
 		_buf->GetSurfaceLevel(0, &surface);
 		if (surface) {
@@ -215,10 +216,8 @@ void FlashContent::process(const DWORD& frame) {
 					// RECT is relative to the windowless container rect
 					RECTL rectl = {L(0), L(0), L(_w), L(_h)};
 					HBRUSH brush = CreateSolidBrush(RGB(100, 100, 110));
-					FillRect(hdc, (RECT*)&rectl, brush);
-					//DVASPECT_CONTENT DVASPECT_TRANSPARENT
-					//hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
-					hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
+					::FillRect(hdc, (RECT*)&rectl, brush);
+					hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
 					if FAILED(hr) _log.warning("failed draw");
 					DeleteObject(brush);
 				}

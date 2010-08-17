@@ -243,7 +243,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	server->start();
 
 	// メッセージ処理および描画ループ
-	EmptyWorkingSet(GetCurrentProcess());
+	//EmptyWorkingSet(GetCurrentProcess());
 	//::SetThreadAffinityMask(::GetCurrentThread(), 1);
 	LARGE_INTEGER freq;
 	LARGE_INTEGER start;
@@ -315,6 +315,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			::ShowCursor(TRUE);
 			PostQuitMessage(0);			// アプリケーションを終了する
 			break;
+
 		case WM_SETFOCUS:
 			break;
 		case WM_KILLFOCUS:
@@ -338,6 +339,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			default:
 				return DefWindowProc(hWnd, msg, wParam, lParam);
 			}
+
 
 		case WM_KEYDOWN:
 			if (wParam == VK_ESCAPE) {

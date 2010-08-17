@@ -121,7 +121,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::GetWindow(HWND __RPC_FAR* theWnndow) {
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::ContextSensitiveHelp(BOOL fEnterMode) {
-	_log.information("ContextSensitiveHelp");
+	_log.information(Poco::format("ContextSensitiveHelp [%s]", std::string(fEnterMode?"true":"false")));
     return S_OK;
 }
 
