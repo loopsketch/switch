@@ -41,14 +41,14 @@ void FlashContent::initialize() {
 	//HRESULT hr;
 	_module = LoadLibraryA("C:\\WINDOWS\\system32\\macromed\\Flash\\flash10i.ocx");
 	if (_module == NULL) {
-		_module = LoadLibraryA("flash.ocx");
+		//_module = LoadLibraryA("flash.ocx");
 	}
 	if (_module != NULL) {
 		IClassFactory* classFactory = NULL;
 		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc)GetProcAddress(_module, "DllGetClassObject");
 		hr = aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&classFactory);
 		classFactory->CreateInstance(NULL, IID_IOleObject, (void**)&_ole);
-		classFactory->Release();	
+		classFactory->Release();
 	} else {
 		// Œ³XCLSCTX_ALL CLSCTX_INPROC_SERVER CLSID_ShockwaveFlash
 		hr = CoCreateInstance(CLSID_ShockwaveFlash, NULL, CLSCTX_INPROC_SERVER, IID_IOleObject, (void**)&_ole);
@@ -114,27 +114,28 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	//_log.information(Poco::format("ready state before: %ld", _flash->ReadyState));
 	MediaItemFile mif = media->files()[0];
 	string file;
-	if (mif.file().find("http://") != string::npos) {
+	if (mif.file().find("http://") == 0) {
 		file = mif.file();
 	} else {
 		//file = "file://" + Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX);
 		file = Path(mif.file()).absolute(config().dataRoot).toString();
 	}
+	_log.information(Poco::format("movie: %s", file));
 	//string sjis;
 	//svvitch::utf8_sjis(file, sjis);
-	wstring wfile;
-	Poco::UnicodeConverter::toUTF16(file, wfile);
-	HRESULT hr = _flash->put_Movie(_bstr_t(wfile.c_str()));   
+	//wstring wfile;
+	//Poco::UnicodeConverter::toUTF16(file, wfile);
+	HRESULT hr = _flash->put_Movie(_bstr_t(file.c_str()));   
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed movie: %s", file));
 		return false;
 	}
-	_buf = _renderer.createTexture(L(_w), L(_h), D3DFMT_X8R8G8B8);
+	_buf = _renderer.createTexture(L(_w), L(_h), D3DFMT_A8R8G8B8);
 	IOleInPlaceObject* inPlaceObject = NULL;
-	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*)&inPlaceObject);
 	if SUCCEEDED(hr) {
 		RECT rect;
-		::SetRect(&rect, 0, 0, 640, 480);
+		::SetRect(&rect, 0, 0, _w, _h);
 		hr = inPlaceObject->SetObjectRects(&rect, &rect);
 		if (FAILED(hr)) {
 			_log.warning("failed SetObjectRects");
@@ -146,9 +147,9 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	}
 
 	set("alpha", 1.0f);
-	_duration = _flash->GetTotalFrames();
+	//_duration = _flash->GetTotalFrames();
 	//_flash->StopPlay();
-	//_duration = media->duration() * 60 / 1000;
+	_duration = media->duration() * 60 / 1000;
 	_current = 0;
 	_mediaID = media->id();
 	return true;
@@ -161,7 +162,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 void FlashContent::play() {
 	_playing = true;
 	if (_flash) {
-		HRESULT hr = _flash->Play();
+		//HRESULT hr = _flash->Play();
 	}
 }
 
@@ -171,7 +172,7 @@ void FlashContent::play() {
 void FlashContent::stop() {
 	_playing = false;
 	if (_flash) {
-		HRESULT hr = _flash->Stop();
+		//HRESULT hr = _flash->Stop();
 	}
 }
 
@@ -215,11 +216,11 @@ void FlashContent::process(const DWORD& frame) {
 				if (_view != NULL) {
 					// RECT is relative to the windowless container rect
 					RECTL rectl = {L(0), L(0), L(_w), L(_h)};
-					HBRUSH brush = CreateSolidBrush(RGB(100, 100, 110));
-					::FillRect(hdc, (RECT*)&rectl, brush);
+					//HBRUSH brush = CreateSolidBrush(RGB(100, 100, 110));
+					//::FillRect(hdc, (RECT*)&rectl, brush);
 					hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
 					if FAILED(hr) _log.warning("failed draw");
-					DeleteObject(brush);
+					//DeleteObject(brush);
 				}
 				surface->ReleaseDC(hdc);
 			} else {
@@ -233,11 +234,12 @@ void FlashContent::process(const DWORD& frame) {
 }
 
 void FlashContent::draw(const DWORD& frame) {
-	if (_flash && _playing && _buf) {
-		DWORD col = 0xffffffff;
-		_renderer.drawTexture(_x, _y, _buf, 0, col, col, col, col);
-	}
 	if (_flash) {
+		if (_playing && _buf) {
+			DWORD col = 0xffffffff;
+			_renderer.drawTexture(_x, _y, _buf, 0, col, col, col, col);
+		}
+
 		long state = _flash->GetReadyState();
 		long frame = _flash->CurrentFrame();
 		string playing((_flash->IsPlaying() == VARIANT_TRUE)?"play":"stop");

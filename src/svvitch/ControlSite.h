@@ -1,11 +1,10 @@
 #pragma once
 
 #include "flash.h"
-#include <Poco/format.h>
 #include <Poco/Logger.h>
 
 
-class ControlSite: public IOleInPlaceSiteWindowless //,public IOleClientSite	, public ICallFactory
+class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite //	, public ICallFactory
 {
 private:
 	Poco::Logger& _log;

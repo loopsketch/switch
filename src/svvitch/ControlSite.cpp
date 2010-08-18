@@ -1,5 +1,8 @@
 #include "ControlSite.h"
 
+#include <Poco/format.h>
+
+
 ControlSite::ControlSite(): _log(Poco::Logger::get("")), _ref(0) {
 	AddRef();
 }
@@ -89,7 +92,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::SaveObject(void) {
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::GetMoniker(DWORD dwAssign, DWORD dwWhichMoniker,IMoniker** ppmk) {
-	_log.information("GetMoniker");
+	_log.information(Poco::format("GetMoniker %lx %lx", dwAssign, dwWhichMoniker));
 	*ppmk = NULL;
 	return E_NOTIMPL;
 }

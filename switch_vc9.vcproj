@@ -252,10 +252,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\FlashScene.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\FlashSink.cpp"
 				>
 			</File>
@@ -399,10 +395,6 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\FlashContent.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\FlashScene.h"
 				>
 			</File>
 			<File
