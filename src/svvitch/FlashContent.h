@@ -7,7 +7,7 @@
 #include <Poco/Runnable.h>
 
 #include "Content.h"
-#include "ControlSite.h"
+#include "FlashScene.h"
 
 
 using std::queue;
@@ -18,16 +18,7 @@ class FlashContent: public Content {
 private:
 	Poco::FastMutex _lock;
 
-	HMODULE _module;
-	ControlSite* _controlSite;
-	IOleObject* _ole;
-	ShockwaveFlashObjects::IShockwaveFlash* _flash;
-	IOleInPlaceObjectWindowless* _windowless;
-	IViewObject* _view;
-
-	//string _file;
-	LPDIRECT3DTEXTURE9 _buf;
-	LPDIRECT3DSURFACE9 _surface;
+	FlashScenePtr _scene;
 
 public:
 	FlashContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);

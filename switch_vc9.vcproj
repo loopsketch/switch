@@ -43,11 +43,15 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="src;includes\ffmpeg_"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;USE_FLASH"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
+				BufferSecurityCheck="true"
+				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -204,10 +208,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\ControlSite.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\CvContent.cpp"
 				>
 			</File>
@@ -248,7 +248,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\FlashSink.cpp"
+				RelativePath=".\src\svvitch\FlashScene.cpp"
 				>
 			</File>
 			<File
@@ -342,10 +342,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\ControlSite.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\svvitch\CvContent.h"
 				>
 			</File>
@@ -394,7 +390,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\svvitch\FlashSink.h"
+				RelativePath=".\src\svvitch\FlashScene.h"
 				>
 			</File>
 			<File
