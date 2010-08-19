@@ -45,6 +45,7 @@ public:
 	vector<string> scenes;
 
 	int brightness;
+	float dimmer;
 	bool viewStatus;
 	int imageSplitWidth;
 	string textFont;

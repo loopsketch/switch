@@ -1502,8 +1502,8 @@ void MainScene::draw1() {
 	}
 	if (_interrupttedContent) _interrupttedContent->draw(_frame);
 
-	if (_brightness < 100) {
-		DWORD col = ((DWORD)(0xff * (100 - _brightness) / 100) << 24) | 0x000000;
+	if (_brightness < 100 || config().dimmer < F(1)) {
+		DWORD col = ((DWORD)(0xff * (100 - _brightness * config().dimmer) / 100) << 24) | 0x000000;
 		_renderer.drawTexture(config().mainRect.left, config().mainRect.top, config().mainRect.right, config().mainRect.bottom, NULL, 0, col, col, col, col);
 	}
 	if (_removableCover > 0.0f) {

@@ -116,6 +116,7 @@ bool Configuration::initialize() {
 		string scenesParams = xml->getString("scenes", "");
 		svvitch::split(scenesParams, ',', scenes);
 		brightness = xml->getInt("stage.brightness", 100);
+		dimmer = xml->getDouble("stage.dimmer", 1);
 		viewStatus = xml->getBool("stage.viewStatus", false);
 		captureQuality = xml->getDouble("stage.captureQuality", 0.25f);
 		captureFilter = Poco::toLower(xml->getString("stage.captureQuality[@filter]", ""));
