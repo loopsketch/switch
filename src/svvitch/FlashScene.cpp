@@ -864,7 +864,7 @@ void FlashScene::draw2() {
 
 
 long FlashScene::getReadyState() {
-	long state = -1;	// unknown state
+	long state = -1;
 	if (_flash) _flash->get_ReadyState(&state);
 	return state;
 }
