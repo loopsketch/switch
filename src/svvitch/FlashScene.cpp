@@ -779,6 +779,7 @@ bool FlashScene::initialize() {
 	_controlSite->AddRef();	
 
 	_module = LoadLibraryA("C:\\WINDOWS\\system32\\macromed\\Flash\\flash10i.ocx");
+	//_module = LoadLibraryA("C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
 	//_module = LoadLibraryA("flash10e.ocx");
 
 	// Try the older version
@@ -790,62 +791,117 @@ bool FlashScene::initialize() {
 	if (_module != NULL) {
 		IClassFactory* pClassFactory = NULL;
 		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
-		hr = aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&pClassFactory);
-		pClassFactory->CreateInstance(NULL, IID_IOleObject, (void**)&_ole);
-		pClassFactory->Release();	
+		aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&pClassFactory);
+		if (pClassFactory) {
+			hr = pClassFactory->CreateInstance(NULL, IID_IOleObject, (void**)&_ole);
+			pClassFactory->Release();
+			if FAILED(hr) {
+				_log.warning("failed create IOleObject");
+				return false;
+			}
+		} else {
+			_log.warning("failed create IOleObject");
+			return false;
+		}
 	} else {
-		CoCreateInstance(CLSID_ShockwaveFlash, NULL, CLSCTX_INPROC_SERVER, IID_IOleObject, (void**)&_ole);
+		hr = CoCreateInstance(CLSID_ShockwaveFlash, NULL, CLSCTX_INPROC_SERVER, IID_IOleObject, (void**)&_ole);
+		if FAILED(hr) {
+			_log.warning("failed create IOleObject");
+			return false;
+		}
 	}
 
 	IOleClientSite* pClientSite = NULL;
 	_controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &pClientSite);
-	_ole->SetClientSite(pClientSite);	
+	hr = _ole->SetClientSite(pClientSite);
+	if FAILED(hr) {
+		_log.warning("failed query IOleObject");
+		return false;
+	}
 
 	// Set the to transparent window mode
-	_ole->QueryInterface(__uuidof(IShockwaveFlash), (LPVOID*) &_flash);
+	hr = _ole->QueryInterface(__uuidof(IShockwaveFlash), (LPVOID*) &_flash);
+	if FAILED(hr) {
+		_log.warning("failed IShockwaveFlash");
+		return false;
+	}
 	_flash->put_WMode(L"transparent");
 
 	// In-place activate the object
 	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, pClientSite, 0, NULL, NULL);
 	pClientSite->Release();	
 		
-	_ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*) &_windowless);
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*) &_windowless);
+	if FAILED(hr) {
+		_log.warning("failed quey IOleInPlaceObjectWindowless");
+		return false;
+	}
 
-	_flash->QueryInterface(IID_IViewObject, (LPVOID*) &_view);   
+	hr = _flash->QueryInterface(IID_IViewObject, (LPVOID*) &_view);   
+	if FAILED(hr) {
+		_log.warning("failed quey IViewObject");
+		return false;
+	}
 	_buf = _renderer.createTexture(640, 480, D3DFMT_A8R8G8B8);
-
+	IOleInPlaceObject* inPlaceObject = NULL;     
+	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
+	if (inPlaceObject != NULL) {
+		RECT rect;
+		SetRect(&rect, 0, 0, 640, 480);
+		inPlaceObject->SetObjectRects(&rect, &rect);
+		inPlaceObject->Release();
+	}
+	_log.information("flash initialized");
 	return true;
 }
 
 void FlashScene::process() {
-	if (_flash && _buf) {
-		LPDIRECT3DSURFACE9 surface = NULL;
-		_buf->GetSurfaceLevel(0, &surface);
-		if (surface) {
-			HDC hdc = NULL;
-			HRESULT hr = surface->GetDC(&hdc);
+	if (_flash) {
+		//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		if (!_movie.empty()) {
+			_bstr_t bstr((char*)_movie.c_str());           
+			HRESULT hr = _flash->put_Movie(bstr);
 			if SUCCEEDED(hr) {
-				if (_view != NULL) {
-					// RECT is relative to the windowless container rect
-					RECTL rectl = {L(0), L(0), L(640), L(480)};
-					//HBRUSH brush = CreateSolidBrush(RGB(100, 100, 110));
-					//::FillRect(hdc, (RECT*)&rectl, brush);
-					hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
-					if FAILED(hr) _log.warning("failed draw");
-					//DeleteObject(brush);
-				}
-				surface->ReleaseDC(hdc);
+				_log.information(Poco::format("movie: %s", _movie));
 			} else {
-				_log.warning("failed getDC");
+				_log.warning(Poco::format("failed  movie: %s", _movie));
 			}
-			surface->Release();
-		} else {
-			_log.warning("failed get surface");
+			_movie.clear();
+		}
+		if (_buf) {
+			LPDIRECT3DSURFACE9 surface = NULL;
+			_buf->GetSurfaceLevel(0, &surface);
+			if (surface) {
+				HDC hdc = NULL;
+				HRESULT hr = surface->GetDC(&hdc);
+				if SUCCEEDED(hr) {
+					if (_view != NULL) {
+						//_renderer.colorFill(_buf, 0xff000000);
+						// RECT is relative to the windowless container rect
+						RECTL rectl = {L(0), L(0), L(640), L(480)};
+						//HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
+						//::FillRect(hdc, (RECT*)&rectl, brush);
+						hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
+						if FAILED(hr) _log.warning("failed draw");
+						//DeleteObject(brush);
+					}
+					surface->ReleaseDC(hdc);
+				} else {
+					_log.warning("failed getDC");
+				}
+				surface->Release();
+			} else {
+				_log.warning("failed get surface");
+			}
 		}
 	}
 }
 
 void FlashScene::draw1() {
+	{
+		DWORD col = 0xffcc9966;
+		_renderer.drawTexture(0, 0, 1024, 768, NULL, 0, col, col, col, col);
+	}
 	if (_flash) {
 		if (_buf) {
 			DWORD col = 0xffffffff;
@@ -855,7 +911,7 @@ void FlashScene::draw1() {
 		long state = getReadyState();
 		long frame = getCurrentFrame();
 		string playing(isPlaying()?"play":"stop");
-		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%03ld [%s]", state, frame, playing));
+		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%ld [%s]", state, frame, playing));
 	}
 }
 
@@ -869,23 +925,9 @@ long FlashScene::getReadyState() {
 	return state;
 }
 
-bool FlashScene::loadMovie(const std::string& file) {
-	_bstr_t bstr((char*)file.c_str());           
-	if (_flash) {
-		HRESULT hr = _flash->put_Movie(bstr);
-		if SUCCEEDED(hr) {
-			IOleInPlaceObject* inPlaceObject = NULL;     
-			_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
-			if (inPlaceObject != NULL) {
-				RECT rect;
-				SetRect(&rect, 0, 0, 640, 480);
-				inPlaceObject->SetObjectRects(&rect, &rect);
-				inPlaceObject->Release();
-			}
-			return true;
-		}
-	}
-	return false;
+bool FlashScene::loadMovie(const string& file) {
+	_movie = file;
+	return true;
 }
 
 bool FlashScene::isPlaying() {

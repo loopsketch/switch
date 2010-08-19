@@ -19,11 +19,11 @@ FlashContent::~FlashContent() {
 
 void FlashContent::initialize() {
 	_scene = dynamic_cast<FlashScenePtr>(_renderer.getScene("flash"));
-	_log.information("flash initialized");
 }
 
 /** ファイルをオープンします */
 bool FlashContent::open(const MediaItemPtr media, const int offset) {
+	if (!_scene) return false;
 	//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 
 	//load the movie
@@ -36,9 +36,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		//file = "file://" + Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX);
 		file = Path(mif.file()).absolute(config().dataRoot).toString();
 	}
-	_log.information(Poco::format("movie: %s", file));
 	if (!_scene->loadMovie(file)) {
-		_log.warning(Poco::format("failed movie: %s", file));
 		return false;
 	}
 	//string sjis;

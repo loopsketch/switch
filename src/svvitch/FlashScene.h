@@ -20,6 +20,7 @@
 #include <atlbase.h>
 #include <string>
 #include "Scene.h"
+#include <Poco/Mutex.h>
 
 using std::string;
 using std::wstring;
@@ -49,6 +50,8 @@ class ControlSite;
 class FlashScene: public Scene
 {
 private:
+	Poco::FastMutex _lock;
+
 	HMODULE _module;
 	ControlSite* _controlSite;
 	IOleObject* _ole;
@@ -57,6 +60,7 @@ private:
 	IViewObject* _view;
 
 	LPDIRECT3DTEXTURE9 _buf;
+	string _movie;
 
 public:
 	FlashScene(Renderer& renderer);
@@ -73,7 +77,7 @@ public:
 
 	long getReadyState();
 
-	bool loadMovie(const std::string& file);
+	bool loadMovie(const string& file);
 
 	bool isPlaying();
 
