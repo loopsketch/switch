@@ -23,6 +23,11 @@ class FlashScene: public Scene
 private:
 	Poco::FastMutex _lock;
 
+	int _x;
+	int _y;
+	int _w;
+	int _h;
+
 	HMODULE _module;
 	ControlSite* _controlSite;
 	IOleObject* _ole;

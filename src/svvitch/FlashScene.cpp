@@ -21,6 +21,10 @@ FlashScene::~FlashScene() {
 }
 
 bool FlashScene::initialize() {
+	_x = config().stageRect.left;
+	_y = config().stageRect.top;
+	_w = config().stageRect.right;
+	_h = config().stageRect.bottom;
 	_controlSite = new ControlSite();
 	_controlSite->AddRef();	
 
@@ -32,12 +36,12 @@ bool FlashScene::initialize() {
 	Poco::UnicodeConverter::toUTF8(libw, lib);
 	_log.information(Poco::format("library: %s", lib));
 	_module = LoadLibrary(libw.c_str());
-	//_module = LoadLibraryA("C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
-	//_module = LoadLibraryA("flash10e.ocx");
+	//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
+	//_module = LoadLibrary(L"flash10e.ocx");
 
 	// Try the older version
 	if (_module == NULL) {
-		//_module = LoadLibraryA("flash.ocx");
+		//_module = LoadLibrary(L"flash.ocx");
 	}
 
 	HRESULT hr;
@@ -64,9 +68,9 @@ bool FlashScene::initialize() {
 		}
 	}
 
-	IOleClientSite* pClientSite = NULL;
-	_controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &pClientSite);
-	hr = _ole->SetClientSite(pClientSite);
+	IOleClientSite* clientSite = NULL;
+	_controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
+	hr = _ole->SetClientSite(clientSite);
 	if FAILED(hr) {
 		_log.warning("failed query IOleObject");
 		return false;
@@ -81,8 +85,8 @@ bool FlashScene::initialize() {
 	_flash->put_WMode(L"transparent");
 
 	// In-place activate the object
-	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, pClientSite, 0, NULL, NULL);
-	pClientSite->Release();	
+	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
+	clientSite->Release();	
 		
 	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*) &_windowless);
 	if FAILED(hr) {
@@ -95,12 +99,12 @@ bool FlashScene::initialize() {
 		_log.warning("failed quey IViewObject");
 		return false;
 	}
-	_buf = _renderer.createTexture(640, 480, D3DFMT_A8R8G8B8);
+	_buf = _renderer.createTexture(_w, _h, D3DFMT_A8R8G8B8);
 	IOleInPlaceObject* inPlaceObject = NULL;     
 	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
 	if (inPlaceObject != NULL) {
 		RECT rect;
-		SetRect(&rect, 0, 0, 640, 480);
+		SetRect(&rect, _x, _y, _w, _h);
 		inPlaceObject->SetObjectRects(&rect, &rect);
 		inPlaceObject->Release();
 	}
@@ -131,7 +135,7 @@ void FlashScene::process() {
 					if (_view != NULL) {
 						//_renderer.colorFill(_buf, 0xff000000);
 						// RECT is relative to the windowless container rect
-						RECTL rectl = {L(0), L(0), L(640), L(480)};
+						RECTL rectl = {L(0), L(0), L(_w), L(_h)};
 						//HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
 						//::FillRect(hdc, (RECT*)&rectl, brush);
 						hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
@@ -151,24 +155,21 @@ void FlashScene::process() {
 }
 
 void FlashScene::draw1() {
-	{
-		DWORD col = 0xffcc9966;
-		_renderer.drawTexture(0, 0, 1024, 768, NULL, 0, col, col, col, col);
-	}
-	if (_flash) {
-		if (_buf) {
-			DWORD col = 0xffffffff;
-			_renderer.drawTexture(0, 0, _buf, 0, col, col, col, col);
-		}
-
-		long state = getReadyState();
-		long frame = getCurrentFrame();
-		string playing(isPlaying()?"play":"stop");
-		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%ld [%s]", state, frame, playing));
+	if (_buf) {
+		DWORD col = 0xffffffff;
+		_renderer.drawTexture(_x, _y, _buf, 0, col, col, col, col);
 	}
 }
 
 void FlashScene::draw2() {
+	if (_flash) {
+		long state = getReadyState();
+		long frame = getCurrentFrame();
+		string playing(isPlaying()?"play":"stop");
+		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%ld [%s]", state, frame, playing));
+	} else {
+		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, "flash not ready");
+	}
 }
 
 
