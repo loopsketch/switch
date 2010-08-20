@@ -116,7 +116,7 @@ void FlashScene::process() {
 	if (_flash) {
 		//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_movie.empty()) {
-			_bstr_t bstr((char*)_movie.c_str());           
+			_bstr_t bstr((char*)_movie.c_str());
 			HRESULT hr = _flash->put_Movie(bstr);
 			if SUCCEEDED(hr) {
 				_log.information(Poco::format("movie: %s", _movie));
@@ -133,7 +133,7 @@ void FlashScene::process() {
 				HRESULT hr = surface->GetDC(&hdc);
 				if SUCCEEDED(hr) {
 					if (_view != NULL) {
-						//_renderer.colorFill(_buf, 0xff000000);
+						_renderer.colorFill(_buf, 0xff000000);
 						// RECT is relative to the windowless container rect
 						RECTL rectl = {L(0), L(0), L(_w), L(_h)};
 						//HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
@@ -155,10 +155,6 @@ void FlashScene::process() {
 }
 
 void FlashScene::draw1() {
-	if (_buf) {
-		DWORD col = 0xffffffff;
-		_renderer.drawTexture(_x, _y, _buf, 0, col, col, col, col);
-	}
 }
 
 void FlashScene::draw2() {
@@ -172,6 +168,9 @@ void FlashScene::draw2() {
 	}
 }
 
+LPDIRECT3DTEXTURE9 FlashScene::getTexture() {
+	return _buf;
+}
 
 long FlashScene::getReadyState() {
 	long state = -1;
@@ -179,8 +178,19 @@ long FlashScene::getReadyState() {
 	return state;
 }
 
-bool FlashScene::loadMovie(const string& file) {
-	_movie = file;
+bool FlashScene::loadMovie(const string& movie) {
+	if (movie.empty()) {
+		_bstr_t bstr((char*)movie.c_str());
+		HRESULT hr = _flash->put_Movie(bstr);
+		if SUCCEEDED(hr) {
+			_log.information("unload movie");
+			return true;
+		} else {
+			_log.warning("failed unload movie");
+			return false;
+		}
+	}
+	_movie = movie;
 	return true;
 }
 

@@ -51,6 +51,8 @@ public:
 
 	virtual void draw2();
 
+	LPDIRECT3DTEXTURE9 getTexture();
+
 	long getReadyState();
 
 	bool loadMovie(const string& file);
