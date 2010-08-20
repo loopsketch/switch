@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ControlSite.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\CvContent.cpp"
 				>
 			</File>
@@ -339,6 +343,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\Content.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\ControlSite.h"
 				>
 			</File>
 			<File

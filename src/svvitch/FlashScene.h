@@ -1,50 +1,21 @@
 #pragma once
 
-#ifdef UNICODE
-#define FormatMessage FormatMessageW
-#define FindResource FindResourceW
-#define GetModuleFileName GetModuleFileNameW
-#define CreateFile CreateFileW
-#define LoadLibrary LoadLibraryW
-#define CreateEvent CreateEventW
-#else
-#define FormatMessage FormatMessageA
-#define FindResource FindResourceA
-#define GetModuleFileName GetModuleFileNameA
-#define CreateFile CreateFileA
-#define LoadLibrary LoadLibraryA
-#define CreateEvent CreateEventA
-#endif // !UNICODE
-
-#include <windows.h>
-#include <atlbase.h>
 #include <string>
 #include "Scene.h"
+#include "flash.h"
+#include "ControlSite.h"
 #include <Poco/Mutex.h>
 
 using std::string;
 using std::wstring;
 
-// Shockwave Flash ActiveX interfaces
-
-struct IOleObject;
-struct IOleInPlaceObjectWindowless;
-
-namespace ShockwaveFlashObjects
-{
-	struct IShockwaveFlash;
-}
-
 
 class FlashListener
 {
 public:
-	virtual void			FlashAnimEnded() {}
-	virtual void			FlashCommand(const std::string& theCommand, const std::string& theParam) {}
+	virtual void FlashAnimEnded() {}
+	virtual void FlashCommand(const std::string& theCommand, const std::string& theParam) {}
 };
-
-// Forward Declarations
-class ControlSite;
 
 
 class FlashScene: public Scene
@@ -55,7 +26,7 @@ private:
 	HMODULE _module;
 	ControlSite* _controlSite;
 	IOleObject* _ole;
-	ShockwaveFlashObjects::IShockwaveFlash* _flash;
+	IShockwaveFlash* _flash;
 	IOleInPlaceObjectWindowless* _windowless;
 	IViewObject* _view;
 

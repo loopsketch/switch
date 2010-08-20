@@ -4,7 +4,7 @@
 #include <Poco/Logger.h>
 
 
-class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite //	, public ICallFactory
+class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
 {
 private:
 	Poco::Logger& _log;
