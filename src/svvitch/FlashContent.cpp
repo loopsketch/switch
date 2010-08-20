@@ -49,8 +49,8 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
  */
 void FlashContent::play() {
 	if (_scene) {
-		_scene->loadMovie(_movie);
 		_playing = true;
+		_scene->loadMovie(_movie);
 	}
 }
 
@@ -60,7 +60,7 @@ void FlashContent::play() {
 void FlashContent::stop() {
 	if (_scene) {
 		_playing = false;
-		_scene->loadMovie("");
+		_scene->stop();
 	}
 }
 

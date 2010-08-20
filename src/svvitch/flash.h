@@ -20,6 +20,7 @@
 #include <atlbase.h>
 
 #pragma warning(disable: 4192)
+//#import <C:\\WINDOWS\\system32\\Macromed\\Flash\\Flash10i.ocx> named_guids raw_interfaces_only
 // Created by Microsoft (R) C/C++ Compiler Version 15.00.30729.01 (e0ae33f4).
 //
 // e:\vs_workspace\switch_sf\release\flash10i.tlh

@@ -7,7 +7,7 @@
 
 FlashScene::FlashScene(Renderer& renderer): Scene(renderer),
 	_module(NULL), _controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_buf(NULL)
+	_playing(false), _buf(NULL), _doStop(false)
 {
 }
 
@@ -108,6 +108,7 @@ bool FlashScene::initialize() {
 		inPlaceObject->SetObjectRects(&rect, &rect);
 		inPlaceObject->Release();
 	}
+	_flash->put_Loop(VARIANT_FALSE);
 	_log.information("flash initialized");
 	return true;
 }
@@ -116,16 +117,20 @@ void FlashScene::process() {
 	if (_flash) {
 		//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (!_movie.empty()) {
-			_bstr_t bstr((char*)_movie.c_str());
-			HRESULT hr = _flash->put_Movie(bstr);
-			if SUCCEEDED(hr) {
-				_log.information(Poco::format("movie: %s", _movie));
-			} else {
-				_log.warning(Poco::format("failed  movie: %s", _movie));
-			}
 			_movie.clear();
 		}
-		if (_buf) {
+		if (_doStop) {
+			File f("images/black.swf");
+			string movie = " ";
+			_bstr_t bstr((char*)movie.c_str());
+			HRESULT hr = _flash->put_Movie(bstr);
+			if SUCCEEDED(hr) _log.information(Poco::format("movie: %s", movie));
+			hr = _flash->raw_Stop();
+			if SUCCEEDED(hr) _log.information("stop");
+			_doStop = false;
+			_playing = false;
+		}
+		if (_playing && _buf) {
 			LPDIRECT3DSURFACE9 surface = NULL;
 			_buf->GetSurfaceLevel(0, &surface);
 			if (surface) {
@@ -133,7 +138,7 @@ void FlashScene::process() {
 				HRESULT hr = surface->GetDC(&hdc);
 				if SUCCEEDED(hr) {
 					if (_view != NULL) {
-						_renderer.colorFill(_buf, 0xff000000);
+						//_renderer.colorFill(_buf, 0xff000000);
 						// RECT is relative to the windowless container rect
 						RECTL rectl = {L(0), L(0), L(_w), L(_h)};
 						//HBRUSH brush = CreateSolidBrush(RGB(0, 0, 0));
@@ -155,17 +160,21 @@ void FlashScene::process() {
 }
 
 void FlashScene::draw1() {
+	//if (_buf) {
+	//	DWORD col = 0xffffffff;
+	//	_renderer.drawTexture(_x, _y, _w / 2, _h / 2, _buf, 0, col, col, col, col);
+	//}
 }
 
 void FlashScene::draw2() {
-	if (_flash) {
-		long state = getReadyState();
-		long frame = getCurrentFrame();
-		string playing(isPlaying()?"play":"stop");
-		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%ld [%s]", state, frame, playing));
-	} else {
-		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, "flash not ready");
-	}
+	//if (_flash) {
+	//	long state = getReadyState();
+	//	long frame = getCurrentFrame();
+	//	string playing(isPlaying()?"play":"stop");
+	//	_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, Poco::format("swf state:%ld frame:%ld [%s]", state, frame, playing));
+	//} else {
+	//	_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, "flash not ready");
+	//}
 }
 
 LPDIRECT3DTEXTURE9 FlashScene::getTexture() {
@@ -179,19 +188,20 @@ long FlashScene::getReadyState() {
 }
 
 bool FlashScene::loadMovie(const string& movie) {
-	if (movie.empty()) {
-		_bstr_t bstr((char*)movie.c_str());
-		HRESULT hr = _flash->put_Movie(bstr);
-		if SUCCEEDED(hr) {
-			_log.information("unload movie");
-			return true;
-		} else {
-			_log.warning("failed unload movie");
-			return false;
-		}
-	}
 	_movie = movie;
+	_bstr_t bstr((char*)_movie.c_str());
+	HRESULT hr = _flash->raw_LoadMovie(0, bstr);
+	if SUCCEEDED(hr) {
+		_log.information(Poco::format("movie: %s", _movie));
+		_playing = true;
+	} else {
+		_log.warning(Poco::format("failed  movie: %s", _movie));
+	}
 	return true;
+}
+
+void FlashScene::stop() {
+	_doStop = true;
 }
 
 bool FlashScene::isPlaying() {

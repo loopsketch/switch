@@ -35,7 +35,9 @@ private:
 	IOleInPlaceObjectWindowless* _windowless;
 	IViewObject* _view;
 
+	bool _playing;
 	LPDIRECT3DTEXTURE9 _buf;
+	boolean _doStop;
 	string _movie;
 
 public:
@@ -56,6 +58,8 @@ public:
 	long getReadyState();
 
 	bool loadMovie(const string& file);
+
+	void stop();
 
 	bool isPlaying();
 
