@@ -158,14 +158,16 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				break;
 
 			case CODEC_TYPE_AUDIO:
-				if (_audio < 0 && avcodec_open(avctx, avcodec) < 0) {
-					_log.warning(Poco::format("failed open codec: %s", mif.file()));
-				} else {
-					// codec‚ªopen‚Å‚«‚½
-					_log.information(Poco::format("open decoder: %s %dkbps", string(avcodec->long_name), avctx->bit_rate / 1024));
-					_audio = i;
-					_audioDecoder = new FFAudioDecoder(_renderer, _ic, _audio);
-					_audioDecoder->start();
+				if (_renderer.getSoundDevice()) {
+					if (_audio < 0 && avcodec_open(avctx, avcodec) < 0) {
+						_log.warning(Poco::format("failed open codec: %s", mif.file()));
+					} else {
+						// codec‚ªopen‚Å‚«‚½
+						_log.information(Poco::format("open decoder: %s %dkbps", string(avcodec->long_name), avctx->bit_rate / 1024));
+						_audio = i;
+						_audioDecoder = new FFAudioDecoder(_renderer, _ic, _audio);
+						_audioDecoder->start();
+					}
 				}
 				break;
 		}
