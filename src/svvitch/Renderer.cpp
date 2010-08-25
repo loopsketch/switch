@@ -173,12 +173,13 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	hr = DirectSoundCreate(NULL, &_sound, NULL);
 	if (FAILED(hr)) {
 		_log.warning("failed not initialize direct sound");
-		return E_FAIL;
-	}
-	hr = _sound->SetCooperativeLevel(hWnd, DSSCL_PRIORITY);
-	if (FAILED(hr)) {
-		_log.warning("failed not set cooperative level");
-		return E_FAIL;
+		// return E_FAIL;
+	} else {
+		hr = _sound->SetCooperativeLevel(hWnd, DSSCL_PRIORITY);
+		if (FAILED(hr)) {
+			_log.warning("failed not set cooperative level");
+			return E_FAIL;
+		}
 	}
 
 	// ƒtƒHƒ“ƒg“Çž‚Ý
@@ -763,8 +764,7 @@ const UINT Renderer::getMaxTextureH() const {
  */
 const LPDIRECT3DTEXTURE9 Renderer::createTexture(const int w, const int h, const D3DFORMAT format) const {
 	LPDIRECT3DTEXTURE9 texture = NULL;
-	HRESULT hr = D3DXCreateTexture(_device, w, h, 1, 0, format, D3DPOOL_MANAGED, &texture);
-	// HRESULT hr = _device->CreateTexture(w, h, 1, 0, format, D3DPOOL_MANAGED, &texture, NULL);
+	HRESULT hr = _device->CreateTexture(w, h, 1, 0, format, D3DPOOL_MANAGED, &texture, NULL);
 	if (SUCCEEDED(hr)) {
 	// D3DSURFACE_DESC desc;
 	// hr = texture->GetLevelDesc(0, &desc);		
