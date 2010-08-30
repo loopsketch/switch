@@ -269,11 +269,15 @@ void SwitchRequestHandler::get(const string& name) {
 				string s = form().get("s", "");
 				if (!s.empty()) {
 					targetScene = _renderer.getScene(s);
+					if (!targetScene) {
+						sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
+						return;
+					}
 				}
 				map<string, string> status = targetScene->getStatus();
 				map<string, string> params;
 				for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
-					params[it->first] = Poco::format("\"%s\"", it->second);
+					params[it->first] = svvitch::formatJSON(it->second);
 				}
 				sendJSONP(form().get("callback", ""), params);
 				return;

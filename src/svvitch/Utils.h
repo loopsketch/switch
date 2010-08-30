@@ -49,7 +49,10 @@ namespace svvitch {
 	void split(const string& s, char c, vector<string>& v, int splits = 0);
 
 	/** JSON•¶š—ñ¶¬ */
-	string formatJSON(const map<string, string>& json);
+	string formatJSON(const string& s);
+
+	/** JSON•¶š—ñ¶¬ */
+	string formatJSON(const map<string, string>& obj);
 
 	/** JSON”z—ñ•¶š—ñ¶¬ */
 	string formatJSONArray(const vector<string>& list);

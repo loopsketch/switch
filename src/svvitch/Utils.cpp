@@ -168,9 +168,21 @@ void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
 	if (v.empty()) v.push_back(s);
 }
 
-string svvitch::formatJSON(const map<string, string>& json) {
+string svvitch::formatJSON(const string& s) {
+	if (!s.empty()) {
+		int i = s.length() - 1;
+		if (s.c_str()[0] == '[' && s.c_str()[i] == ']') {
+			return s;
+		} else if (s.c_str()[0] == '{' && s.c_str()[i] == '}') {
+			return s;
+		}
+	}
+	return "\"" + s + "\"";
+}
+
+string svvitch::formatJSON(const map<string, string>& obj) {
 	vector<string> params;
-	for (map<string, string>::const_iterator it = json.begin(); it != json.end(); it++) {
+	for (map<string, string>::const_iterator it = obj.begin(); it != obj.end(); it++) {
 		params.push_back(Poco::format("\"%s\":%s", it->first, it->second));
 	}
 	return Poco::format("{%s}", svvitch::join(params, ","));
@@ -179,7 +191,7 @@ string svvitch::formatJSON(const map<string, string>& json) {
 string svvitch::formatJSONArray(const vector<string>& list) {
 	vector<string> params;
 	for (vector<string>::const_iterator it = list.begin(); it != list.end(); it++) {
-		params.push_back("\"" + (*it) + "\"");
+		params.push_back(formatJSON(*it));
 	}
 	return Poco::format("[%s]", svvitch::join(params, ","));
 }
