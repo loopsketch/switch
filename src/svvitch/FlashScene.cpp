@@ -21,31 +21,24 @@ FlashScene::~FlashScene() {
 }
 
 bool FlashScene::initialize() {
-	_x = config().stageRect.left;
-	_y = config().stageRect.top;
-	_w = config().stageRect.right;
-	_h = config().stageRect.bottom;
-	_controlSite = new ControlSite();
-	_controlSite->AddRef();	
-
-	TCHAR buf[MAX_PATH+1];
-	GetSystemDirectory(buf, MAX_PATH+1);
-	wstring libw(buf);
-	libw.append(L"\\macromed\\Flash\\flash10i.ocx");
-	string lib;
-	Poco::UnicodeConverter::toUTF8(libw, lib);
+	_log.information("flash initialize");
+	char buf[MAX_PATH + 1];
+	GetSystemDirectoryA(buf, MAX_PATH  + 1);
+	string lib(buf);
+	lib.append("\\macromed\\Flash\\flash10i.ocx");
 	_log.information(Poco::format("library: %s", lib));
-	_module = LoadLibrary(libw.c_str());
+	_module = LoadLibraryA(lib.c_str());
 	//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
 	//_module = LoadLibrary(L"flash10e.ocx");
 
 	// Try the older version
 	if (_module == NULL) {
 		//_module = LoadLibrary(L"flash.ocx");
+		_log.warning("failed not load 'flash.ocx'");
 	}
 
 	HRESULT hr;
-	if (_module != NULL) {
+	if (_module) {
 		IClassFactory* pClassFactory = NULL;
 		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
 		aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&pClassFactory);
@@ -56,6 +49,7 @@ bool FlashScene::initialize() {
 				_log.warning("failed create IOleObject");
 				return false;
 			}
+			_log.information("created class ShockwaveFlash(LoadLibrary)");
 		} else {
 			_log.warning("failed create IOleObject");
 			return false;
@@ -66,10 +60,22 @@ bool FlashScene::initialize() {
 			_log.warning("failed create IOleObject");
 			return false;
 		}
+		_log.information("created class ShockwaveFlash");
 	}
 
+	_x = config().stageRect.left;
+	_y = config().stageRect.top;
+	_w = config().stageRect.right;
+	_h = config().stageRect.bottom;
+	_controlSite = new ControlSite();
+	_controlSite->AddRef();
+
 	IOleClientSite* clientSite = NULL;
-	_controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
+	hr = _controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
+	if FAILED(hr) {
+		_log.warning("failed query IOleClientSite");
+		return false;
+	}
 	hr = _ole->SetClientSite(clientSite);
 	if FAILED(hr) {
 		_log.warning("failed query IOleObject");
@@ -99,7 +105,7 @@ bool FlashScene::initialize() {
 		_log.warning("failed quey IViewObject");
 		return false;
 	}
-	_buf = _renderer.createTexture(_w, _h, D3DFMT_A8R8G8B8);
+	_buf = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	IOleInPlaceObject* inPlaceObject = NULL;     
 	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
 	if (inPlaceObject != NULL) {
@@ -123,7 +129,8 @@ void FlashScene::process() {
 			File f("images/black.swf");
 			string movie = " ";
 			_bstr_t bstr((char*)movie.c_str());
-			HRESULT hr = _flash->put_Movie(bstr);
+			HRESULT hr;
+			hr = _flash->put_Movie(bstr);
 			if SUCCEEDED(hr) _log.information(Poco::format("movie: %s", movie));
 			hr = _flash->raw_Stop();
 			if SUCCEEDED(hr) _log.information("stop");
