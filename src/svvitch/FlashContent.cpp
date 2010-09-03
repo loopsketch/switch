@@ -253,7 +253,7 @@ void FlashContent::process(const DWORD& frame) {
 			} else {
 				_log.warning("failed get surface");
 			}
-			_current++;
+			_current = _playTimer.getTime() * 60 / 1000;
 		}
 		break;
 	case 3: // ÉNÉçÅ[ÉY
