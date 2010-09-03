@@ -21,6 +21,7 @@ private:
 
 	int _phase;
 	HMODULE _module;
+	IClassFactory* _classFactory;
 	ControlSite* _controlSite;
 	IOleObject* _ole;
 	IShockwaveFlash* _flash;

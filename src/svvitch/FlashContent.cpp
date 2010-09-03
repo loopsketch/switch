@@ -9,7 +9,8 @@
 
 
 FlashContent::FlashContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h),
-	_phase(-1), _module(NULL), _controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
+	_phase(-1), _module(NULL), _classFactory(NULL),
+	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
 	_texture(NULL), _playing(false)
 {
 	initialize();
@@ -17,6 +18,9 @@ FlashContent::FlashContent(Renderer& renderer, float x, float y, float w, float 
 
 FlashContent::~FlashContent() {
 	close();
+	SAFE_RELEASE(_texture);
+	SAFE_RELEASE(_controlSite);
+	SAFE_RELEASE(_classFactory);
 	if (_module) {
 		FreeLibrary(_module);
 		_module = NULL;
@@ -24,33 +28,43 @@ FlashContent::~FlashContent() {
 }
 
 void FlashContent::initialize() {
-	_log.information("flash initialize");
 	char buf[MAX_PATH + 1];
 	GetSystemDirectoryA(buf, MAX_PATH  + 1);
-	string lib(buf);
-	lib.append("\\macromed\\Flash\\flash10i.ocx");
-	_log.information(Poco::format("library: %s", lib));
-	_module = LoadLibraryA(lib.c_str());
-	//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
-	//_module = LoadLibrary(L"flash10e.ocx");
-
-	// Try the older version
-	if (_module == NULL) {
-		//_module = LoadLibrary(L"flash.ocx");
-		_log.warning("failed not load 'flash.ocx'");
+	string sys(buf);
+	sys.append("\\macromed\\Flash\\");
+	string libs[] = {"flash10i.ocx", "flash10.ocx", "flash9.ocx", "flash.ocx"};
+	for (int i = 0; !_module && i < 4; i++) {
+		string lib = sys + libs[i];
+		_module = LoadLibraryA(lib.c_str());
+		if (_module) {
+			_log.information(Poco::format("library: %s", lib));
+			DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
+			aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
+			if (!_classFactory) {
+				FreeLibrary(_module);
+				_module = NULL;
+			}
+		}
+		//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
+		//_module = LoadLibrary(L"flash10e.ocx");
 	}
+	if (!_module) {
+		_log.warning("failed not loading flash ActiveX");
+		return;
+	}
+	_controlSite = new ControlSite();
+	_controlSite->AddRef();
+	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
+	_renderer.colorFill(_texture, 0xff000000);
 	_phase = 0;
 }
 
 void FlashContent::createFlashComponents() {
 	HRESULT hr;
 	if (_module) {
-		IClassFactory* pClassFactory = NULL;
-		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
-		aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&pClassFactory);
-		if (pClassFactory) {
-			hr = pClassFactory->CreateInstance(NULL, IID_IOleObject, (void**)&_ole);
-			pClassFactory->Release();
+		if (_classFactory) {
+			hr = _classFactory->CreateInstance(NULL, IID_IOleObject, (void**)&_ole);
+			SAFE_RELEASE(_classFactory);
 			if FAILED(hr) {
 				_log.warning("failed create IOleObject");
 				_phase = -1;
@@ -72,9 +86,6 @@ void FlashContent::createFlashComponents() {
 		_log.information("created class ShockwaveFlash");
 	}
 
-	_controlSite = new ControlSite();
-	_controlSite->AddRef();
-
 	IOleClientSite* clientSite = NULL;
 	hr = _controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
 	if FAILED(hr) {
@@ -85,6 +96,7 @@ void FlashContent::createFlashComponents() {
 	hr = _ole->SetClientSite(clientSite);
 	if FAILED(hr) {
 		_log.warning("failed query IOleObject");
+		clientSite->Release();	
 		_phase = -1;
 		return;
 	}
@@ -93,6 +105,7 @@ void FlashContent::createFlashComponents() {
 	hr = _ole->QueryInterface(__uuidof(IShockwaveFlash), (LPVOID*) &_flash);
 	if FAILED(hr) {
 		_log.warning("failed IShockwaveFlash");
+		clientSite->Release();	
 		_phase = -1;
 		return;
 	}
@@ -115,7 +128,6 @@ void FlashContent::createFlashComponents() {
 		_phase = -1;
 		return;
 	}
-	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	IOleInPlaceObject* inPlaceObject = NULL;     
 	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
 	if (inPlaceObject != NULL) {
@@ -130,30 +142,35 @@ void FlashContent::createFlashComponents() {
 }
 
 void FlashContent::releaseFlashComponents() {
-	_log.information("flash release");
-	SAFE_RELEASE(_texture);
 	SAFE_RELEASE(_view);
 	SAFE_RELEASE(_windowless);
 	SAFE_RELEASE(_flash);
 	SAFE_RELEASE(_ole);
-	SAFE_RELEASE(_controlSite);
-	_phase = 4;
 	_log.information("flash released");
+	_phase = 3;
 }
 
 /** ファイルをオープンします */
 bool FlashContent::open(const MediaItemPtr media, const int offset) {
+	if (!_module) return false;
 	//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 
 	//load the movie
 	//_log.information(Poco::format("ready state before: %ld", _flash->ReadyState));
 	MediaItemFile mif = media->files()[0];
+	string movie;
 	if (mif.file().find("http://") == 0) {
-		_movie = mif.file();
+		movie = mif.file();
 	} else {
-		//file = "file://" + Path(mif.file()).absolute(config().dataRoot).toString(Poco::Path::PATH_UNIX);
-		_movie = Path(mif.file()).absolute(config().dataRoot).toString();
+		movie = Path(mif.file()).absolute(config().dataRoot).toString();
+		Poco::File f(movie);
+		if (!f.exists()) {
+			_log.warning(Poco::format("file not found: %s", movie));
+			return false;
+		}
 	}
+	svvitch::utf8_sjis(movie, _movie);
+	//_movie = movie;
 
 	set("alpha", 1.0f);
 	_duration = media->duration() * 60 / 1000;
@@ -168,7 +185,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
  */
 void FlashContent::play() {
 	_playing = true;
-	_log.information("flash play");
+	_playTimer.start();
 }
 
 /**
@@ -176,7 +193,6 @@ void FlashContent::play() {
  */
 void FlashContent::stop() {
 	_playing = false;
-	_log.information("flash stop");
 	if (_phase >= 0) {
 		releaseFlashComponents();
 	}
@@ -219,13 +235,14 @@ void FlashContent::process(const DWORD& frame) {
 		if (_playing && !_movie.empty()) {
 			_bstr_t bstr((char*)_movie.c_str());
 			HRESULT hr = _flash->raw_LoadMovie(0, bstr);
+			string movie;
+			svvitch::sjis_utf8(_movie, movie);
 			if SUCCEEDED(hr) {
-				_log.information(Poco::format("movie: %s", _movie));
-				_playTimer.start();
+				_log.information(Poco::format("load movie: %s", movie));
+				_phase = 2;
 			} else {
-				_log.warning(Poco::format("failed  movie: %s", _movie));
+				_log.warning(Poco::format("failed  movie: %s", movie));
 			}
-			_phase = 2;
 		}
 		break;
 	case 2: // 再生中
@@ -256,9 +273,7 @@ void FlashContent::process(const DWORD& frame) {
 			_current = _playTimer.getTime() * 60 / 1000;
 		}
 		break;
-	case 3: // クローズ
-		break;
-	case 4: // クローズ終了
+	case 3: // リリース済
 		break;
 	}
 	unsigned long cu = _playTimer.getTime() / 1000;
@@ -273,7 +288,8 @@ void FlashContent::process(const DWORD& frame) {
 void FlashContent::draw(const DWORD& frame) {
 	switch (_phase) {
 	case 2:
-		if (_playing && _texture) {
+	case 3:
+		if (_texture) {
 			float alpha = getF("alpha");
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 			_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
