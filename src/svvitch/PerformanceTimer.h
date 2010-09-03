@@ -11,9 +11,10 @@ private:
 	LARGE_INTEGER _freq;
 	LARGE_INTEGER _start;
 	LARGE_INTEGER _current;
+	bool _enabled;
 
 public:
-	PerformanceTimer() {
+	PerformanceTimer(): _enabled(false) {
 		::QueryPerformanceFrequency(&_freq);
 	}
 
@@ -23,11 +24,15 @@ public:
 	virtual void start() {
 		::QueryPerformanceCounter(&_start);
 		_current = _start;
+		_enabled = true;
 	}
 
 	const DWORD getTime() {
-		::QueryPerformanceCounter(&_current);
-		return (DWORD)((_current.QuadPart - _start.QuadPart) * 1000 / _freq.QuadPart);
+		if (_enabled) {
+			::QueryPerformanceCounter(&_current);
+			return (DWORD)((_current.QuadPart - _start.QuadPart) * 1000 / _freq.QuadPart);
+		}
+		return 0;
 	}
 
 	void update() {

@@ -194,9 +194,10 @@ const bool FlashContent::playing() const {
 }
 
 const bool FlashContent::finished() {
-	if (_playing) {
+	if (_phase == 2) {
 	//	return _flash->IsPlaying() == VARIANT_FALSE;
-		return _current >= _duration;
+	//	return _current >= _duration;
+		return _playTimer.getTime() >= 1000 * _duration / 60;
 	}
 	return false;
 }
@@ -220,6 +221,7 @@ void FlashContent::process(const DWORD& frame) {
 			HRESULT hr = _flash->raw_LoadMovie(0, bstr);
 			if SUCCEEDED(hr) {
 				_log.information(Poco::format("movie: %s", _movie));
+				_playTimer.start();
 			} else {
 				_log.warning(Poco::format("failed  movie: %s", _movie));
 			}
@@ -259,6 +261,13 @@ void FlashContent::process(const DWORD& frame) {
 	case 4: // クローズ終了
 		break;
 	}
+	unsigned long cu = _playTimer.getTime() / 1000;
+	unsigned long re = _duration / 60 - cu;
+	string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, 0);
+	string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, 0);
+	set("time", Poco::format("%s %s", t1, t2));
+	set("time_current", t1);
+	set("time_remain", t2);
 }
 
 void FlashContent::draw(const DWORD& frame) {

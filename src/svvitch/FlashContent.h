@@ -31,6 +31,7 @@ private:
 
 	bool _playing;
 	string _movie;
+	PerformanceTimer _playTimer;
 
 	void createFlashComponents();
 	void releaseFlashComponents();
