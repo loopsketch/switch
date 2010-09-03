@@ -1320,6 +1320,9 @@ void MainScene::process() {
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
 			//_doSwitchNext = false;
+			if (_currentContent >= 0) {
+				_contents[_currentContent]->stop();
+			}
 			_playCurrent = _playNext;
 			int next = (_currentContent + 1) % _contents.size();
 			ContentPtr nextContent = _contents[next]->get(0);
