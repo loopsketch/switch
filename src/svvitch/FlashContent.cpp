@@ -54,17 +54,20 @@ void FlashContent::createFlashComponents() {
 			if FAILED(hr) {
 				_log.warning("failed create IOleObject");
 				_phase = -1;
+				return;
 			}
 			_log.information("created class ShockwaveFlash(LoadLibrary)");
 		} else {
 			_log.warning("failed create IOleObject");
 			_phase = -1;
+			return;
 		}
 	} else {
 		hr = CoCreateInstance(CLSID_ShockwaveFlash, NULL, CLSCTX_INPROC_SERVER, IID_IOleObject, (void**)&_ole);
 		if FAILED(hr) {
 			_log.warning("failed create IOleObject");
 			_phase = -1;
+			return;
 		}
 		_log.information("created class ShockwaveFlash");
 	}
@@ -77,11 +80,13 @@ void FlashContent::createFlashComponents() {
 	if FAILED(hr) {
 		_log.warning("failed query IOleClientSite");
 		_phase = -1;
+		return;
 	}
 	hr = _ole->SetClientSite(clientSite);
 	if FAILED(hr) {
 		_log.warning("failed query IOleObject");
 		_phase = -1;
+		return;
 	}
 
 	// Set the to transparent window mode
@@ -89,6 +94,7 @@ void FlashContent::createFlashComponents() {
 	if FAILED(hr) {
 		_log.warning("failed IShockwaveFlash");
 		_phase = -1;
+		return;
 	}
 	_flash->put_WMode(L"transparent");
 
@@ -100,19 +106,21 @@ void FlashContent::createFlashComponents() {
 	if FAILED(hr) {
 		_log.warning("failed quey IOleInPlaceObjectWindowless");
 		_phase = -1;
+		return;
 	}
 
 	hr = _flash->QueryInterface(IID_IViewObject, (LPVOID*) &_view);   
 	if FAILED(hr) {
 		_log.warning("failed quey IViewObject");
 		_phase = -1;
+		return;
 	}
 	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	IOleInPlaceObject* inPlaceObject = NULL;     
 	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
 	if (inPlaceObject != NULL) {
 		RECT rect;
-		SetRect(&rect, _x, _y, _w, _h);
+		SetRect(&rect, 0, 0, _w, _h);
 		inPlaceObject->SetObjectRects(&rect, &rect);
 		inPlaceObject->Release();
 	}
@@ -227,8 +235,11 @@ void FlashContent::process(const DWORD& frame) {
 				HRESULT hr = surface->GetDC(&hdc);
 				if SUCCEEDED(hr) {
 					if (_view != NULL) {
-						RECTL rectl = {L(_x), L(_y), L(_w), L(_h)};
-						hr = _view->Draw(DVASPECT_CONTENT, 1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
+						//RECT rect;
+						//_controlSite->GetRect(&rect);
+						//RECTL rectl = {rect.left, rect.top, rect.right, rect.bottom};
+						RECTL rectl = {0, 0, _w, _h};
+						hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
 						if FAILED(hr) _log.warning("failed draw");
 						//DeleteObject(brush);
 					}

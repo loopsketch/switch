@@ -9,16 +9,14 @@ class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
 private:
 	Poco::Logger& _log;
 	int _ref;
-	//FlashPlayer* _server;
+	RECT _rect;
 
 public:
 	ControlSite();
 
 	virtual ~ControlSite();
 
-	//void Init(FlashPlayer* pFlashPlayer);
-
-
+	void GetRect(LPRECT rect);
 
 	// IUnknown
 	

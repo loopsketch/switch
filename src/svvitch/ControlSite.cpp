@@ -5,22 +5,18 @@
 using std::string;
 
 
-ControlSite::ControlSite(): _log(Poco::Logger::get("")) {
+ControlSite::ControlSite(): _log(Poco::Logger::get(""))
+{
 	_ref = 0;
-	//m_pFlashPlayer = NULL;
+	::SetRect(&_rect, 0, 0, 2000, 2000);
 }	
 
 ControlSite::~ControlSite() {
-	//if (m_pFlashPlayer != NULL)
-	//	m_pFlashPlayer->m_nCOMCount--;
 }
 
-//void Init(FlashPlayer* pFlashPlayer)
-//{
-//	m_pFlashPlayer = pFlashPlayer;
-//	m_pFlashPlayer->m_nCOMCount++;
-//}
-
+void ControlSite::GetRect(LPRECT rect) {
+	SetRect(rect, _rect.left, _rect.top, _rect.right, _rect.bottom);
+}
 
 HRESULT STDMETHODCALLTYPE ControlSite::QueryInterface(REFIID riid, LPVOID* ppv) {
 	*ppv = NULL;
@@ -248,17 +244,22 @@ HRESULT STDMETHODCALLTYPE ControlSite::ReleaseDC(/* [in] */ HDC hDC) {
 
 
 HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(/* [in] */ LPCRECT rect, /* [in] */ BOOL erase) {
-	if (rect == NULL) {
+	if (rect == NULL)
+	{
 		//m_pFlashPlayer->m_rcDirtyRect = m_pFlashPlayer->GetRect();
 		//m_pFlashPlayer->m_bFlashDirty = true;
 	}
 	//else if (!m_pFlashPlayer->m_bFlashDirty)
-	else if (false)
+	else if (true)
 	{
+		//_log.information(Poco::format("InvalidateRect: %s (%ld,%ld)-%ldx%ld", string(erase?"true":"false"), rect->left, rect->top, rect->right, rect->bottom));	
+		SetRect(&_rect, rect->left, rect->top, rect->right, rect->bottom);
 		//SetRect(&m_pFlashPlayer->m_rcDirtyRect, pRect->left, pRect->top, pRect->right - pRect->left, pRect->bottom - pRect->top);
 		//m_pFlashPlayer->m_bFlashDirty = true;
-	} else {
-		//_log.information(Poco::format("InvalidateRect: %s (%ld,%ld)-%ldx%ld", string(erase?"true":"false"), rect->left, rect->top, rect->right, rect->bottom));	
+	}
+	else
+	{			
+		
 	}		
 	
 	return S_OK;
