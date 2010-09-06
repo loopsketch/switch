@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <Psapi.h>
-#include <Poco/AutoPtr.h>
 #include <Poco/DOM/DOMParser.h>
 #include <Poco/DOM/Document.h>
 #include <Poco/DOM/Element.h>

@@ -165,6 +165,8 @@ bool BaseRequestHandler::sendFile(Path& path) {
 	} catch (Poco::FileException& ex) {
 		_log.warning(ex.displayText());
 		//sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	} catch (...) {
+		_log.warning(Poco::format("failed sendFile(%s)", path.toString()));
 	}
 	return false;
 }

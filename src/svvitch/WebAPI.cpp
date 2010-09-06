@@ -235,9 +235,9 @@ void SwitchRequestHandler::get(const string& name) {
 			} else if (name == "fonts") {
 				vector<string> fonts;
 				scene->renderer().getPrivateFontFamilies(fonts);
-				vector<string> arrays;
-				for (vector<string>::iterator it = fonts.begin(); it != fonts.end(); it++) {
-				}
+				//vector<string> arrays;
+				//for (vector<string>::iterator it = fonts.begin(); it != fonts.end(); it++) {
+				//}
 
 				map<string, string> params;
 				params["fonts"] = svvitch::formatJSONArray(fonts);
