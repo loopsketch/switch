@@ -1277,16 +1277,22 @@ void MainScene::process() {
 					string d = Poco::DateTimeFormatter::format(now, "%Y%m%d");
 					if (_castLogDate != d) {
 						_castLogDate = d;
-						File dataFile("logs/cast-" + _castLogDate + ".csv");
 						if (_castLog) {
 							_castLog->close();
 							SAFE_DELETE(_castLog);
 						}
+						File dataFile("logs/cast-" + _castLogDate + ".csv");
+						bool createNewFile = !dataFile.exists();
 						_castLog = new Poco::FileOutputStream();
 						_castLog->open(dataFile.path(), std::ios::out | std::ios::app);
+						if (createNewFile) {
+							string s = "@1\r\n";
+							_castLog->write(s.c_str(), s.length());
+							_castLog->flush();
+						}
 					}
 					if (_castLog) {
-						string time = Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT);
+						string time = Poco::DateTimeFormatter::format(now, "%Y-%m-%d %H:%M:%S.%i");
 						string s = time + "," + _status["current-content"] + "\r\n";
 						_castLog->write(s.c_str(), s.length());
 						_castLog->flush();
