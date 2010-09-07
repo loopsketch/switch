@@ -36,6 +36,8 @@ public:
 
 	void stop();
 
+	bool useFastStop();
+
 	void rewind();
 
 	const bool finished();

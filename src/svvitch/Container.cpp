@@ -71,6 +71,13 @@ void Container::stop() {
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->stop();
 }
 
+bool Container::useFastStop() {
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	bool useFastStop = false;
+	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) useFastStop |= (*it)->useFastStop();
+	return useFastStop;
+}
+
 void Container::rewind() {
 //	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->rewind();
