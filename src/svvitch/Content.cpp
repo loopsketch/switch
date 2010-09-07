@@ -35,6 +35,10 @@ void Content::stop() {
 	_playing = false;
 }
 
+bool Content::useFastStop() {
+	return false;
+}
+
 void Content::rewind() {
 	_current = 0;
 }

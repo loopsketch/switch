@@ -35,11 +35,9 @@
 #include "Utils.h"
 
 #include "CaptureContent.h"
+#include "FlashContent.h"
 #ifdef USE_OPENCV
 #include "CvContent.h"
-#endif
-#ifdef USE_FLASH
-#include "FlashContent.h"
 #endif
 
 using Poco::XML::Document;
@@ -275,7 +273,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 	}
 
 	c = new Container(_renderer);
-	if (preparePlaylist(c, playlistID, i)) {
+	if (preparePlaylist(c, playlistID, i, true)) {
 		string playlistName = "ready";
 		string itemID = "";
 		string itemName = "ready";
@@ -329,8 +327,11 @@ bool MainScene::stackPrepareContent(string& playlistID, int i) {
 	PlayParameters args;
 	args.playlistID = playlistID;
 	args.i = i;
-	_prepareStack.push_back(args);
-	if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		_prepareStack.push_back(args);
+		if (_prepareStack.size() > 5) _prepareStack.erase(_prepareStack.begin());
+	}
 	_prepareStackTime = 0;
 	return true;
 }
@@ -400,21 +401,27 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 	SAFE_RELEASE(oldPreparedName);
 
 	ContainerPtr c = new Container(_renderer);
-	if (preparePlaylist(c, params.playlistID, params.i)) {
+	if (preparePlaylist(c, params.playlistID, params.i, false)) {
 		string playlistName = "ready";
 		string itemID = "";
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 			PlayListPtr playlist = _workspace->getPlaylist(params.playlistID);
-			playlistName = playlist->name();
-			PlayListItemPtr item = playlist->items()[params.i % playlist->itemCount()];
-			itemID = item->media()->id();
-			itemName = item->media()->name();
-			_playPrepared.playlistID = params.playlistID;
-			_playPrepared.i = params.i;
-			_playPrepared.action = item->next();
-			_playPrepared.transition = item->transition();
+			if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > params.i) {
+				playlistName = playlist->name();
+				PlayListItemPtr item = playlist->items()[params.i];
+				itemID = item->media()->id();
+				itemName = item->media()->name();
+				_playPrepared.playlistID = params.playlistID;
+				_playPrepared.i = params.i;
+				_playPrepared.action = item->next();
+				_playPrepared.transition = item->transition();
+			} else {
+				_log.warning(Poco::format("failed playlist item index: %s-%d", params.playlistID, params.i));
+				SAFE_DELETE(c);
+				return false;
+			}
 		}
 
 		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlistName);
@@ -429,21 +436,25 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 		_status["prepared-content-id"] = itemID;
 		_status["prepared-content"] = itemName;
 		return true;
+	} else {
+		_log.warning(Poco::format("failed prepareContent: %s-%d", params.playlistID, params.i));
 	}
 	SAFE_DELETE(c);
 	return false;
 }
 
-bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID, const int listIndex) {
-	_log.information(Poco::format("prepare: %s-%d", playlistID, listIndex));
+bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID, const int i, const bool round) {
+	_log.information(Poco::format("prepare: %s-%d", playlistID, i));
 	PlayListPtr playlist = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		playlist = _workspace->getPlaylist(playlistID);
 	}
 	container->initialize();
-	if (playlist && playlist->itemCount() > 0) {
-		PlayListItemPtr item = playlist->items()[listIndex % playlist->itemCount()];
+	if (playlist && playlist->itemCount() > 0 && (round || playlist->itemCount() > i)) {
+		int index = i;
+		if (round) index = i % playlist->itemCount();
+		PlayListItemPtr item = playlist->items().at(index);
 		MediaItemPtr media = item->media();
 		if (media) {
 			return prepareMedia(container, media, playlist->text());
@@ -451,7 +462,7 @@ bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID
 			_log.warning("failed prepare next media, no media item");
 		}
 	} else {
-		_log.warning("failed prepare next media, no item in current playlist");
+		_log.warning(Poco::format("failed preparing item index: %s-%d", playlistID, i));
 	}
 	return false;
 }
@@ -495,6 +506,8 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 					} else if (engine == "directshow") {
 						DSContentPtr movie = new DSContent(_renderer);
 						if (movie->open(media)) {
+							movie->setPosition(x, y);
+							movie->setBounds(w, h);
 							// movie->set("aspect-mode", "fit");
 							container->add(movie);
 							break;
@@ -511,7 +524,6 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 		case MediaTypeText:
 			break;
 
-#ifdef USE_FLASH
 		case MediaTypeFlash:
 			{
 				FlashContentPtr flash = new FlashContent(_renderer, x, y, w, h);
@@ -522,7 +534,6 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 				}
 			}
 			break;
-#endif
 
 		case MediaTypeCvCap:
 			{
@@ -860,91 +871,6 @@ void MainScene::setRemoteStatus(const string& remote, const string& name, const 
 	}
 }
 
-/**
-bool MainScene::copyRemoteDir(const string& remote, const string& root) {
-	_log.information(Poco::format("remote copy directory: %s", root));
-	try {
-		Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, root));
-		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
-		string result;
-		Poco::StreamCopier::copyToString(*is.get(), result);
-		//_log.information(Poco::format("result: %s", result));
-		map<string, string> m;
-		svvitch::parseJSON(result, m);
-		//for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
-		//	_log.information(Poco::format("[%s]=%s", it->first, it->second));
-		//}
-		if (root == "/") {
-			Poco::NumberParser::tryParse(m["count"], _copyRemoteFiles);
-			_log.information(Poco::format("copy files: %d", _copyRemoteFiles));
-		}
-		vector<string> v;
-		svvitch::parseJSONArray(m["files"], v);
-		File dataDir("datas");
-		File copyDir("copys");
-		if (!copyDir.exists()) copyDir.createDirectories();
-		for (vector<string>::iterator it = v.begin(); it != v.end(); it++) {
-			string remotePath = root + *it;
-			if (remotePath.at(remotePath.length() - 1) == '/') {
-				copyRemoteDir(remote, remotePath);
-
-			} else {
-				Poco::DateTime modified;
-				int tzd = Poco::Timezone::tzd();
-				modified.makeLocal(tzd);
-				try {
-					Poco::URI uri(Poco::format("http://%s/files?path=%s", remote, remotePath));
-					std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
-					string result;
-					Poco::StreamCopier::copyToString(*is.get(), result);
-					_log.information(Poco::format("result: %s", result));
-					map<string, string> m;
-					svvitch::parseJSON(result, m);
-					svvitch::parseJSON(m["files"], m);
-					for (map<string, string>::iterator it = m.begin(); it != m.end(); it++) {
-						_log.information(Poco::format("[%s]=%s", it->first, it->second));
-					}
-					int tz = 0;
-					Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tz);
-					modified.makeUTC(tzd);
-					_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
-
-				} catch (Poco::FileException& ex) {
-					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				} catch (Poco::Exception& ex) {
-					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				}
-
-				//_log.information(Poco::format("files: %s", path));
-				File f(copyDir.path() + remotePath + ".part");
-				File parent(Path(f.path()).parent());
-				if (!parent.exists()) parent.createDirectories();
-				try {
-					Poco::URI uri(Poco::format("http://%s/download?path=%s", remote, remotePath));
-					std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
-					Poco::FileOutputStream os(f.path());
-					int size = Poco::StreamCopier::copyStream(*is.get(), os, 1024 * 1024);
-					os.close();
-					File rename(copyDir.path() + remotePath);
-					if (rename.exists()) rename.remove();
-					f.renameTo(rename.path());
-					f.setLastModified(modified.timestamp());
-					_log.information(Poco::format("remote file copy %s %d", remotePath, size));
-					_copyRemoteFiles--;
-				} catch (Poco::FileException& ex) {
-					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				} catch (Poco::Exception& ex) {
-					_log.warning(Poco::format("failed copy: %s", ex.displayText()));
-				}
-			}
-		}
-	} catch (Poco::Exception& ex) {
-		_log.warning(Poco::format("failed files: %s", ex.displayText()));
-	}
-	return true;
-}
-*/
-
 void MainScene::addRemovableMedia(const string& driveLetter) {
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -961,8 +887,6 @@ void MainScene::addRemovableMedia(const string& driveLetter) {
 	_currentCopyProgress = 0;
 	_removableAlpha = 0.01f;
 	_removableCover = 0;
-	// Sleep(3000);
-	// Sleep(60000);
 
 	Path dst = Path(config().dataRoot.parent(), "removable-copys\\");
 	File dir(dst);
@@ -1262,7 +1186,7 @@ void MainScene::process() {
 				if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 				PlayListPtr playlist = _workspace->getPlaylist(_playPrepared.playlistID);
-				if (playlist && playlist->itemCount() > _playPrepared.i) {
+				if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > _playPrepared.i) {
 					PlayListItemPtr item = playlist->items()[_playPrepared.i];
 					if (item) {
 						_log.information(Poco::format("switch content: %s-%d: %s", _playPrepared.playlistID, _playPrepared.i, item->media()->name()));
@@ -1272,7 +1196,7 @@ void MainScene::process() {
 						}
 					}
 				} else {
-					_log.warning(Poco::format("not find playlist: %s", _playPrepared.i));
+					_log.warning(Poco::format("not find playlist: %s-%d", _playPrepared.playlistID, _playPrepared.i));
 				}
 				_status["next-playlist"] = _status["prepared-playlist"];
 				_status["next-content-id"] = _status["prepared-content-id"];
@@ -1319,7 +1243,7 @@ void MainScene::process() {
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
 			//_doSwitchNext = false;
-			if (_currentContent >= 0) {
+			if (_currentContent >= 0 && _contents[_currentContent]->useFastStop()) {
 				_contents[_currentContent]->stop();
 			}
 			_playCurrent = _playNext;

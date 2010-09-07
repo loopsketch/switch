@@ -55,6 +55,8 @@ public:
 
 	virtual void stop();
 
+	virtual bool useFastStop();
+
 	virtual void rewind();
 
 	virtual const bool playing() const;

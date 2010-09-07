@@ -157,7 +157,7 @@ private:
 	bool prepareNextContent(const PlayParameters& args);
 
 	/** Containerに指定されたプレイリストのコンテンツを準備します */
-	bool preparePlaylist(ContainerPtr container, const string& playlistID, const int i = 0);
+	bool preparePlaylist(ContainerPtr container, const string& playlistID, const int i, const bool round = false);
 
 	bool prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText);
 

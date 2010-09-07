@@ -1,6 +1,3 @@
-#ifdef USE_FLASH
-
-
 #include "FlashContent.h"
 #include <Poco/UnicodeConverter.h>
 //#include <Poco/DateTime.h>
@@ -30,24 +27,20 @@ FlashContent::~FlashContent() {
 void FlashContent::initialize() {
 	char buf[MAX_PATH + 1];
 	GetSystemDirectoryA(buf, MAX_PATH  + 1);
-	string sys(buf);
-	sys.append("\\macromed\\Flash\\");
-	string libs[] = {"flash10i.ocx", "flash10.ocx", "flash9.ocx", "flash.ocx"};
-	for (int i = 0; !_module && i < 4; i++) {
-		string lib = sys + libs[i];
-		_module = LoadLibraryA(lib.c_str());
-		if (_module) {
-			_log.information(Poco::format("library: %s", lib));
-			DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
-			aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
-			if (!_classFactory) {
-				FreeLibrary(_module);
-				_module = NULL;
-			}
+	string lib(buf);
+	lib.append("\\macromed\\Flash\\flash10i.ocx");
+	_module = LoadLibraryA(lib.c_str());
+	if (_module) {
+		_log.information(Poco::format("library: %s", lib));
+		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
+		aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
+		if (!_classFactory) {
+			FreeLibrary(_module);
+			_module = NULL;
 		}
-		//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
-		//_module = LoadLibrary(L"flash10e.ocx");
 	}
+	//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
+	//_module = LoadLibrary(L"flash10e.ocx");
 	if (!_module) {
 		_log.warning("failed not loading flash ActiveX");
 		return;
@@ -199,7 +192,7 @@ void FlashContent::stop() {
 }
 
 bool FlashContent::useFastStop() {
-	return false;
+	return true;
 }
 
 /**
@@ -297,5 +290,3 @@ void FlashContent::draw(const DWORD& frame) {
 		break;
 	}
 }
-
-#endif
