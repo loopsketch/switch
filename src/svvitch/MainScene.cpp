@@ -1326,6 +1326,9 @@ void MainScene::process() {
 				SAFE_DELETE(_transition);
 				// ŽŸ‚ÌƒRƒ“ƒeƒ“ƒc€”õ
 				_doPrepareNext = true;
+				if (_currentContent >= 0 && _contents[_currentContent]->useFastStop()) {
+					_contents[_currentContent]->stop();
+				}
 			}
 		}
 
