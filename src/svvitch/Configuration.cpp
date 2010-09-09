@@ -105,6 +105,8 @@ bool Configuration::initialize() {
 			splitType = 2;
 		} else if (st == "horizontal") {
 			splitType = 11;
+		} else if (st == "matrix") {
+			splitType = 21;
 		} else {
 			splitType = 0;
 		}

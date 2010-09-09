@@ -158,7 +158,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				break;
 
 			case CODEC_TYPE_AUDIO:
-				if (_renderer.getSoundDevice()) {
+				if (_renderer.getSoundDevice() && config().splitType != 21) {
 					if (_audio < 0 && avcodec_open(avctx, avcodec) < 0) {
 						_log.warning(Poco::format("failed open codec: %s", mif.file()));
 					} else {
@@ -172,6 +172,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				break;
 		}
 	}
+
 	_worker = this;
 	_thread.start(*_worker);
 
@@ -348,13 +349,21 @@ void FFMovieContent::process(const DWORD& frame) {
 				if (_audioDecoder) _audioDecoder->play();
 				_starting = false;
 			}
-			if (_frameOddEven == (frame % 2)) {
-				VideoFrame* vf = _videoDecoder->popFrame();
-				if (vf) {
-					if (_vf) _videoDecoder->pushFrame(_vf);
-					_vf = vf;
-					_current++;
-					_fpsCounter.count();
+
+			switch (config().splitType) {
+			case 21:
+				break;
+			default:
+				{
+					if (_frameOddEven == (frame % 2)) {
+						VideoFrame* vf = _videoDecoder->popFrame();
+						if (vf) {
+							if (_vf) _videoDecoder->pushFrame(_vf);
+							_vf = vf;
+							_current++;
+							_fpsCounter.count();
+						}
+					}
 				}
 			}
 			if (_videoDecoder) vbufs = _videoDecoder->bufferedFrames();
@@ -477,6 +486,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 					}
 				}
 				break;
+
 			default:
 				{
 					RECT rect = config().stageRect;
@@ -512,6 +522,31 @@ void FFMovieContent::draw(const DWORD& frame) {
 					}
 				}
 				break;
+			}
+
+		} else if (_playing && config().splitType == 21) {
+			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+			float alpha = getF("alpha");
+			int cw = config().splitSize.cx;
+			int ch = config().splitSize.cy;
+			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
+
+			int remain = _duration - _current;
+			if (_videoDecoder->bufferedFrames() >= ((remain > 8)?8:remain)) {
+				for (int y = 0; y < 2; y++) {
+					for (int x = 0; x < 4 && _current <= _duration; x++) {
+						VideoFrame* vf = _videoDecoder->popFrame();
+						if (vf) {
+							int w = vf->width();
+							int h = vf->height();
+							vf->draw(L(x * w), L(y * h), L(w), L(h), 0, 0xffffffff);
+							_videoDecoder->pushFrame(vf);
+							_fpsCounter.count();
+							_current++;
+						}
+					}
+				}
+				_fpsCounter.count();
 			}
 
 		} else if (get("prepare") == "true" && _prepareVF) {
