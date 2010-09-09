@@ -158,6 +158,7 @@ bool MainScene::initialize() {
 
 	_workspace = new Workspace(config().workspaceFile);
 	if (_workspace->parse()) {
+		setStatus("workspace", _workspace->signature());
 		preparedStanbyMedia();
 		preparedFont(_workspace);
 	} else {
@@ -1081,6 +1082,7 @@ void MainScene::process() {
 			if (!_status["next-content"].empty() && _playCurrent.action.find("stop") == 0) {
 				activePrepareNextContent(_playNext);
 			}
+			setStatus("workspace", _workspace->signature());
 		}
 	}
 
