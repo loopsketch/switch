@@ -55,6 +55,11 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+0.9f
+・Flash(10.1)の対応
+・airSwitchを複数個所で起動していた場合の更新通知機能を追加
+・その他、airSvvitchにて細かいバグフィックス。
+
 0.9d
 ・同期時に親ディレクトリが無い場合に同期できないのを修正
 
