@@ -1,7 +1,9 @@
 #pragma once
 
-#include "flash.h"
 #include <Poco/Logger.h>
+#include "flash.h"
+
+class FlashContent;
 
 
 class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
@@ -10,9 +12,10 @@ private:
 	Poco::Logger& _log;
 	int _ref;
 	RECT _rect;
+	FlashContent* _flash;
 
 public:
-	ControlSite();
+	ControlSite(FlashContent* flash);
 
 	virtual ~ControlSite();
 

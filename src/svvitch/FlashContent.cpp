@@ -8,7 +8,7 @@
 FlashContent::FlashContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_texture(NULL), _playing(false)
+	_texture(NULL), _playing(false), _updated(false)
 {
 	initialize();
 }
@@ -45,7 +45,7 @@ void FlashContent::initialize() {
 		_log.warning("failed not loading flash ActiveX");
 		return;
 	}
-	_controlSite = new ControlSite();
+	_controlSite = new ControlSite(this);
 	_controlSite->AddRef();
 	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	_renderer.colorFill(_texture, 0xff000000);
@@ -172,6 +172,10 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	return true;
 }
 
+void FlashContent::update() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	_updated = true;
+}
 
 /**
  * Ä¶
@@ -240,28 +244,32 @@ void FlashContent::process(const DWORD& frame) {
 		break;
 	case 2: // Ä¶’†
 		if (_playing && _texture) {
-			LPDIRECT3DSURFACE9 surface = NULL;
-			_texture->GetSurfaceLevel(0, &surface);
-			if (surface) {
-				HDC hdc = NULL;
-				HRESULT hr = surface->GetDC(&hdc);
-				if SUCCEEDED(hr) {
-					if (_view != NULL) {
-						//RECT rect;
-						//_controlSite->GetRect(&rect);
-						//RECTL rectl = {rect.left, rect.top, rect.right, rect.bottom};
-						RECTL rectl = {0, 0, _w, _h};
-						hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
-						if FAILED(hr) _log.warning("failed draw");
-						//DeleteObject(brush);
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			if (_updated) {
+				_updated = false;
+				LPDIRECT3DSURFACE9 surface = NULL;
+				_texture->GetSurfaceLevel(0, &surface);
+				if (surface) {
+					HDC hdc = NULL;
+					HRESULT hr = surface->GetDC(&hdc);
+					if SUCCEEDED(hr) {
+						if (_view != NULL) {
+							//RECT rect;
+							//_controlSite->GetRect(&rect);
+							//RECTL rectl = {rect.left, rect.top, rect.right, rect.bottom};
+							RECTL rectl = {0, 0, _w, _h};
+							hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
+							if FAILED(hr) _log.warning("failed draw");
+							//DeleteObject(brush);
+						}
+						surface->ReleaseDC(hdc);
+					} else {
+						_log.warning("failed getDC");
 					}
-					surface->ReleaseDC(hdc);
+					surface->Release();
 				} else {
-					_log.warning("failed getDC");
+					_log.warning("failed get surface");
 				}
-				surface->Release();
-			} else {
-				_log.warning("failed get surface");
 			}
 			_current = _playTimer.getTime() * 60 / 1000;
 		}

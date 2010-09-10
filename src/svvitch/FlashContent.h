@@ -33,6 +33,7 @@ private:
 	bool _playing;
 	string _movie;
 	PerformanceTimer _playTimer;
+	bool _updated;
 
 	void createFlashComponents();
 	void releaseFlashComponents();
@@ -47,6 +48,8 @@ public:
 
 	/** ファイルをオープンします */
 	bool open(const MediaItemPtr media, const int offset = 0);
+
+	void update();
 
 	/**
 	 * 再生

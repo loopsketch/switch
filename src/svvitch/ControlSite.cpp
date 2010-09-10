@@ -1,11 +1,12 @@
 #include "ControlSite.h"
+#include "FlashContent.h"
 
 #include <Poco/format.h>
 
 using std::string;
 
 
-ControlSite::ControlSite(): _log(Poco::Logger::get(""))
+ControlSite::ControlSite(FlashContentPtr flash): _log(Poco::Logger::get("")), _flash(flash)
 {
 	_ref = 0;
 	::SetRect(&_rect, 0, 0, 2000, 2000);
@@ -244,23 +245,10 @@ HRESULT STDMETHODCALLTYPE ControlSite::ReleaseDC(/* [in] */ HDC hDC) {
 
 
 HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(/* [in] */ LPCRECT rect, /* [in] */ BOOL erase) {
-	if (rect == NULL)
-	{
-		//m_pFlashPlayer->m_rcDirtyRect = m_pFlashPlayer->GetRect();
-		//m_pFlashPlayer->m_bFlashDirty = true;
-	}
-	//else if (!m_pFlashPlayer->m_bFlashDirty)
-	else if (true)
-	{
-		//_log.information(Poco::format("InvalidateRect: %s (%ld,%ld)-%ldx%ld", string(erase?"true":"false"), rect->left, rect->top, rect->right, rect->bottom));	
+	if (rect) {
 		SetRect(&_rect, rect->left, rect->top, rect->right, rect->bottom);
-		//SetRect(&m_pFlashPlayer->m_rcDirtyRect, pRect->left, pRect->top, pRect->right - pRect->left, pRect->bottom - pRect->top);
-		//m_pFlashPlayer->m_bFlashDirty = true;
+		_flash->update();
 	}
-	else
-	{			
-		
-	}		
 	
 	return S_OK;
 }
