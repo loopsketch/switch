@@ -8,16 +8,13 @@
 FlashContent::FlashContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_texture(NULL), _playing(false), _updated(false)
+	_texture(NULL), _surface(NULL), _playing(false), _updated(false)
 {
 	initialize();
 }
 
 FlashContent::~FlashContent() {
 	close();
-	SAFE_RELEASE(_texture);
-	SAFE_RELEASE(_controlSite);
-	SAFE_RELEASE(_classFactory);
 	if (_module) {
 		FreeLibrary(_module);
 		_module = NULL;
@@ -45,10 +42,6 @@ void FlashContent::initialize() {
 		_log.warning("failed not loading flash ActiveX");
 		return;
 	}
-	_controlSite = new ControlSite(this);
-	_controlSite->AddRef();
-	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
-	_renderer.colorFill(_texture, 0xff000000);
 	_phase = 0;
 }
 
@@ -165,6 +158,14 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	}
 	_movie = movie;
 
+	_controlSite = new ControlSite(this);
+	_controlSite->AddRef();
+	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
+	if (_texture) {
+		_texture->GetSurfaceLevel(0, &_surface);
+		_renderer.colorFill(_texture, 0xff000000);
+	}
+
 	set("alpha", 1.0f);
 	_duration = media->duration() * 60 / 1000;
 	_current = 0;
@@ -219,6 +220,10 @@ const bool FlashContent::finished() {
 void FlashContent::close() {
 	stop();
 	_mediaID.clear();
+	SAFE_RELEASE(_surface);
+	SAFE_RELEASE(_texture);
+	SAFE_RELEASE(_controlSite);
+	SAFE_RELEASE(_classFactory);
 }
 
 void FlashContent::process(const DWORD& frame) {
@@ -243,32 +248,18 @@ void FlashContent::process(const DWORD& frame) {
 		}
 		break;
 	case 2: // çƒê∂íÜ
-		if (_playing && _texture) {
+		if (_playing && _surface && _view) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_updated) {
 				_updated = false;
-				LPDIRECT3DSURFACE9 surface = NULL;
-				_texture->GetSurfaceLevel(0, &surface);
-				if (surface) {
-					HDC hdc = NULL;
-					HRESULT hr = surface->GetDC(&hdc);
-					if SUCCEEDED(hr) {
-						if (_view != NULL) {
-							//RECT rect;
-							//_controlSite->GetRect(&rect);
-							//RECTL rectl = {rect.left, rect.top, rect.right, rect.bottom};
-							RECTL rectl = {0, 0, _w, _h};
-							hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, &rectl, NULL, NULL, 0);
-							if FAILED(hr) _log.warning("failed draw");
-							//DeleteObject(brush);
-						}
-						surface->ReleaseDC(hdc);
-					} else {
-						_log.warning("failed getDC");
-					}
-					surface->Release();
+				HDC hdc = NULL;
+				HRESULT hr = _surface->GetDC(&hdc);
+				if SUCCEEDED(hr) {
+					hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
+					if FAILED(hr) _log.warning("failed draw");
+					_surface->ReleaseDC(hdc);
 				} else {
-					_log.warning("failed get surface");
+					_log.warning("failed getDC");
 				}
 			}
 			_current = _playTimer.getTime() * 60 / 1000;

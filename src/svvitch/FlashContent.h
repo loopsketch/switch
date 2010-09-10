@@ -29,6 +29,8 @@ private:
 	IViewObject* _view;
 
 	LPDIRECT3DTEXTURE9 _texture;
+	LPDIRECT3DSURFACE9 _surface;
+	HDC _hdc;
 
 	bool _playing;
 	string _movie;

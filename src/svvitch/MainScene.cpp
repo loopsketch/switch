@@ -1278,11 +1278,11 @@ void MainScene::process() {
 				if (config().outCastLog) {
 					string d = Poco::DateTimeFormatter::format(now, "%Y%m%d");
 					if (_castLogDate != d) {
-						_castLogDate = d;
 						if (_castLog) {
 							_castLog->close();
 							SAFE_DELETE(_castLog);
 						}
+						_castLogDate = d;
 						File dataFile("logs/cast-" + _castLogDate + ".csv");
 						bool createNewFile = !dataFile.exists();
 						_castLog = new Poco::FileOutputStream();
