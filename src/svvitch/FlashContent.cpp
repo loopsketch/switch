@@ -103,6 +103,7 @@ void FlashContent::createFlashComponents() {
 		return;
 	}
 	_flash->put_WMode(L"transparent");
+	//_flash->put_Quality2(L"high");
 
 	// In-place activate the object
 	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
@@ -162,8 +163,7 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 			return false;
 		}
 	}
-	svvitch::utf8_sjis(movie, _movie);
-	//_movie = movie;
+	_movie = movie;
 
 	set("alpha", 1.0f);
 	_duration = media->duration() * 60 / 1000;
@@ -230,15 +230,15 @@ void FlashContent::process(const DWORD& frame) {
 		break;
 	case 1: // ‰Šú‰»Ï
 		if (_playing && !_movie.empty()) {
-			_bstr_t bstr((char*)_movie.c_str());
-			HRESULT hr = _flash->raw_LoadMovie(0, bstr);
 			string movie;
-			svvitch::sjis_utf8(_movie, movie);
+			svvitch::utf8_sjis(_movie, movie);
+			_bstr_t bstr((char*)movie.c_str());
+			HRESULT hr = _flash->put_Movie(bstr);
 			if SUCCEEDED(hr) {
-				_log.information(Poco::format("load movie: %s", movie));
+				_log.information(Poco::format("load movie: %s", _movie));
 				_phase = 2;
 			} else {
-				_log.warning(Poco::format("failed  movie: %s", movie));
+				_log.warning(Poco::format("failed  movie: %s", _movie));
 			}
 		}
 		break;

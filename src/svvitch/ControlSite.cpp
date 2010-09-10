@@ -188,11 +188,12 @@ HRESULT STDMETHODCALLTYPE ControlSite::DeactivateAndUndo(void) {
 }
 
 
-HRESULT STDMETHODCALLTYPE ControlSite::OnPosRectChange(/* [in] */ LPCRECT lprcPosRect) {
+HRESULT STDMETHODCALLTYPE ControlSite::OnPosRectChange(/* [in] */ LPCRECT rect) {
+	_log.information(Poco::format("change pos/rect: %ld,%ld %ldx%ld", rect->left, rect->top, rect->right, rect->bottom));
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ControlSite::OnInPlaceActivateEx(/* [out] */ BOOL __RPC_FAR *pfNoRedraw, /* [in] */ DWORD dwFlags) {		
+HRESULT STDMETHODCALLTYPE ControlSite::OnInPlaceActivateEx(/* [out] */ BOOL __RPC_FAR *pfNoRedraw, /* [in] */ DWORD dwFlags) {
 	return S_OK;
 }
 
@@ -248,6 +249,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(/* [in] */ LPCRECT rect, /
 	if (rect) {
 		SetRect(&_rect, rect->left, rect->top, rect->right, rect->bottom);
 		_flash->update();
+		//_log.information(Poco::format("invalidate rect: %ld,%ld %ldx%ld %s", rect->left, rect->top, rect->right, rect->bottom, string(erase?"true":"false")));
 	}
 	
 	return S_OK;
@@ -263,12 +265,11 @@ HRESULT STDMETHODCALLTYPE ControlSite::ScrollRect(/* [in] */ INT dx, /* [in] */ 
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ControlSite::AdjustRect(/* [out][in] */ LPRECT prc) {
-	if (prc == NULL)
-	{
+HRESULT STDMETHODCALLTYPE ControlSite::AdjustRect(/* [out][in] */ LPRECT rect) {
+	if (rect == NULL) {
 		return E_INVALIDARG;
 	}
-	
+	_log.information(Poco::format("adjust rect: %ld,%ld %ldx%ld", rect->left, rect->top, rect->right, rect->bottom));
 	return S_OK;
 }
 
