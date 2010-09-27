@@ -50,6 +50,8 @@ public:
 
 	virtual void process();
 
+	virtual void processAlways();
+
 	virtual void draw1();
 
 	virtual void draw2();

@@ -516,7 +516,18 @@ void Renderer::drawUnlock() {
 /**
  *  Scene‚ðƒŒƒ“ƒ_ƒŠƒ“ƒO‚µ‚Ü‚·
  */
-void Renderer::renderScene(const DWORD current) {
+void Renderer::renderScene(const bool visibled, const DWORD current) {
+	MEMORYSTATUS ms;
+	ms.dwLength = sizeof(MEMORYSTATUS);
+	GlobalMemoryStatus(&ms);
+	int availMem = ms.dwAvailPhys / 1024 / 1024;
+
+	PROCESS_MEMORY_COUNTERS pmc = {0};
+	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
+	int mem = pmc.WorkingSetSize / 1024;
+	Uint32 fps = _fpsCounter.getFPS();
+	_fpsCounter.count();
+
 	//PerformanceTimer timer;
 	//timer.start();
 	_current = current;
@@ -529,6 +540,14 @@ void Renderer::renderScene(const DWORD current) {
 			}
 			_addDrives.clear();
 		}
+	}
+	if (!visibled) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
+		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
+			Scene* scene = (*it);
+			scene->processAlways();
+		}
+		return;
 	}
 
 	int keycode = 0;
@@ -553,6 +572,7 @@ void Renderer::renderScene(const DWORD current) {
 			Scene* scene = (*it);
 			scene->notifyKey(keycode, shift, ctrl);
 			scene->process();
+			scene->processAlways();
 		}
 	}
 
@@ -640,17 +660,6 @@ void Renderer::renderScene(const DWORD current) {
 			}
 		}
 	}
-
-	MEMORYSTATUS ms;
-	ms.dwLength = sizeof(MEMORYSTATUS);
-	GlobalMemoryStatus(&ms);
-	int availMem = ms.dwAvailPhys / 1024 / 1024;
-
-	PROCESS_MEMORY_COUNTERS pmc = {0};
-	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
-	int mem = pmc.WorkingSetSize / 1024;
-	Uint32 fps = _fpsCounter.getFPS();
-	_fpsCounter.count();
 
 	// •`‰æ2
 	hr = _device->GetRenderTarget(0, &_backBuffer);

@@ -234,7 +234,7 @@ public:
 	/**
 	 * Scene‚ğƒŒƒ“ƒ_ƒŠƒ“ƒO‚µ‚Ü‚·
 	 */
-	void renderScene(const DWORD current);
+	void renderScene(const bool visibled, const DWORD current);
 
 	const UINT getDisplayAdapters() const;
 

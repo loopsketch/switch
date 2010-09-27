@@ -50,6 +50,9 @@ void Scene::removeStatus(const string& key) {
 void Scene::process() {
 }
 
+void Scene::processAlways() {
+}
+
 void Scene::draw1() {
 }
 

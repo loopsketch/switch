@@ -254,25 +254,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//	_interruptFile.clear();
 		//}
 
+		::QueryPerformanceCounter(&current);
+		DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+		last = time;
+
 		// ウィンドウが見えている時だけ描画するための処理
 		WINDOWPLACEMENT wndpl;
 		GetWindowPlacement(hWnd, &wndpl);	// ウインドウの状態を取得
-		if ((wndpl.showCmd != SW_HIDE) && 
-			(wndpl.showCmd != SW_MINIMIZE) &&
-			(wndpl.showCmd != SW_SHOWMINIMIZED) &&
-			(wndpl.showCmd != SW_SHOWMINNOACTIVE)) {
-
-			::QueryPerformanceCounter(&current);
-			DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
-			last = time;
-
-			// 描画処理の実行
-			_renderer->renderScene(time);
-			// if (lastSwapout == 0 || time - lastSwapout > 3600000) {
-			//	swapout();
-			//	lastSwapout = time;
-			// }
-		}
+		bool visibled = (wndpl.showCmd != SW_HIDE) && (wndpl.showCmd != SW_MINIMIZE) && (wndpl.showCmd != SW_SHOWMINIMIZED) && (wndpl.showCmd != SW_SHOWMINNOACTIVE);
+		_renderer->renderScene(visibled, time);
 		Poco::Thread::sleep(_conf.frameIntervals);
 	}
 
