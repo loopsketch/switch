@@ -235,7 +235,11 @@ bool Workspace::parse() {
 						} else {
 							time.push_back(Poco::NumberParser::parse(s));
 						}
-						if (time.size() == 6) {
+						if (time.size() == 7) {
+							SchedulePtr schedule = new Schedule(id, time[0], time[1], time[2], time[3], time[4], time[5], time[6], command);
+							_schedule.push_back(schedule);
+						} else if (time.size() == 6) {
+							// spec of old
 							SchedulePtr schedule = new Schedule(id, time[0], time[1], time[2], time[3], time[4], 0, time[5], command);
 							_schedule.push_back(schedule);
 						}
