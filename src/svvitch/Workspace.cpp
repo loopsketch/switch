@@ -11,11 +11,9 @@
 #include <Poco/Timezone.h>
 #include <Poco/Exception.h>
 #include <Poco/FileStream.h>
-#include <Poco/NumberParser.h>
 #include <Poco/format.h>
 #include <Poco/hash.h>
 #include <Poco/string.h>
-#include <Poco/RegularExpression.h>
 #include <Poco/UnicodeConverter.h>
 
 #include "Workspace.h"
@@ -208,7 +206,6 @@ bool Workspace::parse() {
 
 			nodes = doc->documentElement()->getElementsByTagName("schedule");
 			if (nodes) {
-				Poco::RegularExpression re("[\\s:/]+");
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* schedule = (Element*)nodes->item(i);
 					NodeList* items = schedule->getElementsByTagName("item");
@@ -217,24 +214,7 @@ bool Workspace::parse() {
 						string id = e->getAttribute("id");
 						string t = e->getAttribute("time");
 						string command = e->innerText();
-						int pos = 0;
-						Poco::RegularExpression::Match match;
-						vector<int> time;
-						while (re.match(t, pos, match) > 0) {
-							string s = t.substr(pos, match.offset - pos);
-							if (s == "*") {
-								time.push_back(-1);
-							} else {
-								time.push_back(Poco::NumberParser::parse(s));
-							}
-							pos = (match.offset + match.length);
-						}
-						string s = t.substr(pos);
-						if (s == "*") {
-							time.push_back(-1);
-						} else {
-							time.push_back(Poco::NumberParser::parse(s));
-						}
+						vector<int> time = svvitch::parseTimes(t);
 						if (time.size() == 7) {
 							SchedulePtr schedule = new Schedule(id, time[0], time[1], time[2], time[3], time[4], time[5], time[6], command);
 							_schedule.push_back(schedule);

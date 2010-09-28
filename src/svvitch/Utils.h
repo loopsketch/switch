@@ -65,4 +65,6 @@ namespace svvitch {
 
 	/** src‚Ì’†‚ÌÅŒã‚ÌfindˆÈ~‚Ì•¶š—ñ‚ğæ“¾‚µ‚Ü‚· */
 	string findLastOfText(const string& src, const string& find);
+
+	vector<int> parseTimes(const string& timeText);
 }

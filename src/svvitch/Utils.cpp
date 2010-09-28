@@ -12,6 +12,8 @@
 #include <Poco/format.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/UnicodeConverter.h>
+#include <Poco/RegularExpression.h>
+#include <Poco/NumberParser.h>
 
 using std::vector;
 using Poco::DigestEngine;
@@ -358,3 +360,25 @@ string svvitch::findLastOfText(const string& src, const string& find) {
 	return s;
 }
 
+vector<int> svvitch::parseTimes(const string& timeText) {
+	Poco::RegularExpression re("[\\s:/]+");
+	int pos = 0;
+	Poco::RegularExpression::Match match;
+	vector<int> time;
+	while (re.match(timeText, pos, match) > 0) {
+		string s = timeText.substr(pos, match.offset - pos);
+		if (s == "*") {
+			time.push_back(-1);
+		} else {
+			time.push_back(Poco::NumberParser::parse(s));
+		}
+		pos = (match.offset + match.length);
+	}
+	string s = timeText.substr(pos);
+	if (s == "*") {
+		time.push_back(-1);
+	} else {
+		time.push_back(Poco::NumberParser::parse(s));
+	}
+	return time;
+}
