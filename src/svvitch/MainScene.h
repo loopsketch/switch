@@ -133,6 +133,8 @@ private:
 	int _copyProgress;
 	int _currentCopyProgress;
 	int _copyRemoteFiles;
+	string _copyingRemote;
+	bool _delayedCopy;
 	vector<File> _delayUpdateFiles;
 
 	vector<ContainerPtr> _delayReleases;

@@ -58,7 +58,7 @@ MainScene::MainScene(Renderer& renderer):
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false), _castLog(NULL),
 	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
-	_copyRemoteFiles(0), _interrupttedContent(NULL)
+	_delayedCopy(false), _copyRemoteFiles(0), _interrupttedContent(NULL)
 {
 	initialize();
 }
@@ -703,6 +703,16 @@ bool MainScene::updateWorkspace() {
 
 /** リモートコピー */
 void MainScene::copyRemote(const string& remote) {
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);
+		if (!_copyingRemote.empty()) {
+			_log.warning(Poco::format("already remote copying: %s", _copyingRemote));
+			_copyingRemote = remote;
+			_delayedCopy = true;
+			return;
+		}
+		_copyingRemote = remote;
+	}
 	_log.information(Poco::format("remote copy: %s", remote));
 	setRemoteStatus(remote, "delayed-update", "");
 	setRemoteStatus(remote, "remote-copy", "1");
@@ -770,7 +780,8 @@ void MainScene::copyRemote(const string& remote) {
 					}
 					_copyRemoteFiles--;
 				}
-				_copyRemoteFiles = 0;				setRemoteStatus(remote, "remote-copy", "4");
+				_copyRemoteFiles = 0;
+				setRemoteStatus(remote, "remote-copy", "4");
 				File dst(config().workspaceFile);
 				if (dst.exists()) dst.remove();
 				File src(remoteWorkspace);
@@ -788,13 +799,27 @@ void MainScene::copyRemote(const string& remote) {
 	File tmp(remoteWorkspace);
 	if (tmp.exists()) tmp.remove();
 	setRemoteStatus(remote, "remote-copy", "10");
+
+	// 多重でremoteCopyが呼ばれていた場合は再実行
+	bool delayedCopy = false;
+	string copyingRemote;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);
+		if (_delayedCopy) {
+			delayedCopy = true;
+			_delayedCopy = false;
+		}
+		copyingRemote = _copyingRemote;
+		_copyingRemote.clear();
+	}
+	if (delayedCopy) copyRemote(copyingRemote);
 }
 
 bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck) {
 	Poco::DateTime modified;
 	int tzd = Poco::Timezone::tzd();
 	modified.makeLocal(tzd);
-	long size = 0;
+	Poco::File::FileSize size = 0;
 	try {
 		Poco::URI uri(Poco::format("%s/files?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
@@ -810,8 +835,8 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		int tz = 0;
 		Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tzd);
 		//modified.makeUTC(tzd);
-		Poco::Int64 num = 0;
-		Poco::NumberParser::tryParse64(m["size"], num);
+		Poco::UInt64 num = 0;
+		Poco::NumberParser::tryParseUnsigned64(m["size"], num);
 		size = num;
 		_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
 		File outFile(out);
