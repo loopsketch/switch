@@ -13,7 +13,6 @@
 #include <Poco/HashMap.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
-#include <Poco/Thread.h>
 
 #include "switch.h"
 #include "Common.h"
