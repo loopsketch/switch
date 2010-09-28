@@ -342,8 +342,11 @@ string SwitchRequestHandler::fileToJSON(const Path path) {
 	Poco::DateTime modified(f.getLastModified());
 	modified.makeLocal(Poco::Timezone::tzd());
 	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
-	params["size"] = Poco::NumberFormatter::format(static_cast<int>(f.getSize()));
-	//params["md5"] = "\"" + svvitch::md5(path) + "\"";
+	params["size"] = Poco::format("%Lu", f.getSize());
+	//if (f.getSize() < 10485760) {
+	//	// 10MBˆÈ‰º‚È‚çmd5‚ðŒvŽZ
+	//	params["md5"] = "\"" + svvitch::md5(path) + "\"";
+	//}
 	return svvitch::formatJSON(params);
 }
 
