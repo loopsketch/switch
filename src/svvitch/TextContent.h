@@ -44,7 +44,7 @@ private:
 	void drawText(string text, Gdiplus::Bitmap& bitmap, Gdiplus::Rect& rect);
 
 public:
-	TextContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
+	TextContent(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~TextContent();
 

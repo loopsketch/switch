@@ -25,7 +25,7 @@ private:
 	void syncronizedPlay();
 
 public:
-	DSContent(Renderer& renderer);
+	DSContent(Renderer& renderer, int splitType);
 
 	virtual ~DSContent();
 

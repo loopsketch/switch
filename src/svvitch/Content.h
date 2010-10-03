@@ -26,6 +26,7 @@ protected:
 	Poco::Logger& _log;
 	Renderer& _renderer;
 
+	int _splitType;
 //	MediaItemPtr _media;
 	string _mediaID;
 	bool _playing;
@@ -41,7 +42,7 @@ protected:
 	float _x, _y, _w, _h;
 
 public:
-	Content(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
+	Content(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~Content();
 

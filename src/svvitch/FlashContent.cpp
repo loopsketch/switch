@@ -5,7 +5,7 @@
 #include "Utils.h"
 
 
-FlashContent::FlashContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h),
+FlashContent::FlashContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
 	_texture(NULL), _surface(NULL), _playing(false), _updated(false)
@@ -24,16 +24,26 @@ FlashContent::~FlashContent() {
 void FlashContent::initialize() {
 	char buf[MAX_PATH + 1];
 	GetSystemDirectoryA(buf, MAX_PATH  + 1);
-	string lib(buf);
-	lib.append("\\macromed\\Flash\\flash10i.ocx");
-	_module = LoadLibraryA(lib.c_str());
-	if (_module) {
-		_log.information(Poco::format("library: %s", lib));
-		DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
-		aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
-		if (!_classFactory) {
-			FreeLibrary(_module);
-			_module = NULL;
+	string dir(buf);
+	dir.append("\\macromed\\Flash\\");
+
+	vector<string> files;
+	files.push_back("flash10k.ocx");
+	files.push_back("flash10j.ocx");
+	files.push_back("flash10i.ocx");
+	for (int i = 0; i < files.size(); i++) {
+		string lib(dir + files[i]);
+		_module = LoadLibraryA(lib.c_str());
+		if (_module) {
+			DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
+			aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
+			if (!_classFactory) {
+				FreeLibrary(_module);
+				_module = NULL;
+			} else {
+				_log.information(Poco::format("load library: %s", lib));
+				break;
+			}
 		}
 	}
 	//_module = LoadLibrary(L"C:\\WINDOWS\\SysWOW64\\macromed\\Flash\\flash10i.ocx");
@@ -284,7 +294,42 @@ void FlashContent::draw(const DWORD& frame) {
 		if (_texture) {
 			float alpha = getF("alpha");
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
+			int cw = config().splitSize.cx;
+			int ch = config().splitSize.cy;
+			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+			switch (config().splitType) {
+			case 1:
+				{
+				}
+				break;
+			case 2:
+				{
+					//device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);
+					//RECT scissorRect;
+					//device->GetScissorRect(&scissorRect);
+					device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+					device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+					int sw = _w / cw;
+					int sh = _h / ch;
+					for (int sy = 0; sy < sh; sy++) {
+						for (int sx = 0; sx < sw; sx++) {
+							int dx = (sx / config().splitCycles) * cw;
+							int dy = (config().splitCycles - (sx % config().splitCycles) - 1) * ch;
+							//RECT rect = {dx, dy, dx + cww, dy + chh};
+							//device->SetScissorRect(&rect);
+							_renderer.drawTexture(dx + _x, dy + _y, cw, ch, sx * cw, sy * ch, cw, ch, _texture, 0, col, col, col, col);
+						}
+					}
+					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+					//device->SetScissorRect(&scissorRect);
+				}
+				break;
+			default:
+				_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
+			}
 		}
 		break;
 	}

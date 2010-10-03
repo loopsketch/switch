@@ -49,7 +49,7 @@ private:
 	string _status;
 
 public:
-	CaptureContent(Renderer& renderer);
+	CaptureContent(Renderer& renderer, int splitType);
 
 	~CaptureContent();
 

@@ -66,7 +66,7 @@ private:
 	string _status;
 
 public:
-	CvContent(Renderer& renderer);
+	CvContent(Renderer& renderer, int splitType);
 
 	virtual ~CvContent();
 

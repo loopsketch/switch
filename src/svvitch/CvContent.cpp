@@ -1,3 +1,5 @@
+#ifdef USE_OPENCV
+
 #include <Poco/DateTime.h>
 #include <Poco/Timezone.h>
 #include <Poco/Mutex.h>
@@ -12,7 +14,7 @@
 using Poco::Util::XMLConfiguration;
 
 
-CvContent::CvContent(Renderer& renderer): Content(renderer), activeOpenDetectMovie(this, &CvContent::openDetectMovie),
+CvContent::CvContent(Renderer& renderer, int splitType): Content(renderer, splitType), activeOpenDetectMovie(this, &CvContent::openDetectMovie),
 	_normalItem(NULL), _normalMovie(NULL), _detectedItem(NULL), _detectedMovie(NULL),
 	_fx(NULL), _small1(NULL), _small2(NULL), _diff(NULL), _diff2(NULL), _photo(NULL), 
 	_detected(false), _doShutter(0), _viewPhoto(0), _finished(true), _playing(false), _statusFrame(0)
@@ -87,7 +89,7 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 	vector<MediaItemFile> file1;
 	file1.push_back(MediaItemFile(MediaTypeMovie, _normalFile, ""));
 	_normalItem = new MediaItem(MediaTypeMovie, "normal", "normal", 0, false, file1);
-	_normalMovie = new FFMovieContent(_renderer);
+	_normalMovie = new FFMovieContent(_renderer, config().splitType);
 	if (_normalMovie->open(_normalItem)) {
 		_normalMovie->setPosition(config().stageRect.left, config().stageRect.top);
 		_normalMovie->setBounds(config().stageRect.right, config().stageRect.bottom);
@@ -96,7 +98,7 @@ bool CvContent::open(const MediaItemPtr media, const int offset) {
 		SAFE_DELETE(_normalMovie);
 	}
 
-	_detectedMovie = new FFMovieContent(_renderer);
+	_detectedMovie = new FFMovieContent(_renderer, config().splitType);
 	_detectedMovie->setPosition(config().stageRect.left, config().stageRect.top);
 	_detectedMovie->setBounds(config().stageRect.right, config().stageRect.bottom);
 	activeOpenDetectMovie();
@@ -444,3 +446,5 @@ void CvContent::draw(const DWORD& frame) {
 		}
 	}
 }
+
+#endif

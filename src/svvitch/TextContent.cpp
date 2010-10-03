@@ -14,7 +14,7 @@
 using namespace Gdiplus;
 
 
-TextContent::TextContent(Renderer& renderer, float x, float y, float w, float h): Content(renderer, x, y, w, h), _texture(NULL), _referencedText(NULL)
+TextContent::TextContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h), _texture(NULL), _referencedText(NULL)
 {
 	initialize();
 }
@@ -211,7 +211,7 @@ void TextContent::draw(const DWORD& frame) {
 		int cw = config().splitSize.cx;
 		int ch = config().splitSize.cy;
 
-		switch (config().splitType) {
+		switch (_splitType) {
 		case 1:
 			{
 				device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);

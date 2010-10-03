@@ -2,7 +2,7 @@
 #include <Poco/UnicodeConverter.h>
 
 
-DSContent::DSContent(Renderer& renderer): Content(renderer),
+DSContent::DSContent(Renderer& renderer, int splitType): Content(renderer, splitType),
 	activePlay(this, &DSContent::syncronizedPlay),
 	_gb(NULL), _vmr9(NULL), _allocator(NULL), _vr(NULL), _mc(NULL), _ms(NULL), _me(NULL)
 {
@@ -278,7 +278,7 @@ void DSContent::draw(const DWORD& frame) {
 			int cw = config().splitSize.cx;
 			int ch = config().splitSize.cy;
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			switch (config().splitType) {
+			switch (_splitType) {
 			case 1:
 				{
 					int sx = 0, sy = 0, dx = 0, dy = 0;

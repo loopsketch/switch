@@ -1,7 +1,7 @@
 #include "Container.h"
 
 
-Container::Container(Renderer& renderer): Content(renderer), _initialized(true) {
+Container::Container(Renderer& renderer): Content(renderer, 0), _initialized(true) {
 }
 
 Container::~Container() {

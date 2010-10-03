@@ -494,7 +494,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 				for (vector<string>::iterator it = config().movieEngines.begin(); it < config().movieEngines.end(); it++) {
 					string engine = Poco::toLower(*it);
 					if (engine == "ffmpeg") {
-						FFMovieContentPtr movie = new FFMovieContent(_renderer);
+						FFMovieContentPtr movie = new FFMovieContent(_renderer, config().splitType);
 						if (movie->open(media)) {
 							movie->setPosition(x, y);
 							movie->setBounds(w, h);
@@ -505,7 +505,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 							SAFE_DELETE(movie);
 						}
 					} else if (engine == "directshow") {
-						DSContentPtr movie = new DSContent(_renderer);
+						DSContentPtr movie = new DSContent(_renderer, config().splitType);
 						if (movie->open(media)) {
 							movie->setPosition(x, y);
 							movie->setBounds(w, h);
@@ -527,7 +527,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 
 		case MediaTypeFlash:
 			{
-				FlashContentPtr flash = new FlashContent(_renderer, x, y, w, h);
+				FlashContentPtr flash = new FlashContent(_renderer, config().splitType, x, y, w, h);
 				if (flash->open(media)) {
 					container->add(flash);
 				} else {
@@ -538,7 +538,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 
 		case MediaTypeCvCap:
 			{
-				CaptureContentPtr cvcap = new CaptureContent(_renderer);
+				CaptureContentPtr cvcap = new CaptureContent(_renderer, config().splitType);
 				if (cvcap->open(media)) {
 					container->add(cvcap);
 				} else {
@@ -550,7 +550,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 #ifdef USE_OPENCV
 		case MediaTypeCv:
 			{
-				CvContentPtr cv = new CvContent(_renderer);
+				CvContentPtr cv = new CvContent(_renderer, config().splitType);
 				if (cv->open(media)) {
 					container->add(cv);
 				} else {
@@ -570,7 +570,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 		for (int i = 0; i < media->fileCount(); i++) {
 			MediaItemFile mif = media->files().at(i);
 			if (mif.type() == MediaTypeText) {
-				TextContentPtr text = new TextContent(_renderer);
+				TextContentPtr text = new TextContent(_renderer, config().splitType);
 				if (text->open(media, i)) {
 					if (block <= 0) {
 						// ŽÀ‘Ìƒ‚[ƒh

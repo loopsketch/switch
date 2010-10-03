@@ -41,7 +41,7 @@ private:
 	void releaseFlashComponents();
 
 public:
-	FlashContent(Renderer& renderer, float x = 0, float y = 0, float w = 0, float h = 0);
+	FlashContent(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~FlashContent();
 

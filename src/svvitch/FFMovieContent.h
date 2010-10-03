@@ -48,7 +48,7 @@ private:
 	float _avgTime;
 
 public:
-	FFMovieContent(Renderer& renderer);
+	FFMovieContent(Renderer& renderer, int splitType);
 
 	virtual ~FFMovieContent();
 

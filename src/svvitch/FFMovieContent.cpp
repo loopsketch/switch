@@ -2,8 +2,8 @@
 #include "Utils.h"
 
 
-FFMovieContent::FFMovieContent(Renderer& renderer):
-	Content(renderer), _ic(NULL), _rate(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL),
+FFMovieContent::FFMovieContent(Renderer& renderer, int splitType):
+	Content(renderer, splitType), _ic(NULL), _rate(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL),
 	_starting(false), _frameOddEven(0), _finished(true), _seeking(false)
 {
 	initialize();
@@ -400,7 +400,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 			int cw = config().splitSize.cx;
 			int ch = config().splitSize.cy;
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-			switch (config().splitType) {
+			switch (_splitType) {
 			case 1:
 				{
 					int sx = 0, sy = 0, dx = 0, dy = 0;
