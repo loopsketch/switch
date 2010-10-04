@@ -1,8 +1,8 @@
 #include "ImageContent.h"
 
 
-ImageContent::ImageContent(Renderer& renderer, float x, float y, float w, float h):
-	Content(renderer, x, y, w, h), _target(NULL), _finished(true), _playing(false)
+ImageContent::ImageContent(Renderer& renderer, int splitType, float x, float y, float w, float h):
+	Content(renderer, splitType, x, y, w, h), _target(NULL), _finished(true), _playing(false)
 {
 	initialize();
 }
@@ -182,7 +182,7 @@ void ImageContent::draw(const DWORD& frame) {
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		int cw = config().splitSize.cx;
 		int ch = config().splitSize.cy;
-		switch (config().splitType) {
+		switch (_splitType) {
 		case 1:
 			{
 				device->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE);

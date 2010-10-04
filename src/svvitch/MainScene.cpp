@@ -478,7 +478,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 	switch (media->type()) {
 		case MediaTypeImage:
 			{
-				ImageContentPtr image = new ImageContent(_renderer);
+				ImageContentPtr image = new ImageContent(_renderer, config().splitType);
 				if (image->open(media)) {
 					image->setPosition(x, y);
 					image->setBounds(w, h);
