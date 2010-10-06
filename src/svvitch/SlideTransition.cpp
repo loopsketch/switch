@@ -21,11 +21,15 @@ void SlideTransition::initialize(const DWORD& frame) {
 }
 
 bool SlideTransition::process(const DWORD& frame) {
+	bool finished = false;
 	if (_c1) {
 		float x1, y1;
 		_c1->getPosition(x1, y1);
-		if (y1 <= -_offsetY) return true;
 		y1 -= _speed;
+		if (y1 <= -_offsetY) {
+			y1 = _offsetY;
+			finished = true;
+		}
 		_c1->setPosition(x1, y1);
 	}
 	if (_c2) {
@@ -34,5 +38,5 @@ bool SlideTransition::process(const DWORD& frame) {
 		y2 -= _speed;
 		_c2->setPosition(x2, y2);
 	}
-	return false;
+	return finished;
 }
