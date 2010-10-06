@@ -1,8 +1,8 @@
 #include "SlideTransition.h"
 
 
-SlideTransition::SlideTransition(ContentPtr c1, ContentPtr c2, int offsetX, int offsetY):
-	Transition(c1, c2), _offsetX(offsetX), _offsetY(offsetY)
+SlideTransition::SlideTransition(ContentPtr c1, ContentPtr c2, float speed, int offsetX, int offsetY):
+	Transition(c1, c2), _speed(speed), _offsetX(offsetX), _offsetY(offsetY)
 {
 }
 
@@ -25,13 +25,13 @@ bool SlideTransition::process(const DWORD& frame) {
 		float x1, y1;
 		_c1->getPosition(x1, y1);
 		if (y1 <= -_offsetY) return true;
-		y1-=0.5f;
+		y1 -= _speed;
 		_c1->setPosition(x1, y1);
 	}
 	if (_c2) {
 		float x2, y2;
 		_c2->getPosition(x2, y2);
-		y2-=0.5f;
+		y2 -= _speed;
 		_c2->setPosition(x2, y2);
 	}
 	return false;

@@ -1336,11 +1336,12 @@ void MainScene::process() {
 				if (currentContent) {
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					if (_playCurrent.transition == "slide") {
-						int cw = config().splitSize.cx;
-						int ch = config().splitSize.cy;
-						_transition = new SlideTransition(currentContent, nextContent, 0, ch);
+						int h = config().stageRect.bottom;
+						float speed = h / 60; // 1s
+						_transition = new SlideTransition(currentContent, nextContent, speed, 0, h);
 					} else if (_playCurrent.transition == "dissolve") {
-						_transition = new DissolveTransition(currentContent, nextContent);
+						float speed = 0.05f;
+						_transition = new DissolveTransition(currentContent, nextContent, speed);
 					}
 					if (_transition) _transition->initialize(_frame);
 				}

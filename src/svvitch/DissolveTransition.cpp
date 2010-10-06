@@ -1,7 +1,7 @@
 #include "DissolveTransition.h"
 
 
-DissolveTransition::DissolveTransition(ContentPtr c1, ContentPtr c2): Transition(c1, c2) {
+DissolveTransition::DissolveTransition(ContentPtr c1, ContentPtr c2, float speed): Transition(c1, c2), _speed(speed) {
 }
 
 DissolveTransition::~DissolveTransition() {
@@ -16,9 +16,9 @@ bool DissolveTransition::process(const DWORD& frame) {
 	if (_c2) {
 		bool finished = false;
 		float alpha = _c2->getF("alpha");
-		alpha+=0.05f;
-		if (alpha >= 1.0f) {
-			alpha = 1.0f;
+		alpha += _speed;
+		if (alpha >= F(1)) {
+			alpha = F(1);
 			finished = true;
 		}
 		_c2->set("alpha", alpha);
