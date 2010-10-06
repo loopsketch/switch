@@ -118,15 +118,11 @@ void Content::set(const string& key, const string& value) {
 }
 
 void Content::set(const string& key, const float& value) {
-	string s;
-	Poco::NumberFormatter::append(s, value);
-	set(key, s);
+	set(key, Poco::NumberFormatter::format(value));
 }
 
 void Content::set(const string& key, const unsigned int& value) {
-	string s;
-	Poco::NumberFormatter::append(s, value);
-	set(key, s);
+	set(key, Poco::NumberFormatter::format(value));
 }
 
 const string& Content::get(const string& key, const string& defaultValue) const {

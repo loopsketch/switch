@@ -176,6 +176,14 @@ void TextContent::close() {
 
 /** 1フレームに1度だけ処理される */
 void TextContent::process(const DWORD& frame) {
+	if (_align == "center") {
+		_ax = (_w - _iw) / 2;
+	} else if (_align == "right") {
+		_ax = _w - _iw;
+	} else {
+		_ax = 0;
+	}
+
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_referencedText) {
@@ -206,7 +214,7 @@ void TextContent::draw(const DWORD& frame) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	if (!_mediaID.empty() && _texture && _playing) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		float alpha = getF("alpha");
+		float alpha = getF("alpha", 1.0f);
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		int cw = config().splitSize.cx;
 		int ch = config().splitSize.cy;
@@ -335,11 +343,15 @@ void TextContent::draw(const DWORD& frame) {
 				if (_fitBounds) {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-					_renderer.drawTexture(_x, _y, _w, _h, _texture, col, col, col, col);
+					if (_h < _ih) {
+						_renderer.drawTexture(_x, _y, _w, _h, _texture, 0, col, col, col, col);
+					} else {
+						_renderer.drawTexture(_x, _y, _w, _ih, _texture, 0, col, col, col, col);
+					}
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				} else {
-					_renderer.drawTexture(_x + _ax, _y, _texture, col, col, col, col);
+					_renderer.drawTexture(_x + _ax, _y, _texture, 0, col, col, col, col);
 				}
 				_x+=_dx;
 				if (_x < -_tw) _x = config().stageRect.right;
@@ -349,7 +361,8 @@ void TextContent::draw(const DWORD& frame) {
 	} else {
 		if (get("prepare") == "true") {
 			int sy = getF("itemNo") * 20;
-			_renderer.drawTexture(700, 600 + sy, 324, 20, _texture, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+			DWORD col = 0xccffffff;
+			_renderer.drawTexture(700, 600 + sy, 324, 20, _texture, 0, col, col, col, col);
 		}
 	}
 }
@@ -423,7 +436,7 @@ void TextContent::drawTexture(string text) {
 		rect.Height = h - y;	// ただしx/yはクリアせずそのまま引き渡すことで、biasとして使用する
 		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
 //		int sh = config().stageRect.bottom;
-		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h, D3DFMT_A8R8G8B8);
+		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h + y, D3DFMT_A8R8G8B8);
 		int tw = 0;
 		int th = 0;
 		int iw = 0;

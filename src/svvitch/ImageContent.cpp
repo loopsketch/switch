@@ -73,7 +73,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
 	int i = (_iw + _tw - 1) / _tw;
 	_th = _ih * i;
-	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_X8R8G8B8);
+	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_A8R8G8B8);
 	if (_target) {
 		_renderer.colorFill(_target, 0xff000000);
 		LPDIRECT3DSURFACE9 dst = NULL;
@@ -178,7 +178,7 @@ void ImageContent::draw(const DWORD& frame) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		// _dy -= 0.5f;
 		// if (_dy <= -32) _dy = 32;
-		float alpha = getF("alpha");
+		float alpha = getF("alpha", 1.0f);
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		int cw = config().splitSize.cx;
 		int ch = config().splitSize.cy;
@@ -299,9 +299,17 @@ void ImageContent::draw(const DWORD& frame) {
 				if (aspectMode == "fit") {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-					_renderer.drawTexture(L(_x), L(_y), L(_w), L(_h), _target, col, col, col, col);
+					_renderer.drawTexture(L(_x), L(_y), L(_w), L(_h), _target, 0, col, col, col, col);
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+
+				} else if (aspectMode == "lefttop") {
+					_renderer.drawTexture(L(_x), L(_y), _target, 0, col, col, col, col);
+
+				} else if (aspectMode == "center") {
+					int x = _x + (_iw - _w) / 2;
+					int y = _y + (_ih - _h) / 2;
+					_renderer.drawTexture(x, y, _target, 0, col, col, col, col);
 
 				} else {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
@@ -314,14 +322,13 @@ void ImageContent::draw(const DWORD& frame) {
 							// 画角よりディスプレイサイズは横長
 							long h = _w / dar;
 							long dy = (_h - h) / 2;
-							_renderer.drawTexture(L(_x), L(_y + dy), L(_w), h, _target, col, col, col, col);
+							_renderer.drawTexture(L(_x), L(_y + dy), L(_w), h, _target, 0, col, col, col, col);
 						} else {
 							long w = _h * dar;
 							long dx = (_w - w) / 2;
-							_renderer.drawTexture(L(_x + dx), L(_y), w, L(_h), _target, col, col, col, col);
+							_renderer.drawTexture(L(_x + dx), L(_y), w, L(_h), _target, 0, col, col, col, col);
 						}
 					}
-
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				}
@@ -331,7 +338,8 @@ void ImageContent::draw(const DWORD& frame) {
 	} else {
 		if (get("prepare") == "true") {
 			int sy = getF("itemNo") * 20;
-			_renderer.drawTexture(700, 600 + sy, 324, 20, _target, 0, 0xccffffff, 0xccffffff,0xccffffff, 0xccffffff);
+			DWORD col = 0xccffffff;
+			_renderer.drawTexture(700, 600 + sy, 324, 20, _target, 0, col, col, col, col);
 		}
 	}
 }
