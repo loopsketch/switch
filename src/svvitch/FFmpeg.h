@@ -19,6 +19,7 @@ extern "C" {
 #pragma comment(lib, "libcoldname.a")
 #pragma comment(lib, "libmingwex.a")
 #pragma comment(lib, "libz.a")
+#pragma comment(lib, "libavcore.a")
 #pragma comment(lib, "libavcodec.a")
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavformat.a")
