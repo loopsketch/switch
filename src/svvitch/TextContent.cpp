@@ -569,11 +569,12 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 		style = Gdiplus::FontStyleRegular;
 	}
 
+	int bh = _borderSize1 + _borderSize2;
 	GraphicsPath path;
-	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y), StringFormat::GenericDefault());
+	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y + bh), StringFormat::GenericDefault());
 	LinearGradientBrush foreBrush(Rect(0, 0, 1, rect.GetBottom() + rect.GetTop()), _c1, _c2, LinearGradientModeVertical);
 	SolidBrush borderBrush1(_b1);
-	Pen pen1(&borderBrush1, _borderSize1 + _borderSize2);
+	Pen pen1(&borderBrush1, bh);
 	if (_borderSize1 > F(0)) {
 		pen1.SetLineJoin(LineJoinRound);
 		g.DrawPath(&pen1, &path);
@@ -589,6 +590,7 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	// pen1‚ÌƒTƒCƒY‚Årect‚ðŽæ“¾
 	if (_borderSize1 > 0) path.Widen(&pen1);
 	path.GetBounds(&rect);
+	rect.Height = rect.Height + bh * 2;
 	g.Flush();
 	SAFE_DELETE(ff);
 
