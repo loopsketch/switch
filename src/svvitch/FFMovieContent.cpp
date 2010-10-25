@@ -85,6 +85,13 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		close();
 		return false;
 	}
+	_log.information(Poco::format("set start time: %d", media->start()));
+	int64_t start = 15000;// media->start();
+	if (start > 0 && av_seek_frame(_ic, -1, start, AVSEEK_FLAG_BACKWARD) != 0) {
+		_log.warning(Poco::format("failed set start time: %d", media->start()));
+		close();
+		return false;
+	}
 
 	_log.information(Poco::format("find stream information: %s streams: %u", string(_ic->title), _ic->nb_streams));
 	for (int i = 0; i < _ic->nb_streams; i++) {
