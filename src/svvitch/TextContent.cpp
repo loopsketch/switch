@@ -44,8 +44,8 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_desent = 0;
 			_c1 = mif.getHexProperty("c1", 0xffffffff);
 			_c2 = mif.getHexProperty("c2", 0xffcccccc);
-			_b1 = mif.getHexProperty("b1", 0x00cccccc);
-			_b2 = mif.getHexProperty("b2", 0xff000000);
+			_b1 = mif.getHexProperty("b1", 0xff000000);
+			_b2 = mif.getHexProperty("b2", 0x00cccccc);
 			_borderSize1 = mif.getFloatProperty("bs1", 4);
 			_borderSize2 = mif.getFloatProperty("bs2", 0);
 			_textStyle = mif.getProperty("style", config().textStyle);
@@ -63,7 +63,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			//_dy = mif.getFloatProperty("dy", F(0));
 			_align = mif.getProperty("align");
 			_fitBounds = mif.getProperty("fit") == "true";
-			string pos = Poco::format("(%hf,%hf) %hfx%hf dx:%hf dy:%hf", _x, _y, _w, _h, _dx, _dy);
+			string pos = Poco::format("(%0.1hf,%0.1hf) %0.1hfx%0.1hf dx:%0.1hf dy:%0.1hf", _x, _y, _w, _h, _dx, _dy);
 			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
 
 			if (!mif.file().empty() && mif.file().find("$") == string::npos) {
@@ -133,11 +133,11 @@ void TextContent::setReference(TextContent* text) {
 void TextContent::play() {
 	if (_move.find("roll-left-") == 0) {
 		_x = _cx + _cw;
-		_y = 0;
+		//_y = 0;
 		int dx = 0;
 		Poco::NumberParser::tryParse(_move.substr(10), dx);
 		_dx = -dx;
-		_log.information(Poco::format("move: scroll-left: %hf", _dx));
+		_log.debug(Poco::format("move: scroll-left: %0.1hf", _dx));
 	}
 	_playing = true;
 }
@@ -343,11 +343,7 @@ void TextContent::draw(const DWORD& frame) {
 				if (_fitBounds) {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-					if (_h < _ih) {
-						_renderer.drawTexture(_x, _y, _w, _h, _texture, 0, col, col, col, col);
-					} else {
-						_renderer.drawTexture(_x, _y, _w, _ih, _texture, 0, col, col, col, col);
-					}
+					_renderer.drawTexture(_x, _y, _w, _ih, _texture, 0, col, col, col, col);
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				} else {
@@ -434,9 +430,9 @@ void TextContent::drawTexture(string text) {
 		int h = rect.Height;
 		rect.Width = w - x;		// rectの領域をx/y=0で作り直す
 		rect.Height = h - y;	// ただしx/yはクリアせずそのまま引き渡すことで、biasとして使用する
-		_log.information(Poco::format("bitmap1: %d,%d %dx%d", x, y, w, h));
+		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
 //		int sh = config().stageRect.bottom;
-		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h + y, D3DFMT_A8R8G8B8);
+		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h, D3DFMT_A8R8G8B8);
 		int tw = 0;
 		int th = 0;
 		int iw = 0;
@@ -529,11 +525,9 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	int y = 0;
 	int h = rect.GetBottom() - rect.GetTop();
 	if (rect.GetRight() - rect.GetLeft() != 0 || rect.GetBottom() - rect.GetTop() != 0) {
-		x = -rect.GetLeft();
+		x = -rect.X;
+		y = -rect.Y;
 	}
-
-	Poco::RegularExpression re1("\\r|\\n");
-	re1.subst(text, "          ", Poco::RegularExpression::RE_GLOBAL);
 
 	Graphics g(&bitmap);
 	g.SetSmoothingMode(SmoothingModeHighQuality);
@@ -566,23 +560,25 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 		style = Gdiplus::FontStyleRegular;
 	}
 
-	int bh = _borderSize1 + _borderSize2;
-	GraphicsPath path;
+	Poco::RegularExpression re1("\\r|\\n");
+	re1.subst(text, "          ", Poco::RegularExpression::RE_GLOBAL);
 	std::wstring wtext;
 	Poco::UnicodeConverter::toUTF16(text, wtext);
 	size_t len = wcslen(wtext.c_str());
+	int bh = _borderSize1 + _borderSize2;
+	GraphicsPath path;
 	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y + bh), StringFormat::GenericDefault());
+	if (_borderSize2 > F(0)) {
+		SolidBrush borderBrush2(_b2);
+		Pen pen2(&borderBrush2, bh);
+		pen2.SetLineJoin(LineJoinRound);
+		g.DrawPath(&pen2, &path);
+	}
 	SolidBrush borderBrush1(_b1);
-	Pen pen1(&borderBrush1, bh);
+	Pen pen1(&borderBrush1, _borderSize1);
 	if (_borderSize1 > F(0)) {
 		pen1.SetLineJoin(LineJoinRound);
 		g.DrawPath(&pen1, &path);
-	}
-	if (_borderSize2 > F(0)) {
-		SolidBrush borderBrush2(_b2);
-		Pen pen2(&borderBrush2, _borderSize2);
-		pen2.SetLineJoin(LineJoinRound);
-		g.DrawPath(&pen2, &path);
 	}
 	LinearGradientBrush foreBrush(Rect(0, 0, 1, rect.GetBottom() + rect.GetTop()), _c1, _c2, LinearGradientModeVertical);
     g.FillPath(&foreBrush, &path);
@@ -590,11 +586,13 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	// pen1のサイズでrectを取得
 	if (_borderSize1 > 0) path.Widen(&pen1);
 	path.GetBounds(&rect);
-	rect.Height = rect.Height + bh * 2;
+	if (_borderSize2 > F(0)) {
+		rect.Height = rect.Height + _borderSize2 * 2;
+	}
 	g.Flush();
 	SAFE_DELETE(ff);
 
-	{
+	if (false) {
 		UINT num;        // number of image encoders
 		UINT size;       // size, in bytes, of the image encoder array
 		ImageCodecInfo* pImageCodecInfo;
