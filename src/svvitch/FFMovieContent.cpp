@@ -85,9 +85,8 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		close();
 		return false;
 	}
-	_log.information(Poco::format("set start time: %d", media->start()));
-	int64_t start = 15000;// media->start();
-	if (start > 0 && av_seek_frame(_ic, -1, start, AVSEEK_FLAG_BACKWARD) != 0) {
+	int64_t start = media->start() / F(1000) * AV_TIME_BASE;
+	if (media->start() > 0 && av_seek_frame(_ic, -1, start, AVSEEK_FLAG_BACKWARD) != 0) {
 		_log.warning(Poco::format("failed set start time: %d", media->start()));
 		close();
 		return false;
@@ -185,7 +184,8 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 	_log.information(Poco::format("opened: %s", mif.file()));
 	_mediaID = media->id();
-	if (media->duration() > 0) _duration = media->duration() / 30;
+	_current = media->start() * 30 / 1000;
+	if (media->duration() > 0) _duration = media->duration() * 30 / 1000;
 	set("alpha", 1.0f);
 	_starting = false;
 	_finished = false;
@@ -248,7 +248,6 @@ void FFMovieContent::run() {
  * çƒê∂
  */
 void FFMovieContent::play() {
-	_current = 0;
 	_playing = true;
 	_starting = true;
 	_playTimer.start();
@@ -386,9 +385,11 @@ void FFMovieContent::process(const DWORD& frame) {
 		}
 		int fps = _rate + 0.03f;
 		unsigned long cu = _current / fps;
-		unsigned long re = (_duration - _current) / fps;
+		long remain = _duration - _current;
+		if (remain < 0) remain = 0;
+		unsigned long re = remain / fps;
 		string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, _current % fps);
-		string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (_duration - _current) % fps);
+		string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, remain % fps);
 		set("time", Poco::format("%s %s", t1, t2));
 		set("time_current", t1);
 		set("time_remain", t2);
