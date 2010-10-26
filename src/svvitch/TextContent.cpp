@@ -434,7 +434,7 @@ void TextContent::drawTexture(string text) {
 		int h = rect.Height;
 		rect.Width = w - x;		// rectの領域をx/y=0で作り直す
 		rect.Height = h - y;	// ただしx/yはクリアせずそのまま引き渡すことで、biasとして使用する
-		_log.debug(Poco::format("bitmap: %d,%d %dx%d", x, y, w, h));
+		_log.information(Poco::format("bitmap1: %d,%d %dx%d", x, y, w, h));
 //		int sh = config().stageRect.bottom;
 		LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(w, h + y, D3DFMT_A8R8G8B8);
 		int tw = 0;
@@ -594,19 +594,19 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	g.Flush();
 	SAFE_DELETE(ff);
 
-//	{
-//		UINT num;        // number of image encoders
-//		UINT size;       // size, in bytes, of the image encoder array
-//		ImageCodecInfo* pImageCodecInfo;
-//		GetImageEncodersSize(&num, &size);
-//		pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
-//		GetImageEncoders(num, size, pImageCodecInfo);
-//		for (int i = 0; i < num ; i ++) {
-//			if (!wcscmp(pImageCodecInfo[i].MimeType, L"image/png")) {
-//				bitmap.Save(L"test.png", &pImageCodecInfo[i].Clsid);
-//				break;
-//			}
-//		}
-//		free(pImageCodecInfo);
-//	}
+	{
+		UINT num;        // number of image encoders
+		UINT size;       // size, in bytes, of the image encoder array
+		ImageCodecInfo* pImageCodecInfo;
+		GetImageEncodersSize(&num, &size);
+		pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+		GetImageEncoders(num, size, pImageCodecInfo);
+		for (int i = 0; i < num ; i ++) {
+			if (!wcscmp(pImageCodecInfo[i].MimeType, L"image/png")) {
+				bitmap.Save(L"test.png", &pImageCodecInfo[i].Clsid);
+				break;
+			}
+		}
+		free(pImageCodecInfo);
+	}
 }
