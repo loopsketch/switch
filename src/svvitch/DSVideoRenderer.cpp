@@ -7,7 +7,8 @@
 
 DSVideoRenderer::DSVideoRenderer(Renderer& renderer, bool supportYUV2, LPUNKNOWN unk, HRESULT* result):
 	CBaseVideoRenderer(__uuidof(CLSID_DSVideoRenderer), NAME("DSVideoRenderer"), unk, result),
-	_log(Poco::Logger::get("")), _renderer(renderer), _supportYUV2(supportYUV2), _w(0), _h(0), _texture(NULL), _readTime(0)
+	_log(Poco::Logger::get("")), _renderer(renderer),
+	_supportYUV2(supportYUV2), _w(0), _h(0), _texture(NULL), _current(0), _readTime(0)
 {
 	AddRef();
 	_format = D3DFMT_UNKNOWN;
@@ -165,7 +166,6 @@ HRESULT DSVideoRenderer::SetMediaType(const CMediaType* pmt) {
 	}
 	if (w != 0 && h != 0) {
 		releaseTexture();
-		LPDIRECT3DTEXTURE9 texture = NULL;
 		string type;
 		D3DFORMAT format;
 		if (getMediaTypeName(pmt, type, &format)) {
@@ -177,14 +177,10 @@ HRESULT DSVideoRenderer::SetMediaType(const CMediaType* pmt) {
 				_format = format;
 				_w = w;
 				_h = h;
-				texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
-				if (texture) hr = S_OK;
+				_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
+				if (_texture) hr = S_OK;
 				break;
 			}
-		}
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			_texture = texture;
 		}
 		_log.information(Poco::format("set media type[%d]: %s %ldx%ld", i, type, w, h));
 	}
@@ -224,6 +220,7 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 					break;
 			}
 			_texture->UnlockRect(0);
+			_current++;
 			hr = S_OK;
 		} else {
 			_log.warning("failed capture texture lock");
@@ -238,6 +235,10 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 LPDIRECT3DTEXTURE9 DSVideoRenderer::getTexture() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	return _texture;
+}
+
+DWORD DSVideoRenderer::currentTime() {
+	return _current;
 }
 
 DWORD DSVideoRenderer::readTime() {

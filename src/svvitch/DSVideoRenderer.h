@@ -29,6 +29,7 @@ private:
 	long _h;
 	LPDIRECT3DTEXTURE9 _texture;
 
+	DWORD _current;
 	PerformanceTimer _readTimer;
 	DWORD _readTime;
 
@@ -51,6 +52,8 @@ public:
 	HRESULT DoRenderSample(IMediaSample* sample);
 
 	LPDIRECT3DTEXTURE9 getTexture();
+
+	DWORD currentTime();
 
 	DWORD readTime();
 
