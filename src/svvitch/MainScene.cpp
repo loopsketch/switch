@@ -1337,7 +1337,7 @@ void MainScene::process() {
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					if (_playCurrent.transition == "slide") {
 						int h = config().stageRect.bottom;
-						float speed = h / 60; // 1s
+						float speed = h / F(60); // 1s
 						_transition = new SlideTransition(currentContent, nextContent, speed, 0, h);
 					} else if (_playCurrent.transition == "dissolve") {
 						float speed = 0.05f;

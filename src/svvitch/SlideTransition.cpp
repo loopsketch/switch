@@ -36,6 +36,9 @@ bool SlideTransition::process(const DWORD& frame) {
 		float x2, y2;
 		_c2->getPosition(x2, y2);
 		y2 -= _speed;
+		if (finished) {
+			y2 = L(y2);
+		}
 		_c2->setPosition(x2, y2);
 	}
 	return finished;
