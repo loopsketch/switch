@@ -47,7 +47,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_b1 = mif.getHexProperty("b1", 0x00cccccc);
 			_b2 = mif.getHexProperty("b2", 0xff000000);
 			_borderSize1 = mif.getFloatProperty("bs1", 4);
-			_borderSize2 = mif.getFloatProperty("bs2", 4);
+			_borderSize2 = mif.getFloatProperty("bs2", 0);
 			_textStyle = mif.getProperty("style", config().textStyle);
 
 			_x = mif.getNumProperty("x", 0);
@@ -533,9 +533,7 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 	}
 
 	Poco::RegularExpression re1("\\r|\\n");
-	re1.subst(text, "     ", Poco::RegularExpression::RE_GLOBAL);
-	std::wstring wtext;
-	Poco::UnicodeConverter::toUTF16(text, wtext);
+	re1.subst(text, "          ", Poco::RegularExpression::RE_GLOBAL);
 
 	Graphics g(&bitmap);
 	g.SetSmoothingMode(SmoothingModeHighQuality);
@@ -557,7 +555,6 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 		Poco::UnicodeConverter::toUTF8(wname, name);
 		_log.information(Poco::format("installed font: %s", name));
 	}
-	size_t len = wcslen(wtext.c_str());
 	Gdiplus::FontStyle style;
 	if (_textStyle == "bold") {
 		style = Gdiplus::FontStyleBold;
@@ -571,20 +568,23 @@ void TextContent::drawText(string text, Bitmap& bitmap, Rect& rect) {
 
 	int bh = _borderSize1 + _borderSize2;
 	GraphicsPath path;
+	std::wstring wtext;
+	Poco::UnicodeConverter::toUTF16(text, wtext);
+	size_t len = wcslen(wtext.c_str());
 	path.AddString(wtext.c_str(), len, ff, style, _textHeight, Point(x, y + bh), StringFormat::GenericDefault());
-	LinearGradientBrush foreBrush(Rect(0, 0, 1, rect.GetBottom() + rect.GetTop()), _c1, _c2, LinearGradientModeVertical);
 	SolidBrush borderBrush1(_b1);
 	Pen pen1(&borderBrush1, bh);
 	if (_borderSize1 > F(0)) {
 		pen1.SetLineJoin(LineJoinRound);
 		g.DrawPath(&pen1, &path);
 	}
-	SolidBrush borderBrush2(_b2);
-	Pen pen2(&borderBrush2, _borderSize2);
-	if (_borderSize2 > 0) {
+	if (_borderSize2 > F(0)) {
+		SolidBrush borderBrush2(_b2);
+		Pen pen2(&borderBrush2, _borderSize2);
 		pen2.SetLineJoin(LineJoinRound);
 		g.DrawPath(&pen2, &path);
 	}
+	LinearGradientBrush foreBrush(Rect(0, 0, 1, rect.GetBottom() + rect.GetTop()), _c1, _c2, LinearGradientModeVertical);
     g.FillPath(&foreBrush, &path);
 
 	// pen1‚ÌƒTƒCƒY‚Årect‚ðŽæ“¾
