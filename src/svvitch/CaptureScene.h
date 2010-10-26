@@ -36,7 +36,6 @@ private:
 
 	LPDIRECT3DTEXTURE9 _cameraImage;
 	LPDIRECT3DSURFACE9 _surface;
-	LPBYTE _gray;
 
 
 	/** ÉtÉBÉãÉ^Çê∂ê¨ÇµÇ‹Ç∑ */
@@ -62,8 +61,6 @@ public:
 	virtual bool initialize();
 
 	LPDIRECT3DTEXTURE9 getCameraImage();
-
-	LPBYTE getGrayScale();
 
 	virtual void process();
 

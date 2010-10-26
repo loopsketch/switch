@@ -192,7 +192,7 @@ HRESULT DSVideoRenderer::DoRenderSample(IMediaSample* sample) {
 	CheckPointer(_texture, E_UNEXPECTED);
 
 	HRESULT hr = E_FAIL;
-	AM_MEDIA_TYPE* type;
+	AM_MEDIA_TYPE* type = NULL;
 	sample->GetMediaType(&type);
 	if (type) {
 		_log.information("*change media type");

@@ -5,7 +5,7 @@
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	_frame(0), _useStageCapture(false), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
-	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL), _gray(NULL)
+	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL)
 {
 }
 
@@ -13,7 +13,6 @@ CaptureScene::~CaptureScene() {
 	releaseFilter();
 	SAFE_RELEASE(_cameraImage);
 	SAFE_RELEASE(_surface);
-	SAFE_DELETE(_gray);
 	_log.information("*release capture-scene");
 }
 
@@ -64,7 +63,6 @@ bool CaptureScene::initialize() {
 	if (_useStageCapture || createFilter()) {
 		_cameraImage = _renderer.createRenderTarget(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
 		_surface = _renderer.createLockableSurface(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
-		_gray = new BYTE[_clip.right * _clip.bottom];
 		string s = Poco::format("clip:%ld,%ld,%ld,%ld", _clip.left, _clip.top, _clip.right, _clip.bottom);
 		_log.information(Poco::format("camera image: %dx%d(%s) %s-mode %s", _deviceW, _deviceH, s, string(_useStageCapture?"stage":"capture"), string(_cameraImage?"OK":"NG")));
 		return true;
@@ -253,17 +251,17 @@ bool CaptureScene::createFilter() {
 					DeleteMediaType(amt);
 				}
 			}
-//			SAFE_RELEASE(sc);
+			// SAFE_RELEASE(sc);
 		}
 
-//		hr = _capture->RenderStream(&PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, src, NULL, NULL);
+		// hr = _capture->RenderStream(&PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, src, NULL, NULL);
 		hr = _gb->Render(renderPin);
 		SAFE_RELEASE(renderPin);
-//		SAFE_RELEASE(src);
+		// SAFE_RELEASE(src);
 		if (dumpFilter(_gb) == 0) {
 			// ³‚µ‚­ƒŒƒ“ƒ_ƒŠƒ“ƒO‚Å‚«‚½
-//			IMediaSeeking* ms;
-//			IMediaEvent* me;
+			// IMediaSeeking* ms;
+			// IMediaEvent* me;
 			IMediaFilter* mf;
 			hr = _gb->QueryInterface(&mf);
 			if (SUCCEEDED(hr)) {
@@ -313,25 +311,23 @@ LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {
 	return _cameraImage;
 }
 
-LPBYTE CaptureScene::getGrayScale() {
-	return _gray;
-}
-
 void CaptureScene::process() {
 	if (_cameraImage && _renderer.getRenderTargetData(_cameraImage, _surface)) {
 		D3DLOCKED_RECT lockedRect = {0};
 		if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
 			LPBYTE src = (LPBYTE)lockedRect.pBits;
-			long len = _clip.right * _clip.bottom * 4;
-			long pos = 0;
-			for (long i = 0; i < len; i += 4) {
-				_gray[pos++] = src[i + 1];
-				//int y = 0.299f * src[i + 2] + 0.587f * src[i + 1] + 0.114f * src[i + 0];
-				//if (y > 255) y = 255;
-				//_gray[pos++] = y;
-			}
+	//		long len = _clip.right * _clip.bottom * 4;
+	//		long pos = 0;
+	//		for (long i = 0; i < len; i += 4) {
+	//			_gray[pos++] = src[i + 1];
+	//			//int y = 0.299f * src[i + 2] + 0.587f * src[i + 1] + 0.114f * src[i + 0];
+	//			//if (y > 255) y = 255;
+	//			//_gray[pos++] = y;
+	//		}
 			_surface->UnlockRect();
 		}
+	} else {
+		_log.warning("failed get render target data");
 	}
 	_frame++;
 }
