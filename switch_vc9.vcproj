@@ -508,62 +508,6 @@
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="ui"
-			>
-			<File
-				RelativePath=".\src\svvitch\ui\Button.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\Button.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\Component.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\Component.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\MouseListener.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\MouseReactionUI.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\Mover.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\Mover.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\SelectedListener.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\SelectList.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\SelectList.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\UserInterfaceManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\src\svvitch\ui\UserInterfaceManager.h"
-				>
-			</File>
-		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
