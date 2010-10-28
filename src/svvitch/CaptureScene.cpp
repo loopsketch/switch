@@ -96,6 +96,8 @@ bool CaptureScene::initialize() {
 				if FAILED(hr) _log.warning("failed effect not set technique convertTechnique");
 				hr = _fx->SetTexture("frame1", _cameraImage);
 				if FAILED(hr) _log.warning("failed effect not set texture");
+			} else {
+				return false;
 			}
 			_log.information(Poco::format("sampling image: %dx%d", _sw, _sh));
 		}
@@ -347,7 +349,7 @@ LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {
 
 void CaptureScene::process() {
 	if (_sample) {
-		_renderer.copyTexture(_cameraImage, _sample);
+		//_renderer.copyTexture(_cameraImage, _sample);
 		if (_renderer.getRenderTargetData(_sample, _surface)) {
 			D3DLOCKED_RECT lockedRect = {0};
 			if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
@@ -355,42 +357,7 @@ void CaptureScene::process() {
 				const long size = _sw * _sh * 4;
 				long pos = 0;
 				for (long i = 0; i < size; i += 4) {
-					int min = src[i + 2];
-					if (min > src[i + 1]) {
-						min = src[i + 1];
-					}
-					if (min > src[i + 0]) {
-						min = src[i + 0];
-					}
-					int rgb = 0;
-					int max = src[i + 2];
-					if (max < src[i + 1]) {
-						// g
-						rgb = 1;
-						max = src[i + 1];
-					}
-					if (max < src[i + 0]) {
-						// b
-						rgb = 2;
-						max = src[i + 0];
-					}
-					int mm = max - min;
-					if (mm != 0) {
-						int h = 0;
-						switch (rgb) {
-						case 0: // R
-							h = 60 * ((src[i + 0] - src[i + 1]) / mm) / F(255);
-							break;
-						case 1: // G
-							h = 120 + 60 * ((src[i + 2] - src[i + 0]) / mm) / F(255);
-							break;
-						case 2: // B
-							h = 240 + 60 * ((src[i + 1] - src[i + 2]) / mm) / F(255);
-							break;
-						}
-						if (h < 0) h += 360;
-						_data1[pos++] = h;
-					}
+					_data1[pos++] = src[i + 2];
 				}
 				_surface->UnlockRect();
 			}
@@ -398,15 +365,15 @@ void CaptureScene::process() {
 
 		const long size = _sw * _sh;
 		// 背景のサンプリング
-		if (_frame % 3600) {
+		if (_frame % 3600 == 0) {
 			for (long i = 0; i < size; i++) {
-				_data2[i] = (_data1[i] + _data2[i]) / 2;
+				_data2[i] = (_data1[i] + _data2[i]) >> 1;
 			}
 		}
 		// 動体のサンプリング
-		if (_frame % 60) {
+		if (_frame % 60 == 0) {
 			for (long i = 0; i < size; i++) {
-				_data3[i] = (_data1[i] + _data3[i]) / 2;
+				_data3[i] = (_data1[i] + _data3[i]) >> 1;
 			}
 		}
 	} else {
@@ -416,29 +383,37 @@ void CaptureScene::process() {
 }
 
 void CaptureScene::draw1() {
-	if (_cameraImage) {
-		DWORD col = 0xffffffff;
-		D3DSURFACE_DESC desc;
-		HRESULT hr = _cameraImage->GetLevelDesc(0, &desc);
-		VERTEX dst[] =
-		{
-			{F(0              - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 0, 0},
-			{F(0 + desc.Width - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 1, 0},
-			{F(0              - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 0, 1},
-			{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
-		};
+	DWORD col = 0xffffffff;
+	D3DSURFACE_DESC desc;
+	HRESULT hr = _sample->GetLevelDesc(0, &desc);
+	VERTEX dst[] =
+	{
+		{F(0              - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 0, 0},
+		{F(0 + desc.Width - 0.5), F(0               - 0.5), 0.0f, 1.0f, col, 1, 0},
+		{F(0              - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 0, 1},
+		{F(0 + desc.Width - 0.5), F(0 + desc.Height - 0.5), 0.0f, 1.0f, col, 1, 1}
+	};
 
+	if (_cameraImage) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		if (_vr) {
-			LPDIRECT3DSURFACE9 orgRT;
-			hr = device->GetRenderTarget(0, &orgRT);
+			LPDIRECT3DSURFACE9 orgRT = NULL;
+			HRESULT hr = device->GetRenderTarget(0, &orgRT);
 
 			LPDIRECT3DSURFACE9 surface;
 			_cameraImage->GetSurfaceLevel(0, &surface);
 			hr = device->SetRenderTarget(0, surface);
 			device->Clear(0, NULL, D3DCLEAR_TARGET, 0xff000000, 1.0f, 0);
-			DWORD col = 0xffffffff;
 			_vr->draw(-_clip.left, -_clip.top, _deviceW, _deviceH, 0, _flipMode, col, col, col, col);
+			SAFE_RELEASE(surface);
+
+			_sample->GetSurfaceLevel(0, &surface);
+			hr = device->SetRenderTarget(0, surface);
+			_fx->Begin(NULL, 0);
+			_fx->BeginPass(0);
+			device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, VERTEX_SIZE);
+			_fx->EndPass();
+			_fx->End();
 			SAFE_RELEASE(surface);
 
 			hr = device->SetRenderTarget(0, orgRT);
@@ -463,8 +438,9 @@ void CaptureScene::draw2() {
 			_renderer.drawTexture(_previewX + _previewW, _previewY, _previewW, _previewH, _sample, 0, col, col, col, col);
 			for (int y = 0; y < _sh; y++) {
 				for (int x = 0; x < _sw; x++) {
-					string s = Poco::format("%3d", _data1[y * _sw + x]);
-					_renderer.drawFontTextureText(_previewX + _previewW + x * 35, _previewY + y * 10, 10, 10, 0xccff3333, s);
+					int data = abs(_data2[y * _sw + x] - _data3[y * _sw + x]);
+					string s = Poco::format("%3d", data);
+					_renderer.drawFontTextureText(_previewX + _previewW + x * 32, _previewY + y * 10, 10, 10, 0xccff3333, s);
 				}
 			}
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
