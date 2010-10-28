@@ -35,7 +35,15 @@ private:
 	IMediaControl* _mc;
 
 	LPDIRECT3DTEXTURE9 _cameraImage;
+	LPDIRECT3DTEXTURE9 _sample;
 	LPDIRECT3DSURFACE9 _surface;
+	LPD3DXEFFECT _fx;
+
+	int _sw;
+	int _sh;
+	LPINT _data1;
+	LPINT _data2;
+	LPINT _data3;
 
 
 	/** ÉtÉBÉãÉ^Çê∂ê¨ÇµÇ‹Ç∑ */

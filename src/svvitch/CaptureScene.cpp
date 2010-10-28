@@ -5,20 +5,27 @@
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	_frame(0), _useStageCapture(false), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
-	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL), _surface(NULL)
+	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL),
+	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL)
 {
 }
 
 CaptureScene::~CaptureScene() {
 	releaseFilter();
 	SAFE_RELEASE(_cameraImage);
+	SAFE_RELEASE(_sample);
 	SAFE_RELEASE(_surface);
+	SAFE_RELEASE(_fx);
+	SAFE_DELETE(_data1);
+	SAFE_DELETE(_data2);
+	SAFE_DELETE(_data3);
 	_log.information("*release capture-scene");
 }
 
 bool CaptureScene::initialize() {
 	_log.information("*initialize CaptureScene");
 
+	bool useSampling = false;
 	SetRect(&_clip, 0, 0, _deviceW, _deviceH);
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("capture-config.xml");
@@ -55,6 +62,12 @@ bool CaptureScene::initialize() {
 		_previewW = xml->getInt("preview.width", 320);
 		_previewH = xml->getInt("preview.height", 240);
 
+		useSampling = xml->hasProperty("sampling");
+		if (useSampling) {
+			_sw = xml->getInt("sampling.width", 0);
+			_sh = xml->getInt("sampling.height", 0);
+		}
+
 		xml->release();
 	} catch (Poco::Exception& ex) {
 		_log.warning(ex.displayText());
@@ -62,9 +75,30 @@ bool CaptureScene::initialize() {
 
 	if (_useStageCapture || createFilter()) {
 		_cameraImage = _renderer.createRenderTarget(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
-		_surface = _renderer.createLockableSurface(_clip.right, _clip.bottom, D3DFMT_A8R8G8B8);
 		string s = Poco::format("clip:%ld,%ld,%ld,%ld", _clip.left, _clip.top, _clip.right, _clip.bottom);
 		_log.information(Poco::format("camera image: %dx%d(%s) %s-mode %s", _deviceW, _deviceH, s, string(_useStageCapture?"stage":"capture"), string(_cameraImage?"OK":"NG")));
+
+		if (useSampling) {
+			_sample = _renderer.createRenderTarget(_sw, _sh, D3DFMT_A8R8G8B8);
+			_surface = _renderer.createLockableSurface(_sw, _sh, D3DFMT_A8R8G8B8);
+			const long size = _sw * _sh;
+			_data1 = new INT[size];
+			_data2 = new INT[size];
+			_data3 = new INT[size];
+			for (long i = 0; i < size; i++) {
+				_data1[i] = 0;
+				_data2[i] = 0;
+				_data3[i] = 0;
+			}
+			_fx = _renderer.createEffect("fx/rgb2hsv.fx");
+			if (_fx) {
+				HRESULT hr = _fx->SetTechnique("convertTechnique");
+				if FAILED(hr) _log.warning("failed effect not set technique convertTechnique");
+				hr = _fx->SetTexture("frame1", _cameraImage);
+				if FAILED(hr) _log.warning("failed effect not set texture");
+			}
+			_log.information(Poco::format("sampling image: %dx%d", _sw, _sh));
+		}
 		return true;
 	}
 	return false;
@@ -312,19 +346,68 @@ LPDIRECT3DTEXTURE9 CaptureScene::getCameraImage() {
 }
 
 void CaptureScene::process() {
-	if (_cameraImage && _renderer.getRenderTargetData(_cameraImage, _surface)) {
-		D3DLOCKED_RECT lockedRect = {0};
-		if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
-			LPBYTE src = (LPBYTE)lockedRect.pBits;
-	//		long len = _clip.right * _clip.bottom * 4;
-	//		long pos = 0;
-	//		for (long i = 0; i < len; i += 4) {
-	//			_gray[pos++] = src[i + 1];
-	//			//int y = 0.299f * src[i + 2] + 0.587f * src[i + 1] + 0.114f * src[i + 0];
-	//			//if (y > 255) y = 255;
-	//			//_gray[pos++] = y;
-	//		}
-			_surface->UnlockRect();
+	if (_sample) {
+		_renderer.copyTexture(_cameraImage, _sample);
+		if (_renderer.getRenderTargetData(_sample, _surface)) {
+			D3DLOCKED_RECT lockedRect = {0};
+			if (SUCCEEDED(_surface->LockRect(&lockedRect, NULL, 0))) {
+				LPBYTE src = (LPBYTE)lockedRect.pBits;
+				const long size = _sw * _sh * 4;
+				long pos = 0;
+				for (long i = 0; i < size; i += 4) {
+					int min = src[i + 2];
+					if (min > src[i + 1]) {
+						min = src[i + 1];
+					}
+					if (min > src[i + 0]) {
+						min = src[i + 0];
+					}
+					int rgb = 0;
+					int max = src[i + 2];
+					if (max < src[i + 1]) {
+						// g
+						rgb = 1;
+						max = src[i + 1];
+					}
+					if (max < src[i + 0]) {
+						// b
+						rgb = 2;
+						max = src[i + 0];
+					}
+					int mm = max - min;
+					if (mm != 0) {
+						int h = 0;
+						switch (rgb) {
+						case 0: // R
+							h = 60 * ((src[i + 0] - src[i + 1]) / mm) / F(255);
+							break;
+						case 1: // G
+							h = 120 + 60 * ((src[i + 2] - src[i + 0]) / mm) / F(255);
+							break;
+						case 2: // B
+							h = 240 + 60 * ((src[i + 1] - src[i + 2]) / mm) / F(255);
+							break;
+						}
+						if (h < 0) h += 360;
+						_data1[pos++] = h;
+					}
+				}
+				_surface->UnlockRect();
+			}
+		}
+
+		const long size = _sw * _sh;
+		// 背景のサンプリング
+		if (_frame % 3600) {
+			for (long i = 0; i < size; i++) {
+				_data2[i] = (_data1[i] + _data2[i]) / 2;
+			}
+		}
+		// 動体のサンプリング
+		if (_frame % 60) {
+			for (long i = 0; i < size; i++) {
+				_data3[i] = (_data1[i] + _data3[i]) / 2;
+			}
 		}
 	} else {
 		_log.warning("failed get render target data");
@@ -377,6 +460,13 @@ void CaptureScene::draw2() {
 			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+			_renderer.drawTexture(_previewX + _previewW, _previewY, _previewW, _previewH, _sample, 0, col, col, col, col);
+			for (int y = 0; y < _sh; y++) {
+				for (int x = 0; x < _sw; x++) {
+					string s = Poco::format("%3d", _data1[y * _sw + x]);
+					_renderer.drawFontTextureText(_previewX + _previewW + x * 35, _previewY + y * 10, 10, 10, 0xccff3333, s);
+				}
+			}
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
 			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, s);
 		} else if (_useStageCapture) {
