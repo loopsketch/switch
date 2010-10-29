@@ -8,7 +8,7 @@ CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	_frame(0), _startup(0), _useStageCapture(false), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL),
-	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL), _detectCount(0), _ignoreDetectCount(0)
+	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL), _forceUpdate(false), _detectCount(0), _ignoreDetectCount(0)
 {
 }
 
@@ -414,15 +414,20 @@ void CaptureScene::process() {
 			}
 		}
 		// 背景のサンプリング
-		if (_frame % 3600 == 0) {
-			if (_data2[0] < 0) {
-				for (long i = 0; i < size; i++) {
-					_data2[i] = _data1[i];
+		if (_frame % 3600 == 0 || _forceUpdate) {
+			if (_detectCount == 0) {
+				if (_data2[0] < 0) {
+					for (long i = 0; i < size; i++) {
+						_data2[i] = _data1[i];
+					}
+				} else {
+					for (long i = 0; i < size; i++) {
+						_data2[i] = (_data1[i] + _data2[i]) >> 1;
+					}
 				}
+				_forceUpdate = false;
 			} else {
-				for (long i = 0; i < size; i++) {
-					if (_lookup[i]) _data2[i] = (_data1[i] + _data2[i]) >> 1;
-				}
+				_forceUpdate = true;
 			}
 		}
 		// 動体のサンプリング
@@ -517,6 +522,9 @@ void CaptureScene::draw2() {
 				}
 			}
 			_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect: %d", _detectCount));
+			if (_forceUpdate) {
+				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
+			}
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
 			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, s);
 		} else if (_useStageCapture) {

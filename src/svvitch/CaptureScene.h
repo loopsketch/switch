@@ -49,6 +49,7 @@ private:
 	LPINT _data1;
 	LPINT _data2;
 	LPINT _data3;
+	bool _forceUpdate;
 	LPBOOL _lookup;
 	LPINT _block;
 	int _blockThreshold;
