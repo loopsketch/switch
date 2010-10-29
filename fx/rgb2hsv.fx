@@ -39,8 +39,9 @@ float3 RGBToHSV(float3 Col) {
 void rgb2hsv(float4 in_color: COLOR0, float2 tex: TEXCOORD0, out float4 out_color: COLOR0)
 {
 	float4 p = tex2D(sampler1, tex);
-	float3 HSV = RGBToHSV(p.xyz);
-	out_color = float4(HSV.x, HSV.x, HSV.x, 1);
+	float d = p.x / 2.0 + p.z / 2.0;
+	//float3 HSV = RGBToHSV(p.xyz);
+	out_color = float4(d, d, d, 1);
 }
 
 

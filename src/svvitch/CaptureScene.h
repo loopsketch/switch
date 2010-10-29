@@ -5,6 +5,10 @@
 #include "streams.h"
 #include "Dvdmedia.h"
 #include "DSVideoRenderer.h"
+#include <Poco/ActiveMethod.h>
+
+
+using Poco::ActiveMethod;
 
 
 class CaptureScene: public Scene
@@ -12,6 +16,7 @@ class CaptureScene: public Scene
 private:
 	Poco::FastMutex _lock;
 	DWORD _frame;
+	DWORD _startup;
 
 	BOOL _useStageCapture;
 	int _deviceNo;
@@ -44,7 +49,15 @@ private:
 	LPINT _data1;
 	LPINT _data2;
 	LPINT _data3;
-
+	LPBOOL _lookup;
+	LPINT _block;
+	int _blockThreshold;
+	int _lookupThreshold;
+	int _detectCount;
+	int _detectThreshold;
+	string _playlist;
+	int _ignoreDetectTime;
+	int _ignoreDetectCount;
 
 	/** フィルタを生成します */
 	bool createFilter();
@@ -60,6 +73,11 @@ private:
 	const string getPinName(long lType);
 
 	const string errorText(HRESULT hr);
+
+	ActiveMethod<bool, void, CaptureScene> activeChangePlaylist;
+
+	/** プレイリストを変更します */
+	bool changePlaylist();
 
 public:
 	CaptureScene(Renderer& renderer);
