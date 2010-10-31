@@ -415,7 +415,7 @@ void CaptureScene::process() {
 		}
 		// ”wŒi‚ÌƒTƒ“ƒvƒŠƒ“ƒO
 		if (_frame % 3600 == 0 || _forceUpdate) {
-			if (_detectCount == 0) {
+			if (_detectCount == 0 && _ignoreDetectCount == 0) {
 				if (_data2[0] < 0) {
 					for (long i = 0; i < size; i++) {
 						_data2[i] = _data1[i];
