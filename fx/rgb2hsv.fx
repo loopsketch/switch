@@ -3,11 +3,24 @@
  */
 
 texture frame1;
+texture frame2;
 
 
 sampler sampler1 = sampler_state
 {
 	Texture = <frame1>;
+
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	MipFilter = LINEAR;
+
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+sampler sampler2 = sampler_state
+{
+	Texture = <frame2>;
 
 	MinFilter = LINEAR;
 	MagFilter = LINEAR;
@@ -39,9 +52,9 @@ float3 RGBToHSV(float3 Col) {
 void rgb2hsv(float4 in_color: COLOR0, float2 tex: TEXCOORD0, out float4 out_color: COLOR0)
 {
 	float4 p = tex2D(sampler1, tex);
-	float d = p.x / 2.0 + p.z / 2.0;
-	//float3 HSV = RGBToHSV(p.xyz);
-	out_color = float4(d, d, d, 1);
+	float3 HSV = RGBToHSV(p.xyz);
+	float4 d = tex2D(sampler2, tex) * 0.666 + float4(HSV, 1) * 0.334;
+	out_color = float4(d.xyz, 1);
 }
 
 

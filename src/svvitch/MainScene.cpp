@@ -313,6 +313,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		SAFE_DELETE(oldNextContainer);
 		SAFE_RELEASE(oldNextPlaylistName);
 		SAFE_RELEASE(oldNextName);
+		_status["next-playlist-id"] = playlistID;
 		_status["next-playlist"] = playlistName;
 		_status["next-content-id"] = itemID;
 		_status["next-content"] = itemName;
@@ -383,6 +384,7 @@ void MainScene::setTransition(string& transition) {
 }
 
 bool MainScene::prepareContent(const PlayParameters& params) {
+	removeStatus("prepared-playlist-id");
 	removeStatus("prepared-playlist");
 	removeStatus("prepared-content");
 	ContainerPtr oldPrepared = NULL;
@@ -403,18 +405,19 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 
 	ContainerPtr c = new Container(_renderer);
 	if (preparePlaylist(c, params.playlistID, params.i, false)) {
+		string playlistID = params.playlistID;
 		string playlistName = "ready";
 		string itemID = "";
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			PlayListPtr playlist = _workspace->getPlaylist(params.playlistID);
+			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 			if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > params.i) {
 				playlistName = playlist->name();
 				PlayListItemPtr item = playlist->items()[params.i];
 				itemID = item->media()->id();
 				itemName = item->media()->name();
-				_playPrepared.playlistID = params.playlistID;
+				_playPrepared.playlistID = playlistID;
 				_playPrepared.i = params.i;
 				_playPrepared.action = item->next();
 				_playPrepared.transition = item->transition();
@@ -433,6 +436,7 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 			_preparedPlaylistName = t1;
 			_preparedName = t2;
 		}
+		_status["prepared-playlist-id"] = playlistID;
 		_status["prepared-playlist"] = playlistName;
 		_status["prepared-content-id"] = itemID;
 		_status["prepared-content"] = itemName;
@@ -1230,6 +1234,7 @@ void MainScene::process() {
 				} else {
 					_log.warning(Poco::format("not find playlist: %s-%d", _playPrepared.playlistID, _playPrepared.i));
 				}
+				_status["next-playlist-id"] = _status["prepared-playlist-id"];
 				_status["next-playlist"] = _status["prepared-playlist"];
 				_status["next-content-id"] = _status["prepared-content-id"];
 				_status["next-content"] = _status["prepared-content"];
@@ -1248,6 +1253,7 @@ void MainScene::process() {
 				SAFE_RELEASE(oldPreparedPlaylistName);
 				SAFE_RELEASE(oldPreparedName);
 				SAFE_DELETE(oldTransition);
+				removeStatus("prepared-playlist-id");
 				removeStatus("prepared-playlist");
 				removeStatus("prepared-content");
 				_doSwitchNext = true;
@@ -1298,9 +1304,11 @@ void MainScene::process() {
 				}
 				SAFE_RELEASE(oldPlaylistName);
 				SAFE_RELEASE(oldCurrentName);
+				_status["current-playlist-id"] = _status["next-playlist-id"];
 				_status["current-playlist"] = _status["next-playlist"];
 				_status["current-content-id"] = _status["next-content-id"];
 				_status["current-content"] = _status["next-content"];
+				removeStatus("next-playlist-id");
 				removeStatus("next-playlist");
 				removeStatus("next-content-id");
 				removeStatus("next-content");

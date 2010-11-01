@@ -6,6 +6,7 @@
 #include "Dvdmedia.h"
 #include "DSVideoRenderer.h"
 #include <Poco/ActiveMethod.h>
+#include "MainScene.h"
 
 
 using Poco::ActiveMethod;
@@ -50,6 +51,8 @@ private:
 	LPINT _data2;
 	LPINT _data3;
 	bool _forceUpdate;
+	int _intervalsBackground;
+	int _intervalsForeground;
 	LPBOOL _lookup;
 	LPINT _block;
 	int _blockThreshold;
@@ -59,6 +62,9 @@ private:
 	string _playlist;
 	int _ignoreDetectTime;
 	int _ignoreDetectCount;
+
+	MainScenePtr _main;
+
 
 	/** ÉtÉBÉãÉ^Çê∂ê¨ÇµÇ‹Ç∑ */
 	bool createFilter();
