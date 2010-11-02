@@ -139,6 +139,7 @@ void FlashContent::createFlashComponents() {
 }
 
 void FlashContent::releaseFlashComponents() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	SAFE_RELEASE(_view);
 	SAFE_RELEASE(_windowless);
 	SAFE_RELEASE(_flash);
