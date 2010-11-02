@@ -59,6 +59,7 @@ private:
 	int _intervalsForeground;
 	LPBOOL _lookup;
 	LPINT _block;
+	LPBOOL _activeBlock;
 	int _blockThreshold;
 	int _lookupThreshold;
 	int _detectCount;

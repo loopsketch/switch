@@ -11,6 +11,7 @@ CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL),
 	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL),
+	_lookup(NULL), _block(NULL), _activeBlock(NULL),
 	_forceUpdate(false), _detectCount(0), _ignoreDetectCount(0), _main(NULL)
 {
 }
@@ -26,6 +27,7 @@ CaptureScene::~CaptureScene() {
 	SAFE_DELETE(_data3);
 	SAFE_DELETE(_lookup);
 	SAFE_DELETE(_block);
+	SAFE_DELETE(_activeBlock);
 	_log.information("*release capture-scene");
 }
 
@@ -118,12 +120,14 @@ bool CaptureScene::initialize() {
 			_data3 = new INT[size];
 			_lookup = new BOOL[size];
 			_block = new INT[size];
+			_activeBlock = new BOOL[size];
 			for (long i = 0; i < size; i++) {
 				_data1[i] = -1;
 				_data2[i] = -1;
 				_data3[i] = -1;
 				_lookup[i] = false;
 				_block[i] = 0;
+				_activeBlock[i] = true;
 			}
 			_fx = _renderer.createEffect("fx/rgb2hsv.fx");
 			if (_fx) {
@@ -419,7 +423,7 @@ void CaptureScene::process() {
 				d1 = d2;
 			}
 			_block[i] = d1;
-			if (d1 > _blockThreshold) {
+			if (_activeBlock[i] && d1 > _blockThreshold) {
 				_lookup[i] = true;
 				lookup++;
 			}
@@ -542,10 +546,12 @@ void CaptureScene::draw2() {
 			for (int y = 0; y < _sh; y++) {
 				for (int x = 0; x < _sw; x++) {
 					const int i = y * _sw + x;
-					if (_lookup[i]) {
-						_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccff3333, "*");
-					} else {
-						_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccffffff, "*");
+					if (_activeBlock[i]) {
+						if (_lookup[i]) {
+							_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccff3333, "*");
+						} else {
+							_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccffffff, "*");
+						}
 					}
 					const BYTE data1 = _data1[i];
 					const BYTE data2 = _data2[i];

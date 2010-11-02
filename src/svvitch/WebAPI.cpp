@@ -267,6 +267,7 @@ void SwitchRequestHandler::get(const string& name) {
 			} else if (name == "status") {
 				ScenePtr targetScene = scene;
 				string s = form().get("s", "");
+				string name = form().get("n", "");
 				if (!s.empty()) {
 					targetScene = _renderer.getScene(s);
 					if (!targetScene) {
@@ -275,13 +276,11 @@ void SwitchRequestHandler::get(const string& name) {
 					}
 				}
 				map<string, string> status = targetScene->getStatus();
-				string n = form().get("n", "");
-				if (!n.empty()) {
-					map<string, string>::const_iterator it = status.find(n);
-					if (it != status.end()) {
-						sendResponse(HTTPResponse::HTTP_OK, it->second);
-						return;
-					}
+				if (!name.empty()) {
+					map<string, string>::const_iterator it = status.find(name);
+					string playlistID;
+					if (it != status.end()) playlistID = it->second;
+					sendResponse(HTTPResponse::HTTP_OK, playlistID);
 				} else {
 					map<string, string> params;
 					for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
