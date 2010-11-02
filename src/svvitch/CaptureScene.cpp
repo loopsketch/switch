@@ -615,8 +615,47 @@ bool CaptureScene::fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter
 
 /* クロスバーをルーティングします */
 bool CaptureScene::routeCrossbar(IBaseFilter* src, int no) {
+	IAMVideoProcAmp* procAmp = NULL;
+	HRESULT hr = src->QueryInterface(&procAmp);
+	if SUCCEEDED(hr) {
+		// VideoProcAmp_Brightness
+		// VideoProcAmp_Contrast
+		// VideoProcAmp_Hue
+		// VideoProcAmp_Saturation
+		// VideoProcAmp_Sharpness
+		// VideoProcAmp_Gamma
+		// VideoProcAmp_ColorEnable
+		// VideoProcAmp_WhiteBalance
+		// VideoProcAmp_BacklightCompensation
+		// VideoProcAmp_Gain
+		long min, max, steppingDelta, defaultValue, capsFlags;
+		hr = procAmp->GetRange(VideoProcAmp_WhiteBalance, &min, &max, &steppingDelta, &defaultValue, &capsFlags);
+		string s = (capsFlags == VideoProcAmp_Flags_Auto)?"auto":"manual";
+		_log.information(Poco::format("video whitebalance: %ld-%ld(%ld): %s", min, max, defaultValue, s));
+		hr = procAmp->Set(VideoProcAmp_WhiteBalance, defaultValue, VideoProcAmp_Flags_Manual);
+		SAFE_RELEASE(procAmp);
+	}
+
+	IAMCameraControl* cameraControl = NULL;
+	hr = src->QueryInterface(&cameraControl);
+	if SUCCEEDED(hr) {
+		// CameraControl_Pan
+		// CameraControl_Tilt
+		// CameraControl_Roll
+		// CameraControl_Zoom
+		// CameraControl_Exposure
+		// CameraControl_Iris
+		// CameraControl_Focus
+		long min, max, steppingDelta, defaultValue, capsFlags;
+		hr = cameraControl->GetRange(CameraControl_Exposure, &min, &max, &steppingDelta, &defaultValue, &capsFlags);
+		string s = (capsFlags == CameraControl_Flags_Auto)?"auto":"manual";
+		_log.information(Poco::format("camera exposure: %ld-%ld(%ld): %s", min, max, defaultValue, s));
+		hr = cameraControl->Set(CameraControl_Exposure, defaultValue, CameraControl_Flags_Manual);
+		SAFE_RELEASE(cameraControl);
+	}
+
 	IAMCrossbar* crossbar = NULL;
-	HRESULT hr = _capture->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, src, IID_IAMCrossbar, (void**)&crossbar);
+	hr = _capture->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, src, IID_IAMCrossbar, (void**)&crossbar);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("not found crossbar: %s", errorText(hr)));
 		return false;
