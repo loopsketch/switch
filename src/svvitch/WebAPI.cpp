@@ -275,11 +275,20 @@ void SwitchRequestHandler::get(const string& name) {
 					}
 				}
 				map<string, string> status = targetScene->getStatus();
-				map<string, string> params;
-				for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
-					params[it->first] = svvitch::formatJSON(it->second);
+				string n = form().get("n", "");
+				if (!n.empty()) {
+					map<string, string>::const_iterator it = status.find(n);
+					if (it != status.end()) {
+						sendResponse(HTTPResponse::HTTP_OK, it->second);
+						return;
+					}
+				} else {
+					map<string, string> params;
+					for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
+						params[it->first] = svvitch::formatJSON(it->second);
+					}
+					sendJSONP(form().get("callback", ""), params);
 				}
-				sendJSONP(form().get("callback", ""), params);
 				return;
 
 			} else {
