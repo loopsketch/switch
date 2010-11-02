@@ -4,7 +4,10 @@
 
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	activeChangePlaylist(this, &CaptureScene::changePlaylist),
-	_frame(0), _startup(0), _useStageCapture(false), _deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30), _flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
+	_frame(0), _startup(0), _useStageCapture(false),
+	_deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30),
+	_autoWhiteBalance(true), _whiteBalance(-100), _autoExposure(true), _exposure(-100),
+	_flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
 	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL),
 	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL),
@@ -60,6 +63,22 @@ bool CaptureScene::initialize() {
 		int cw = xml->getInt("device[@cw]", _deviceW);
 		int ch = xml->getInt("device[@ch]", _deviceH);
 		SetRect(&_clip, cx, cy, cw, ch);
+		string wb = Poco::toLower(xml->getString("device[@whitebalance]", "auto"));
+		if (wb == "auto") {
+			_autoWhiteBalance = true;
+		} else {
+			_autoWhiteBalance = false;
+			_whiteBalance = -100;
+			 Poco::NumberParser::tryParse(wb, _whiteBalance);
+		}
+		string exposure = Poco::toLower(xml->getString("device[@exposure]", "auto"));
+		if (exposure == "auto") {
+			_autoExposure = true;
+		} else {
+			_autoExposure = false;
+			_exposure = -100;
+			Poco::NumberParser::tryParse(exposure, _exposure);
+		}
 
 		_previewX = xml->getInt("preview.x", 0);
 		_previewY = xml->getInt("preview.y", 0);
@@ -157,6 +176,8 @@ bool CaptureScene::createFilter() {
 			SAFE_RELEASE(_device);
 			_device = src;
 			routeCrossbar(src, _routePinNo);
+			setWhiteBalance(src, _autoWhiteBalance, _whiteBalance);
+			setExposure(src, _autoExposure, _exposure);
 		}
 
 		IPin* renderPin = NULL;
@@ -421,7 +442,7 @@ void CaptureScene::process() {
 						_log.information(Poco::format("already playing: %s", _playlist));
 					}
 				}
-				_detectCount = 0;
+				//_detectCount = 0;
 				_ignoreDetectCount = _ignoreDetectTime;
 			}
 		}
@@ -613,8 +634,7 @@ bool CaptureScene::fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter
 	return lookup;
 }
 
-/* クロスバーをルーティングします */
-bool CaptureScene::routeCrossbar(IBaseFilter* src, int no) {
+void CaptureScene::setWhiteBalance(IBaseFilter* src, bool autoFlag, long v) {
 	IAMVideoProcAmp* procAmp = NULL;
 	HRESULT hr = src->QueryInterface(&procAmp);
 	if SUCCEEDED(hr) {
@@ -632,12 +652,21 @@ bool CaptureScene::routeCrossbar(IBaseFilter* src, int no) {
 		hr = procAmp->GetRange(VideoProcAmp_WhiteBalance, &min, &max, &steppingDelta, &defaultValue, &capsFlags);
 		string s = (capsFlags == VideoProcAmp_Flags_Auto)?"auto":"manual";
 		_log.information(Poco::format("video whitebalance: %ld-%ld(%ld): %s", min, max, defaultValue, s));
-		hr = procAmp->Set(VideoProcAmp_WhiteBalance, defaultValue, VideoProcAmp_Flags_Manual);
+		if (v == -100) v = defaultValue;
+		if (autoFlag) {
+			hr = procAmp->Set(VideoProcAmp_WhiteBalance, defaultValue, VideoProcAmp_Flags_Auto);
+			if SUCCEEDED(hr) _log.information("video whitebalance: auto");
+		} else {
+			hr = procAmp->Set(VideoProcAmp_WhiteBalance, v, VideoProcAmp_Flags_Manual);
+			if SUCCEEDED(hr) _log.information(Poco::format("video whitebalance: %ld", v));
+		}
 		SAFE_RELEASE(procAmp);
 	}
+}
 
+void CaptureScene::setExposure(IBaseFilter* src, bool autoFlag, long v) {
 	IAMCameraControl* cameraControl = NULL;
-	hr = src->QueryInterface(&cameraControl);
+	HRESULT hr = src->QueryInterface(&cameraControl);
 	if SUCCEEDED(hr) {
 		// CameraControl_Pan
 		// CameraControl_Tilt
@@ -650,12 +679,21 @@ bool CaptureScene::routeCrossbar(IBaseFilter* src, int no) {
 		hr = cameraControl->GetRange(CameraControl_Exposure, &min, &max, &steppingDelta, &defaultValue, &capsFlags);
 		string s = (capsFlags == CameraControl_Flags_Auto)?"auto":"manual";
 		_log.information(Poco::format("camera exposure: %ld-%ld(%ld): %s", min, max, defaultValue, s));
-		hr = cameraControl->Set(CameraControl_Exposure, defaultValue, CameraControl_Flags_Manual);
+		if (v == -100) v = defaultValue;
+		if (autoFlag) {
+			hr = cameraControl->Set(CameraControl_Exposure, defaultValue, CameraControl_Flags_Auto);
+			if SUCCEEDED(hr) _log.information("camera exposure: auto");
+		} else {
+			hr = cameraControl->Set(CameraControl_Exposure, v, CameraControl_Flags_Manual);
+			if SUCCEEDED(hr) _log.information(Poco::format("camera exposure: %ld", v));
+		}
 		SAFE_RELEASE(cameraControl);
 	}
+}
 
+bool CaptureScene::routeCrossbar(IBaseFilter* src, int no) {
 	IAMCrossbar* crossbar = NULL;
-	hr = _capture->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, src, IID_IAMCrossbar, (void**)&crossbar);
+	HRESULT hr = _capture->FindInterface(&LOOK_UPSTREAM_ONLY, NULL, src, IID_IAMCrossbar, (void**)&crossbar);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("not found crossbar: %s", errorText(hr)));
 		return false;

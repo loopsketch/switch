@@ -25,6 +25,10 @@ private:
 	int _deviceW;
 	int _deviceH;
 	int _deviceFPS;
+	bool _autoWhiteBalance;
+	int _whiteBalance;
+	bool _autoExposure;
+	int _exposure;
 	int _flipMode;
 	GUID _deviceVideoType;
 	RECT _clip;
@@ -73,6 +77,13 @@ private:
 
 	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName);
 
+	/** ホワイトバランスの設定 */
+	void setWhiteBalance(IBaseFilter* src, bool autoFlag, long v = -100);
+
+	/** 露出の設定 */
+	void setExposure(IBaseFilter* src, bool autoFlag, long v = -100);
+
+	/* クロスバーをルーティングします */
 	bool routeCrossbar(IBaseFilter *pSrc, int no);
 
 	int dumpFilter(IGraphBuilder* gb);
