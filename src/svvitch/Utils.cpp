@@ -10,6 +10,7 @@
 #include <Poco/FileStream.h>
 #include <Poco/Logger.h>
 #include <Poco/format.h>
+#include <Poco/string.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/UnicodeConverter.h>
 #include <Poco/RegularExpression.h>
@@ -168,6 +169,31 @@ void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
 		count++;
 	}
 	if (v.empty()) v.push_back(s);
+}
+
+bool svvitch::parseMultiNumbers(const string& s, int min, int max, vector<int>& result) {
+	Poco::Logger& log(Poco::Logger::get(""));
+	vector<string> datas;
+	split(s, ',', datas); // カンマを区切る
+	for (vector<string>::const_iterator p = datas.begin(); p != datas.end(); p++) {
+		string data = Poco::trim(*p);
+		if (data[0] == '-' != string::npos) {
+			// 開始省略範囲
+		} else if (data[0] == '-' != string::npos) {
+			// 終了省略範囲
+		} else if (data.find("-") != string::npos) {
+			// 範囲指定
+		} else {
+			int n = -1;
+			if (Poco::NumberParser::tryParse(data, n)) {
+				result.push_back(n);
+			} else {
+				log.warning(Poco::format("parse failed not a number: %s", data));
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 string svvitch::formatJSON(const string& s) {

@@ -48,6 +48,9 @@ namespace svvitch {
 	/** 文字列分割 */
 	void split(const string& s, char c, vector<string>& v, int splits = 0);
 
+	/** 複数数値記述文字列のパース */
+	bool parseMultiNumbers(const string& s, int min, int max, vector<int>& result);
+
 	/** JSON文字列生成 */
 	string formatJSON(const string& s);
 
