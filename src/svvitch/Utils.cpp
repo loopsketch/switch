@@ -1,8 +1,10 @@
 #include "Utils.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <set>
 #include <Poco/Buffer.h>
 #include <Poco/MD5Engine.h>
 #include <Poco/DigestStream.h>
@@ -16,6 +18,9 @@
 #include <Poco/RegularExpression.h>
 #include <Poco/NumberParser.h>
 
+using std::copy;
+using std::set;
+using std::sort;
 using std::vector;
 using Poco::DigestEngine;
 using Poco::File;
@@ -173,26 +178,60 @@ void svvitch::split(const string& s, char c, vector<string>& v, int splits) {
 
 bool svvitch::parseMultiNumbers(const string& s, int min, int max, vector<int>& result) {
 	Poco::Logger& log(Poco::Logger::get(""));
+	set<int> num;
 	vector<string> datas;
 	split(s, ',', datas); // カンマを区切る
 	for (vector<string>::const_iterator p = datas.begin(); p != datas.end(); p++) {
 		string data = Poco::trim(*p);
-		if (data[0] == '-' != string::npos) {
-			// 開始省略範囲
-		} else if (data[0] == '-' != string::npos) {
-			// 終了省略範囲
-		} else if (data.find("-") != string::npos) {
-			// 範囲指定
-		} else {
-			int n = -1;
-			if (Poco::NumberParser::tryParse(data, n)) {
-				result.push_back(n);
+		if (!data.empty()) {
+			if (data[0] == '-') {
+				// 開始省略範囲
+				int n;
+				if (Poco::NumberParser::tryParse(Poco::trim(data.substr(1)), n)) {
+					for (int i = min; i <= n; i++) num.insert(i);
+				} else {
+					log.warning(Poco::format("parse failed: %s", data));
+					return false;
+				}
+
+			} else if (data[data.size() - 1] == '-') {
+				// 終了省略範囲
+				int n;
+				if (Poco::NumberParser::tryParse(Poco::trim(data.substr(0, data.size() - 1)), n)) {
+					for (int i = n; i <= max; i++) num.insert(i);
+				} else {
+					log.warning(Poco::format("parse failed: %s", data));
+					return false;
+				}
+
+			} else if (data.find("-") != string::npos) {
+				// 範囲指定
+				int i = data.find("-");
+				int n1, n2;
+				if (!Poco::NumberParser::tryParse(Poco::trim(data.substr(0, i)), n1) || n1 < min) {
+					log.warning(Poco::format("parse failed: %s", data));
+					return false;
+				}
+				if (!Poco::NumberParser::tryParse(Poco::trim(data.substr(i + 1)), n2) || n2 > max) {
+					log.warning(Poco::format("parse failed: %s", data));
+					return false;
+				}
+				for (int i = n1; i <= n2; i++) num.insert(i);
+
 			} else {
-				log.warning(Poco::format("parse failed not a number: %s", data));
-				return false;
+				// 単独数値
+				int n = -1;
+				if (Poco::NumberParser::tryParse(data, n) && (n >= min && n <= max)) {
+					num.insert(n);
+				} else {
+					log.warning(Poco::format("parse failed: %s", data));
+					return false;
+				}
 			}
 		}
 	}
+	for (set<int>::const_iterator p = num.begin(); p != num.end(); p++) result.push_back(*p);
+	sort(result.begin(), result.end());
 	return true;
 }
 

@@ -64,7 +64,7 @@ private:
 	int _lookupThreshold;
 	int _detectCount;
 	int _detectThreshold;
-	string _playlist;
+	string _detectedPlaylist;
 	int _ignoreDetectTime;
 	int _ignoreDetectCount;
 

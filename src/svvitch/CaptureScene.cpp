@@ -1,6 +1,9 @@
 #include "CaptureScene.h"
+#include <algorithm>
 #include <Poco/Util/XMLConfiguration.h>
 #include <Poco/UnicodeConverter.h>
+#include "Utils.h"
+
 
 CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	activeChangePlaylist(this, &CaptureScene::changePlaylist),
@@ -35,6 +38,7 @@ bool CaptureScene::initialize() {
 	_log.information("*initialize CaptureScene");
 
 	bool useSampling = false;
+	vector<int> activeBlocks;
 	SetRect(&_clip, 0, 0, _deviceW, _deviceH);
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("capture-config.xml");
@@ -96,8 +100,10 @@ bool CaptureScene::initialize() {
 			_blockThreshold = xml->getInt("sampling.blockThreshold", 20);
 			_lookupThreshold = xml->getInt("sampling.lookupThreshold", 40);
 			_detectThreshold = xml->getInt("sampling.detectThreshold", 100);
-			_playlist = xml->getString("sampling.changePlaylist", "");
+			_detectedPlaylist = xml->getString("sampling.detectedPlaylist", "");
 			_ignoreDetectTime = xml->getInt("sampling.ignoreDetectTime", 15 * 60);
+			string ab = xml->getString("sampling.activeBlocks", "");
+			svvitch::parseMultiNumbers(ab, 0, _sw * _sh - 1, activeBlocks);
 		}
 
 		xml->release();
@@ -127,7 +133,7 @@ bool CaptureScene::initialize() {
 				_data3[i] = -1;
 				_lookup[i] = false;
 				_block[i] = 0;
-				_activeBlock[i] = true;
+				_activeBlock[i] = activeBlocks.empty() || std::find(activeBlocks.begin(), activeBlocks.end(), i) != activeBlocks.end();
 			}
 			_fx = _renderer.createEffect("fx/rgb2hsv.fx");
 			if (_fx) {
@@ -439,12 +445,12 @@ void CaptureScene::process() {
 				if (_detectCount > 0) _detectCount--;
 			}
 			if (_detectCount > _detectThreshold) {
-				if (!_playlist.empty() && _main) {
+				if (!_detectedPlaylist.empty() && _main) {
 					string current = _main->getStatus("current-playlist-id");
-					if (current != _playlist) {
+					if (current != _detectedPlaylist) {
 						activeChangePlaylist();
 					} else {
-						_log.information(Poco::format("already playing: %s", _playlist));
+						_log.information(Poco::format("already playing: %s", _detectedPlaylist));
 					}
 				}
 				//_detectCount = 0;
@@ -540,34 +546,36 @@ void CaptureScene::draw2() {
 			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-			col = 0xccffffff;
-			_renderer.drawTexture(_previewX + _previewW, _previewY, _previewW, _previewH, _sample, 0, col, col, col, col);
-			const int sw = _previewW / _sw;
-			const int sh = _previewH / _sh;
-			for (int y = 0; y < _sh; y++) {
-				for (int x = 0; x < _sw; x++) {
-					const int i = y * _sw + x;
-					if (_activeBlock[i]) {
-						if (_lookup[i]) {
-							_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccff3333, "*");
-						} else {
-							_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccffffff, "*");
+			if (_sample) {
+				col = 0xccffffff;
+				_renderer.drawTexture(_previewX + _previewW, _previewY, _previewW, _previewH, _sample, 0, col, col, col, col);
+				const int sw = _previewW / _sw;
+				const int sh = _previewH / _sh;
+				for (int y = 0; y < _sh; y++) {
+					for (int x = 0; x < _sw; x++) {
+						const int i = y * _sw + x;
+						if (_activeBlock[i]) {
+							if (_lookup[i]) {
+								_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccff3333, "*");
+							} else {
+								_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccffffff, "*");
+							}
 						}
+						const BYTE data1 = _data1[i];
+						const BYTE data2 = _data2[i];
+						const BYTE data3 = _data3[i];
+						const BYTE block = _block[i];
+						const int px = _previewW * 2 + x * 22;
+						_renderer.drawFontTextureText(_previewX + px                     , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data1));
+						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22)    , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data2));
+						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 2, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data3));
+						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 3, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", block));
 					}
-					const BYTE data1 = _data1[i];
-					const BYTE data2 = _data2[i];
-					const BYTE data3 = _data3[i];
-					const BYTE block = _block[i];
-					const int px = _previewW * 2 + x * 22;
-					_renderer.drawFontTextureText(_previewX + px                     , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data1));
-					_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22)    , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data2));
-					_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 2, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data3));
-					_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 3, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", block));
 				}
-			}
-			_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect: %3d", _detectCount));
-			if (_forceUpdate) {
-				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
+				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect:%3d ignore:%3d", _detectCount, _ignoreDetectTime));
+				if (_forceUpdate) {
+					_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
+				}
 			}
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
 			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, s);
@@ -813,17 +821,17 @@ bool CaptureScene::changePlaylist() {
 	if (_main) {
 		bool prepared = false;
 		string pl = _main->getStatus("prepared-playlist-id");
-		if (pl == _playlist) {
+		if (pl == _detectedPlaylist) {
 			prepared = true;
 		} else {
-			_log.information(Poco::format("change playlist: %s", _playlist));
-			prepared = _main->stackPrepareContent(_playlist);
+			_log.information(Poco::format("change playlist: %s", _detectedPlaylist));
+			prepared = _main->stackPrepareContent(_detectedPlaylist);
 		}
 		if (prepared) {
 			for (int i = 0; i < 10; i++) {
 				Poco::Thread::sleep(200);
 				string pl = _main->getStatus("prepared-playlist-id");
-				if (pl == _playlist) {
+				if (pl == _detectedPlaylist) {
 					bool res = _main->switchContent();
 					if (!res) {
 						_log.warning("failed switch playlist");
@@ -833,7 +841,7 @@ bool CaptureScene::changePlaylist() {
 			}
 			_log.warning("failed timeup switch playlist");
 		} else {
-			_log.warning(Poco::format("failed not prepared: %s", _playlist));
+			_log.warning(Poco::format("failed not prepared: %s", _detectedPlaylist));
 		}
 	}
 	return false;
