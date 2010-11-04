@@ -428,10 +428,11 @@ void CaptureScene::process() {
 				lookup++;
 			}
 		}
+		const int lookupThreshold = _sw * _sh * _lookupThreshold / 100;
 		if (_ignoreDetectCount > 0) {
 			_ignoreDetectCount--;
+			if (_detectCount > 0) _detectCount--;
 		} else {
-			int lookupThreshold = _sw * _sh * _lookupThreshold / 100;
 			if (lookup >= lookupThreshold) {
 				_detectCount++;
 			} else {
