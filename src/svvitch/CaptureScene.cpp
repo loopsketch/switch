@@ -101,6 +101,8 @@ bool CaptureScene::initialize() {
 			_lookupThreshold = xml->getInt("sampling.lookupThreshold", 40);
 			_detectThreshold = xml->getInt("sampling.detectThreshold", 100);
 			_detectedPlaylist = xml->getString("sampling.detectedPlaylist", "");
+			string activePlaylist = xml->getString("sampling.activePlaylist", "");
+			if (!activePlaylist.empty()) svvitch::split(activePlaylist, ',', _activePlaylist);
 			_ignoreDetectTime = xml->getInt("sampling.ignoreDetectTime", 15 * 60);
 			string ab = xml->getString("sampling.activeBlocks", "");
 			svvitch::parseMultiNumbers(ab, 0, _sw * _sh - 1, activeBlocks);
@@ -447,10 +449,12 @@ void CaptureScene::process() {
 			if (_detectCount > _detectThreshold) {
 				if (!_detectedPlaylist.empty() && _main) {
 					string current = _main->getStatus("current-playlist-id");
-					if (current != _detectedPlaylist) {
-						activeChangePlaylist();
-					} else {
-						_log.information(Poco::format("already playing: %s", _detectedPlaylist));
+					if (_activePlaylist.empty() || std::find(_activePlaylist.begin(), _activePlaylist.end(), current) != _activePlaylist.end()) {
+						if (current != _detectedPlaylist) {
+							activeChangePlaylist();
+						} else {
+							_log.information(Poco::format("already playing: %s", _detectedPlaylist));
+						}
 					}
 				}
 				//_detectCount = 0;
@@ -572,7 +576,7 @@ void CaptureScene::draw2() {
 						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 3, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", block));
 					}
 				}
-				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect:%3d ignore:%3d", _detectCount, _ignoreDetectTime));
+				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect:%3d ignore:%3d", _detectCount, _ignoreDetectCount));
 				if (_forceUpdate) {
 					_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
 				}

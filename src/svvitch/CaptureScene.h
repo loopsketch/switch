@@ -65,6 +65,7 @@ private:
 	int _detectCount;
 	int _detectThreshold;
 	string _detectedPlaylist;
+	vector<string> _activePlaylist;
 	int _ignoreDetectTime;
 	int _ignoreDetectCount;
 
