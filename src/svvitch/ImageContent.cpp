@@ -26,6 +26,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	_dy = 0;
 	vector<LPDIRECT3DTEXTURE9> textures;
 	bool valid = true;
+	D3DFORMAT fomart = D3DFMT_X8R8G8B8; // D3DFMT_A8R8G8B8;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 	for (vector<MediaItemFile>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
 		MediaItemFile mif = *it;
@@ -40,7 +41,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 					LPDIRECT3DSURFACE9 src = NULL;
 					hr = texture->GetSurfaceLevel(0, &src);
 					for (int y = 0; y < desc.Height; y += _ih) {
-						LPDIRECT3DTEXTURE9 t = _renderer.createRenderTarget(desc.Width, _ih, D3DFMT_A8R8G8B8);
+						LPDIRECT3DTEXTURE9 t = _renderer.createRenderTarget(desc.Width, _ih, fomart);
 						LPDIRECT3DSURFACE9 dst = NULL;
 						hr = t->GetSurfaceLevel(0, &dst);
 						RECT srcRect = {0, y, desc.Width, y + _ih};
@@ -73,7 +74,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
 	int i = (_iw + _tw - 1) / _tw;
 	_th = _ih * i;
-	_target = _renderer.createRenderTarget(_tw, _th, D3DFMT_A8R8G8B8);
+	_target = _renderer.createRenderTarget(_tw, _th, fomart);
 	if (_target) {
 		_renderer.colorFill(_target, 0xff000000);
 		LPDIRECT3DSURFACE9 dst = NULL;
