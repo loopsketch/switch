@@ -106,7 +106,13 @@ void FlashContent::createFlashComponents() {
 		return;
 	}
 	_flash->put_WMode(L"transparent");
-	//_flash->put_Quality2(L"high");
+	//flashInterface->PutQuality2("low");
+	//flashInterface->PutQuality2("medium");
+	//flashInterface->PutQuality2("high");
+	//flashInterface->PutQuality2("best");
+	//flashInterface->PutQuality2("autolow");
+	//flashInterface->PutQuality2("autohigh");
+	//_flash->put_Quality2(L"medium");
 
 	// In-place activate the object
 	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
@@ -135,6 +141,8 @@ void FlashContent::createFlashComponents() {
 	}
 	_flash->put_Loop(VARIANT_FALSE);
 	_log.information("flash initialized");
+	_readCount = 0;
+	_avgTime = 0;
 	_phase = 1;
 }
 
@@ -219,10 +227,13 @@ const bool FlashContent::playing() const {
 }
 
 const bool FlashContent::finished() {
-	if (_phase == 2) {
-	//	return _flash->IsPlaying() == VARIANT_FALSE;
-	//	return _current >= _duration;
+	switch (_phase) {
+	case 2:
+		//	return _flash->IsPlaying() == VARIANT_FALSE;
+		//	return _current >= _duration;
 		return _playTimer.getTime() >= 1000 * _duration / 60;
+	case 3:
+		return true;
 	}
 	return false;
 }
@@ -263,12 +274,17 @@ void FlashContent::process(const DWORD& frame) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_updated) {
 				_updated = false;
+				PerformanceTimer timer;
+				timer.start();
 				HDC hdc = NULL;
 				HRESULT hr = _surface->GetDC(&hdc);
 				if SUCCEEDED(hr) {
 					hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
 					if FAILED(hr) _log.warning("failed draw");
 					_surface->ReleaseDC(hdc);
+					_readTime = timer.getTime();
+					_readCount++;
+					_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 				} else {
 					_log.warning("failed getDC");
 				}
@@ -286,6 +302,7 @@ void FlashContent::process(const DWORD& frame) {
 	set("time", Poco::format("%s %s", t1, t2));
 	set("time_current", t1);
 	set("time_remain", t2);
+	set("status", Poco::format("%03.2hfms", _avgTime));
 }
 
 void FlashContent::draw(const DWORD& frame) {

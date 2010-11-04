@@ -37,6 +37,10 @@ private:
 	PerformanceTimer _playTimer;
 	bool _updated;
 
+	DWORD _readTime;
+	int _readCount;
+	float _avgTime;
+
 	void createFlashComponents();
 	void releaseFlashComponents();
 
