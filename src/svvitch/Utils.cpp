@@ -447,3 +447,35 @@ vector<int> svvitch::parseTimes(const string& timeText) {
 	}
 	return time;
 }
+
+void svvitch::rebootWindows(BOOL shutdown, BOOL force) {
+	HANDLE hToken;
+    LUID Luid;
+	HANDLE hProcess = GetCurrentProcess();
+	OpenProcessToken(hProcess, TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken);
+	LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &Luid);
+	TOKEN_PRIVILEGES tokenNew, tokenPre;
+	tokenNew.PrivilegeCount = 1;
+	tokenNew.Privileges[0].Luid = Luid;
+	tokenNew.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	DWORD ret;
+	AdjustTokenPrivileges(hToken, FALSE, &tokenNew, sizeof(tokenPre), &tokenPre, &ret);
+
+	//case 1:     uFlag = EWX_LOGOFF;     break;
+	//case 2:     uFlag = EWX_POWEROFF;   break;
+	//case 3:     uFlag = EWX_REBOOT;     break;
+	//case 4:     uFlag = EWX_SHUTDOWN;   break;
+	UINT flag;
+	if (shutdown) {
+		// 電源OFF
+		flag = EWX_POWEROFF;
+	} else {
+		// 再起動(default)
+		flag = EWX_REBOOT;
+	}
+	if (force) {
+		// プロセス強制終了
+        flag |= EWX_FORCE;
+    }
+	ExitWindowsEx(flag, 0);
+}

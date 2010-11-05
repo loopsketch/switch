@@ -70,4 +70,6 @@ namespace svvitch {
 	string findLastOfText(const string& src, const string& find);
 
 	vector<int> parseTimes(const string& timeText);
+
+	void rebootWindows(BOOL shutdown = FALSE, BOOL force = FALSE);
 }

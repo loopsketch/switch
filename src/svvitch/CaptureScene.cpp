@@ -493,7 +493,7 @@ void CaptureScene::process() {
 		_frame++;
 
 	} else {
-		_log.warning("failed get render target data");
+		// _log.warning("failed get render target data");
 	}
 }
 

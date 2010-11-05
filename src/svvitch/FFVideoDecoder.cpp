@@ -236,7 +236,7 @@ void FFVideoDecoder::run() {
 							}
 						}
 						if (_diFrame && avpicture_deinterlace((AVPicture*)_diFrame, (AVPicture*)frame, format, w, h) < 0) {
-//								_log.warning("failed deinterlace");
+							_log.warning("failed deinterlace");
 							// mov‚ÌMJPEG‚ªinterlaced‚Å‚Í‚È‚¢‚Ì‚É‚àŠÖ‚í‚ç‚¸A‚±‚±‚É—ˆ‚Ä‚µ‚Ü‚¤B
 							if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
 								SAFE_DELETE(vf);
