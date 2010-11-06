@@ -33,6 +33,7 @@ private:
 	int _cw;
 	int _ch;
 	string _move;
+	bool _async;
 	float _dx;
 	float _dy;
 	string _align;

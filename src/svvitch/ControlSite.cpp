@@ -17,6 +17,7 @@ ControlSite::~ControlSite() {
 
 void ControlSite::GetRect(LPRECT rect) {
 	SetRect(rect, _rect.left, _rect.top, _rect.right, _rect.bottom);
+	_log.information(Poco::format("get rect: %ld,%ld %ldx%ld", rect->left, rect->top, rect->right, rect->bottom));
 }
 
 HRESULT STDMETHODCALLTYPE ControlSite::QueryInterface(REFIID riid, LPVOID* ppv) {

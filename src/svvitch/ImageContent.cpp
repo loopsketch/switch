@@ -28,7 +28,13 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	bool valid = true;
 	D3DFORMAT fomart = D3DFMT_X8R8G8B8; // D3DFMT_A8R8G8B8;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+	int i = 0;
 	for (vector<MediaItemFile>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
+		if (i < offset) {
+			i++;
+			continue;
+		}
+
 		MediaItemFile mif = *it;
 		if (mif.type() == MediaTypeImage) {
 			LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif.file());
@@ -66,14 +72,16 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 				_log.warning(Poco::format("failed open: %s", mif.file()));
 				valid = false;
 			}
+		} else {
+			// 異なるメディアタイプで終了
+			break;
 		}
 	}
 	_log.information(Poco::format("tiled texture size: %dx%d", _iw, _ih));
 	if (!valid) return false;
 	// _tw = 1024;
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
-	int i = (_iw + _tw - 1) / _tw;
-	_th = _ih * i;
+	_th = _ih * (_iw + _tw - 1) / _tw;
 	_target = _renderer.createRenderTarget(_tw, _th, fomart);
 	if (_target) {
 		_renderer.colorFill(_target, 0xff000000);

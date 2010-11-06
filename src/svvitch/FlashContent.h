@@ -34,8 +34,10 @@ private:
 
 	bool _playing;
 	string _movie;
+	string _params;
 	PerformanceTimer _playTimer;
 	bool _updated;
+	int _zoom;
 
 	DWORD _readTime;
 	int _readCount;

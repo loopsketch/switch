@@ -14,7 +14,8 @@
 using namespace Gdiplus;
 
 
-TextContent::TextContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h), _texture(NULL), _referencedText(NULL)
+TextContent::TextContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
+	_texture(NULL), _referencedText(NULL), _async(false)
 {
 	initialize();
 }
@@ -59,6 +60,7 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_cw = mif.getNumProperty("cw", _w);
 			_ch = mif.getNumProperty("ch", _h);
 			_move = mif.getProperty("move");
+			_async = mif.getProperty("async") == "true";
 			//_dx = mif.getFloatProperty("dx", F(0));
 			//_dy = mif.getFloatProperty("dy", F(0));
 			_align = mif.getProperty("align");
@@ -148,7 +150,7 @@ void TextContent::stop() {
 
 const bool TextContent::finished() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (_move.empty()) {
+	if (_move.empty() || _async) {
 		return true;
 	}
 	return !_playing;
@@ -198,12 +200,13 @@ void TextContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _texture && _playing) {
 		if (!_move.empty()) {
 			_x += _dx;
-			// if (_x < (_cx - _iw - config().stageRect.right)) _playing = false;
-			if (_x < (_cx - _iw)) {
-				// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
-				_dx = 0;
-				_move.clear();
-				//_playing = false;
+			if (!_async) {
+				if (_x < (_cx - _iw)) {
+					// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
+					_dx = 0;
+					_move.clear();
+					//_playing = false;
+				}
 			}
 		}
 	}

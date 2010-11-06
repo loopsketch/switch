@@ -30,40 +30,48 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_openLock);
 	initialize();
 
-	if (media->files().empty()) return false;
-	MediaItemFile mif = media->files()[0];
+	if (media->files().empty() || media->files().size() <= offset) return false;
+	MediaItemFile mif = media->files()[offset];
+	//for (vector<MediaItemFile>::const_iterator it = media->files().begin(); it != media->files().end(); it++) {
+	//	switch (it->type()) {
+	//	case MediaTypeMovie:
+	//		mif = *it;
+	//		break;
+	//	}
+	//}
+
 	AVInputFormat* format = NULL;
 	if (mif.file().find(string("vfwcap")) == 0) {
 		_log.information(Poco::format("capture device: %s", mif.file()));
 		format = av_find_input_format("vfwcap");
 		if (format) _log.information(Poco::format("input format: %s", string(format->long_name)));
-//		AVOutputFormat* outf = guess_format("vfwcap", mbfile.c_str(), NULL);
-//		if (outf) _log.information(Poco::format("output format: [%s]", string(outf->long_name)));
+		// AVOutputFormat* outf = guess_format("vfwcap", mbfile.c_str(), NULL);
+		// if (outf) _log.information(Poco::format("output format: [%s]", string(outf->long_name)));
 
 		AVFormatParameters ap = {0};
-//		ap.prealloced_context = 1;
+		// ap.prealloced_context = 1;
 		ap.width = 640;
 		ap.height = 480;
 		ap.pix_fmt = PIX_FMT_RGB24; //PIX_FMT_NONE;
 		ap.time_base.num = 1;
 		ap.time_base.den = 30;
 		ap.channel = 0;
-//		ap.standard = NULL;
-//		ap.video_codec_id = CODEC_ID_NONE;
-//		ap.audio_codec_id = CODEC_ID_NONE;
+		//	ap.standard = NULL;
+		//	ap.video_codec_id = CODEC_ID_NONE;
+		//	ap.audio_codec_id = CODEC_ID_NONE;
 
-//ap->sample_rate = audio_sample_rate;
-//ap->channels = audio_channels;
-//ap->time_base.den = frame_rate.num;
-//ap->time_base.num = frame_rate.den;
-//ap->width = frame_width + frame_padleft + frame_padright;
-//ap->height = frame_height + frame_padtop + frame_padbottom;
-//ap->pix_fmt = frame_pix_fmt;
-// ap->sample_fmt = audio_sample_fmt; //FIXME:not implemented in libavformat
-//ap->channel = video_channel;
-//ap->standard = video_standard;
-//ap->video_codec_id = find_codec_or_die(video_codec_name, CODEC_TYPE_VIDEO, 0);
-//ap->audio_codec_id = find_codec_or_die(audio_codec_name, CODEC_TYPE_AUDIO, 0);
+		// ap->sample_rate = audio_sample_rate;
+		// ap->channels = audio_channels;
+		// ap->time_base.den = frame_rate.num;
+		// ap->time_base.num = frame_rate.den;
+		// ap->width = frame_width + frame_padleft + frame_padright;
+		// ap->height = frame_height + frame_padtop + frame_padbottom;
+		// ap->pix_fmt = frame_pix_fmt;
+		// ap->sample_fmt = audio_sample_fmt; //FIXME:not implemented in libavformat
+		// ap->channel = video_channel;
+		// ap->standard = video_standard;
+		// ap->video_codec_id = find_codec_or_die(video_codec_name, CODEC_TYPE_VIDEO, 0);
+		// ap->audio_codec_id = find_codec_or_die(audio_codec_name, CODEC_TYPE_AUDIO, 0);
 
 		if (av_open_input_file(&_ic, mif.file().substr(6).c_str(), format, 0, &ap) != 0) {
 			_log.warning(Poco::format("failed open capture device: [%s]", mif.file()));
@@ -78,7 +86,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 			return false;
 		}
 	}
-//	_log.information(Poco::format("opened: %s", file));
+	// _log.information(Poco::format("opened: %s", file));
 
 	if (av_find_stream_info(_ic) < 0 || !_ic) {
 		_log.warning(Poco::format("failed find stream info: %s", mif.file()));

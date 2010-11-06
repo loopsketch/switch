@@ -8,7 +8,7 @@
 FlashContent::FlashContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_texture(NULL), _surface(NULL), _playing(false), _updated(false)
+	_texture(NULL), _surface(NULL), _playing(false), _zoom(0), _updated(false)
 {
 	initialize();
 }
@@ -140,6 +140,17 @@ void FlashContent::createFlashComponents() {
 		inPlaceObject->Release();
 	}
 	_flash->put_Loop(VARIANT_FALSE);
+	if (!_params.empty()) {
+		string params;
+		svvitch::utf8_sjis(_params, params);
+		_bstr_t bstr((char*)params.c_str());
+		HRESULT hr = _flash->put_FlashVars(bstr);
+		if SUCCEEDED(hr) {
+			_log.information(Poco::format("flashvars: %s", _params));
+		} else {
+			_log.warning(Poco::format("failed flashvars: %s", _params));
+		}
+	}
 	_log.information("flash initialized");
 	_readCount = 0;
 	_avgTime = 0;
@@ -163,7 +174,8 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 
 	//load the movie
 	//_log.information(Poco::format("ready state before: %ld", _flash->ReadyState));
-	MediaItemFile mif = media->files()[0];
+	if (media->files().empty() || media->files().size() <= offset) return false;
+	MediaItemFile mif = media->files()[offset];
 	string movie;
 	if (mif.file().find("http://") == 0) {
 		movie = mif.file();
@@ -176,11 +188,15 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 		}
 	}
 	_movie = movie;
+	_params = mif.params();
+	_zoom = media->getNumProperty("swf_zoom", 0);
+	_log.information(Poco::format("flash zoom: %d", _zoom));
 
 	_controlSite = new ControlSite(this);
 	_controlSite->AddRef();
 	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	if (_texture) {
+		_log.information(Poco::format("flash texture: %.0hfx%.0hf", _w, _h));
 		_texture->GetSurfaceLevel(0, &_surface);
 		_renderer.colorFill(_texture, 0xff000000);
 	}
@@ -229,9 +245,12 @@ const bool FlashContent::playing() const {
 const bool FlashContent::finished() {
 	switch (_phase) {
 	case 2:
-		//	return _flash->IsPlaying() == VARIANT_FALSE;
-		//	return _current >= _duration;
-		return _playTimer.getTime() >= 1000 * _duration / 60;
+		if (_duration > 0) {
+			//	return _flash->IsPlaying() == VARIANT_FALSE;
+			//	return _current >= _duration;
+			return _playTimer.getTime() >= 1000 * _duration / 60;
+		}
+		break;
 	case 3:
 		return true;
 	}
@@ -260,10 +279,13 @@ void FlashContent::process(const DWORD& frame) {
 			string movie;
 			svvitch::utf8_sjis(_movie, movie);
 			_bstr_t bstr((char*)movie.c_str());
+			//HRESULT hr = _flash->LoadMovie(0, bstr);
 			HRESULT hr = _flash->put_Movie(bstr);
 			if SUCCEEDED(hr) {
 				_log.information(Poco::format("load movie: %s", _movie));
 				_phase = 2;
+				_flash->put_Scale(L"showAll");
+				//_flash->put_Scale(L"exactfit");
 			} else {
 				_log.warning(Poco::format("failed  movie: %s", _movie));
 			}
@@ -279,6 +301,7 @@ void FlashContent::process(const DWORD& frame) {
 				HDC hdc = NULL;
 				HRESULT hr = _surface->GetDC(&hdc);
 				if SUCCEEDED(hr) {
+					_flash->Zoom(0);
 					hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
 					if FAILED(hr) _log.warning("failed draw");
 					_surface->ReleaseDC(hdc);
@@ -301,7 +324,11 @@ void FlashContent::process(const DWORD& frame) {
 	string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, 0);
 	set("time", Poco::format("%s %s", t1, t2));
 	set("time_current", t1);
-	set("time_remain", t2);
+	if (_duration > 0) {
+		set("time_remain", t2);
+	} else {
+		set("time_remain", "--:--:--.--");
+	}
 	set("status", Poco::format("%03.2hfms", _avgTime));
 }
 

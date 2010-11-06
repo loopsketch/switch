@@ -36,6 +36,7 @@
 
 #include "CaptureContent.h"
 #include "FlashContent.h"
+#include "MixContent.h"
 #ifdef USE_OPENCV
 #include "CvContent.h"
 #endif
@@ -194,18 +195,18 @@ void MainScene::preparedStanbyMedia() {
 	for (map<string, ContainerPtr>::iterator it = _stanbyMedias.begin(); it != _stanbyMedias.end(); it = _stanbyMedias.erase(it)) {
 		SAFE_DELETE(it->second);
 	}
-	if (_workspace) {
-		for (int i = 0; i < _workspace->getMediaCount(); i++) {
-			MediaItemPtr media = _workspace->getMedia(i);
-			if (media->stanby()) {
-				ContainerPtr c = new Container(_renderer);
-				if (prepareMedia(c, media, "")) {
-					_stanbyMedias[media->id()] = c;
-					_log.information(Poco::format("standby media: %s", media->id()));
-				}
-			}
-		}
-	}
+	//if (_workspace) {
+		//for (int i = 0; i < _workspace->getMediaCount(); i++) {
+		//	MediaItemPtr media = _workspace->getMedia(i);
+			//if (media->stanby()) {
+			//	ContainerPtr c = new Container(_renderer);
+			//	if (prepareMedia(c, media, "")) {
+			//		_stanbyMedias[media->id()] = c;
+			//		_log.information(Poco::format("standby media: %s", media->id()));
+			//	}
+			//}
+		//}
+	//}
 }
 
 
@@ -480,6 +481,19 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 	float w = F(config().stageRect.right);
 	float h = F(config().stageRect.bottom);
 	switch (media->type()) {
+		case MediaTypeMix:
+			{
+				MixContentPtr mix = new MixContent(_renderer, config().splitType);
+				if (mix->open(media)) {
+					mix->setPosition(x, y);
+					mix->setBounds(w, h);
+					container->add(mix);
+				} else {
+					SAFE_DELETE(mix);
+				}
+			}
+			break;
+
 		case MediaTypeImage:
 			{
 				ImageContentPtr image = new ImageContent(_renderer, config().splitType);
@@ -576,7 +590,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 			if (mif.type() == MediaTypeText) {
 				TextContentPtr text = new TextContent(_renderer, config().splitType);
 				if (text->open(media, i)) {
-					if (block <= 0) {
+					if (block <= 0 || ref.empty()) {
 						// ŽÀ‘Ìƒ‚[ƒh
 						if (mif.file().empty()) {
 							_log.information(Poco::format("tempate text: %s", templatedText));
