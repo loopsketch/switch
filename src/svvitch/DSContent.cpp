@@ -116,7 +116,7 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 		}
 	}
 
-	MediaItemFile mif = media->files()[0];
+	MediaItemFile mif = media->files()[offset];
 	wstring wfile;
 	Poco::UnicodeConverter::toUTF16(Path(mif.file()).absolute(config().dataRoot).toString(), wfile);
 	IBaseFilter* src = NULL;

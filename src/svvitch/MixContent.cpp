@@ -69,8 +69,10 @@ bool MixContent::open(const MediaItemPtr media, const int offset) {
 				string engine = Poco::toLower(*it);
 				if (engine == "ffmpeg") {
 					c = new FFMovieContent(_renderer, config().splitType);
+					if (c->open(media, i)) break;
 				} else if (engine == "directshow") {
 					c = new DSContent(_renderer, config().splitType);
+					if (c->open(media, i)) break;
 				} else {
 					_log.warning(Poco::format("failed not found movie engine: %s", engine));
 				}
@@ -81,7 +83,7 @@ bool MixContent::open(const MediaItemPtr media, const int offset) {
 			break;
 		}
 		if (c) {
-			if (c->open(media, i)) {
+			if (!c->opened().empty() || c->open(media, i)) {
 				c->setPosition(x, y);
 				c->setBounds(w, h);
 				c->set("alpha", 1.0f);
