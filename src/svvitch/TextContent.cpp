@@ -350,10 +350,17 @@ void TextContent::draw(const DWORD& frame) {
 					device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 					device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				} else {
-					_renderer.drawTexture(_x + _ax, _y, _texture, 0, col, col, col, col);
+					if (_ih != _th) {
+						const int c = _th / _ih;
+						for (int i = 0; i < c; i++) {
+							_renderer.drawTexture(_x + _ax + i * _tw, _y, _tw, _ih, 0, i * _ih, _tw, _ih, _texture, 0, col, col, col, col);
+						}
+					} else {
+						_renderer.drawTexture(_x + _ax, _y, _texture, 0, col, col, col, col);
+					}
 				}
 				_x+=_dx;
-				if (_x < -_tw) _x = config().stageRect.right;
+				if (_x < -_iw) _x = config().stageRect.right;
 				_y+=_dy;
 			}
 		}
