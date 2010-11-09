@@ -72,9 +72,9 @@ void SwitchRequestHandler::doRequest() {
 		} else if (urls[1] == "copy") {
 			copy();
 
-		} else if (urls[1] == "reboot") {
-			svvitch::rebootWindows();
-			sendResponse(HTTPResponse::HTTP_OK, "reboot now");
+		//} else if (urls[1] == "reboot") {
+		//	svvitch::rebootWindows();
+		//	sendResponse(HTTPResponse::HTTP_OK, "reboot now");
 
 		} else if (urls[1] == "version") {
 			version();
