@@ -36,6 +36,7 @@
 
 #include "CaptureContent.h"
 #include "FlashContent.h"
+#include "IEContent.h"
 #include "MixContent.h"
 #ifdef USE_OPENCV
 #include "CvContent.h"
@@ -550,6 +551,17 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 					container->add(flash);
 				} else {
 					SAFE_DELETE(flash);
+				}
+			}
+			break;
+
+		case MediaTypeBrowser:
+			{
+				IEContentPtr ie = new IEContent(_renderer, config().splitType, x, y, w, h);
+				if (ie->open(media)) {
+					container->add(ie);
+				} else {
+					SAFE_DELETE(ie);
 				}
 			}
 			break;

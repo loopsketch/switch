@@ -260,6 +260,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\IEContent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\ImageContent.cpp"
 				>
 			</File>
@@ -411,6 +415,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\HTTPServerBase.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\IEContent.h"
 				>
 			</File>
 			<File

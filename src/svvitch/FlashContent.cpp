@@ -8,7 +8,7 @@
 FlashContent::FlashContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_texture(NULL), _surface(NULL), _playing(false), _zoom(0), _updated(false)
+	_texture(NULL), _surface(NULL), _zoom(0), _updated(false)
 {
 	initialize();
 }

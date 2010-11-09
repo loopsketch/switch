@@ -34,7 +34,6 @@ private:
 	LPDIRECT3DSURFACE9 _surface;
 	HDC _hdc;
 
-	bool _playing;
 	string _movie;
 	string _params;
 	PerformanceTimer _playTimer;

@@ -134,6 +134,8 @@ bool Workspace::parse() {
 							typeCode = MediaTypeImage;
 						} else  if (type == "flash") {
 							typeCode = MediaTypeFlash;
+						} else  if (type == "browser") {
+							typeCode = MediaTypeBrowser;
 						} else  if (type == "cv") {
 							typeCode = MediaTypeCv;
 						} else  if (type == "cvcap") {

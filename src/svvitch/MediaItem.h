@@ -22,6 +22,7 @@ enum MediaType {
 	MediaTypeImage,
 	MediaTypeText,
 	MediaTypeFlash,
+	MediaTypeBrowser,
 	MediaTypeCv,
 	MediaTypeCvCap,
 	MediaTypeGame,
