@@ -39,6 +39,7 @@ private:
 	string _params;
 	PerformanceTimer _playTimer;
 	bool _updated;
+	DWORD _background;
 	int _zoom;
 
 	DWORD _readTime;

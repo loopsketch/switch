@@ -113,6 +113,9 @@ void FlashContent::createFlashComponents() {
 	//flashInterface->PutQuality2("autolow");
 	//flashInterface->PutQuality2("autohigh");
 	//_flash->put_Quality2(L"medium");
+	_flash->put_BackgroundColor(_background);
+	//_flash->put_Scale(L"exactfit");
+	_flash->put_Scale(L"showAll");
 
 	// In-place activate the object
 	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
@@ -190,15 +193,16 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	_movie = movie;
 	_params = mif.params();
 	_zoom = media->getNumProperty("swf_zoom", 0);
+	_background = media->getHexProperty("swf_background", 0);
 	_log.information(Poco::format("flash zoom: %d", _zoom));
+	_log.information(Poco::format("flash background: %lx", _background));
 
 	_controlSite = new ControlSite(this);
 	_controlSite->AddRef();
-	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
+	_texture = _renderer.createTexture(_w, _h, D3DFMT_A8R8G8B8);
 	if (_texture) {
 		_log.information(Poco::format("flash texture: %.0hfx%.0hf", _w, _h));
 		_texture->GetSurfaceLevel(0, &_surface);
-		_renderer.colorFill(_texture, 0xff000000);
 	}
 
 	set("alpha", 1.0f);
@@ -285,8 +289,6 @@ void FlashContent::process(const DWORD& frame) {
 			if SUCCEEDED(hr) {
 				_log.information(Poco::format("load movie: %s", _movie));
 				_phase = 2;
-				_flash->put_Scale(L"showAll");
-				//_flash->put_Scale(L"exactfit");
 				_worker = this;
 				_thread.start(*_worker);
 
@@ -329,10 +331,12 @@ void FlashContent::run() {
 		}
 		if (update) {
 			timer.start();
+			_renderer.colorFill(_texture, 0x00000000);
 			HDC hdc = NULL;
 			HRESULT hr = _surface->GetDC(&hdc);
 			if SUCCEEDED(hr) {
-				_flash->Zoom(0);
+				_flash->Zoom(_zoom);
+				SetMapMode(hdc, MM_TEXT);
 				hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
 				if FAILED(hr) _log.warning("failed drawing flash");
 				_surface->ReleaseDC(hdc);
@@ -382,6 +386,9 @@ void FlashContent::draw(const DWORD& frame) {
 							int dy = (config().splitCycles - (sx % config().splitCycles) - 1) * ch;
 							//RECT rect = {dx, dy, dx + cww, dy + chh};
 							//device->SetScissorRect(&rect);
+							if (_background) {
+								_renderer.drawTexture(dx + _x, dy + _y, cw, ch, sx * cw, sy * ch, cw, ch, NULL, 0, _background, _background, _background, _background);
+							}
 							_renderer.drawTexture(dx + _x, dy + _y, cw, ch, sx * cw, sy * ch, cw, ch, _texture, 0, col, col, col, col);
 						}
 					}
@@ -391,6 +398,9 @@ void FlashContent::draw(const DWORD& frame) {
 				}
 				break;
 			default:
+				if (_background) {
+					_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, _background, _background, _background, _background);
+				}
 				_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
 			}
 		}
