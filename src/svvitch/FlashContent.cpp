@@ -227,6 +227,7 @@ void FlashContent::play() {
 void FlashContent::stop() {
 	_playing = false;
 	if (_phase >= 0) {
+		_thread.join();
 		releaseFlashComponents();
 	}
 }
@@ -286,34 +287,16 @@ void FlashContent::process(const DWORD& frame) {
 				_phase = 2;
 				_flash->put_Scale(L"showAll");
 				//_flash->put_Scale(L"exactfit");
+				_worker = this;
+				_thread.start(*_worker);
+
 			} else {
 				_log.warning(Poco::format("failed  movie: %s", _movie));
 			}
 		}
 		break;
 	case 2: // çƒê∂íÜ
-		if (_playing && _surface && _view) {
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			if (_updated) {
-				_updated = false;
-				PerformanceTimer timer;
-				timer.start();
-				HDC hdc = NULL;
-				HRESULT hr = _surface->GetDC(&hdc);
-				if SUCCEEDED(hr) {
-					_flash->Zoom(0);
-					hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
-					if FAILED(hr) _log.warning("failed draw");
-					_surface->ReleaseDC(hdc);
-					_readTime = timer.getTime();
-					_readCount++;
-					_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
-				} else {
-					_log.warning("failed getDC");
-				}
-			}
-			_current = _playTimer.getTime() * 60 / 1000;
-		}
+		_current = _playTimer.getTime() * 60 / 1000;
 		break;
 	case 3: // ÉäÉäÅ[ÉXçœ
 		break;
@@ -330,6 +313,41 @@ void FlashContent::process(const DWORD& frame) {
 		set("time_remain", "--:--:--.--");
 	}
 	set("status", Poco::format("%03.2hfms", _avgTime));
+}
+
+void FlashContent::run() {
+	_log.information("start flash drawing thread");
+	PerformanceTimer timer;
+	while (_playing && _surface && _view) {
+		bool update = false;
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			if (_updated) {
+				update = true;
+				_updated = false;
+			}
+		}
+		if (update) {
+			timer.start();
+			HDC hdc = NULL;
+			HRESULT hr = _surface->GetDC(&hdc);
+			if SUCCEEDED(hr) {
+				_flash->Zoom(0);
+				hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
+				if FAILED(hr) _log.warning("failed drawing flash");
+				_surface->ReleaseDC(hdc);
+				_readTime = timer.getTime();
+				_readCount++;
+				_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+			} else {
+				_log.warning("failed getDC");
+			}
+			Poco::Thread::sleep(0);
+		} else {
+			Poco::Thread::sleep(10);
+		}
+	}
+	_log.information("finished flash drawing thread");
 }
 
 void FlashContent::draw(const DWORD& frame) {

@@ -15,7 +15,7 @@ using std::queue;
 using std::string;
 
 
-class FlashContent: public Content {
+class FlashContent: public Content, Poco::Runnable {
 private:
 	Poco::FastMutex _lock;
 
@@ -27,6 +27,8 @@ private:
 	IShockwaveFlash* _flash;
 	IOleInPlaceObjectWindowless* _windowless;
 	IViewObject* _view;
+	Poco::Thread _thread;
+	Poco::Runnable* _worker;
 
 	LPDIRECT3DTEXTURE9 _texture;
 	LPDIRECT3DSURFACE9 _surface;
@@ -82,6 +84,8 @@ public:
 	void close();
 
 	void process(const DWORD& frame);
+
+	void run();
 
 	void draw(const DWORD& frame);
 };
