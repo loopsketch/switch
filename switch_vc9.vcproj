@@ -196,6 +196,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\ComContent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\Configuration.cpp"
 				>
 			</File>
@@ -335,6 +339,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\CaptureScene.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\ComContent.h"
 				>
 			</File>
 			<File

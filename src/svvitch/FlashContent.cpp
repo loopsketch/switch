@@ -5,10 +5,10 @@
 #include "Utils.h"
 
 
-FlashContent::FlashContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
+FlashContent::FlashContent(Renderer& renderer, int splitType, float x, float y, float w, float h): ComContent(renderer, splitType, x, y, w, h),
 	_phase(-1), _module(NULL), _classFactory(NULL),
 	_controlSite(NULL), _ole(NULL), _flash(NULL), _windowless(NULL), _view(NULL),
-	_texture(NULL), _surface(NULL), _zoom(0), _updated(false)
+	_texture(NULL), _surface(NULL), _zoom(0)
 {
 	initialize();
 }
@@ -82,78 +82,6 @@ void FlashContent::createFlashComponents() {
 		_log.information("created class ShockwaveFlash");
 	}
 
-	IOleClientSite* clientSite = NULL;
-	hr = _controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
-	if FAILED(hr) {
-		_log.warning("failed query IOleClientSite");
-		_phase = -1;
-		return;
-	}
-	hr = _ole->SetClientSite(clientSite);
-	if FAILED(hr) {
-		_log.warning("failed query IOleObject");
-		clientSite->Release();	
-		_phase = -1;
-		return;
-	}
-
-	// Set the to transparent window mode
-	hr = _ole->QueryInterface(__uuidof(IShockwaveFlash), (LPVOID*) &_flash);
-	if FAILED(hr) {
-		_log.warning("failed IShockwaveFlash");
-		clientSite->Release();	
-		_phase = -1;
-		return;
-	}
-	_flash->put_WMode(L"transparent");
-	//flashInterface->PutQuality2("low");
-	//flashInterface->PutQuality2("medium");
-	//flashInterface->PutQuality2("high");
-	//flashInterface->PutQuality2("best");
-	//flashInterface->PutQuality2("autolow");
-	//flashInterface->PutQuality2("autohigh");
-	//_flash->put_Quality2(L"medium");
-	_flash->put_BackgroundColor(_background);
-	//_flash->put_Scale(L"exactfit");
-	_flash->put_Scale(L"showAll");
-
-	// In-place activate the object
-	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
-	clientSite->Release();	
-		
-	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*) &_windowless);
-	if FAILED(hr) {
-		_log.warning("failed quey IOleInPlaceObjectWindowless");
-		_phase = -1;
-		return;
-	}
-
-	hr = _flash->QueryInterface(IID_IViewObject, (LPVOID*) &_view);   
-	if FAILED(hr) {
-		_log.warning("failed quey IViewObject");
-		_phase = -1;
-		return;
-	}
-	IOleInPlaceObject* inPlaceObject = NULL;     
-	_ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
-	if (inPlaceObject != NULL) {
-		RECT rect;
-		SetRect(&rect, 0, 0, _w, _h);
-		inPlaceObject->SetObjectRects(&rect, &rect);
-		inPlaceObject->Release();
-	}
-	_flash->put_Loop(VARIANT_FALSE);
-	if (!_params.empty()) {
-		string params;
-		svvitch::utf8_sjis(_params, params);
-		_bstr_t bstr((char*)params.c_str());
-		HRESULT hr = _flash->put_FlashVars(bstr);
-		if SUCCEEDED(hr) {
-			_log.information(Poco::format("flashvars: %s", _params));
-		} else {
-			_log.warning(Poco::format("failed flashvars: %s", _params));
-		}
-	}
 	_log.information("flash initialized");
 	_readCount = 0;
 	_avgTime = 0;
@@ -172,8 +100,7 @@ void FlashContent::releaseFlashComponents() {
 
 /** ファイルをオープンします */
 bool FlashContent::open(const MediaItemPtr media, const int offset) {
-	if (!_module) return false;
-	//Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	//if (!_module) return false;
 
 	//load the movie
 	//_log.information(Poco::format("ready state before: %ld", _flash->ReadyState));
@@ -210,11 +137,6 @@ bool FlashContent::open(const MediaItemPtr media, const int offset) {
 	_current = 0;
 	_mediaID = media->id();
 	return true;
-}
-
-void FlashContent::update() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	_updated = true;
 }
 
 /**
@@ -281,20 +203,9 @@ void FlashContent::process(const DWORD& frame) {
 		break;
 	case 1: // 初期化済
 		if (_playing && !_movie.empty()) {
-			string movie;
-			svvitch::utf8_sjis(_movie, movie);
-			_bstr_t bstr((char*)movie.c_str());
-			//HRESULT hr = _flash->LoadMovie(0, bstr);
-			HRESULT hr = _flash->put_Movie(bstr);
-			if SUCCEEDED(hr) {
-				_log.information(Poco::format("load movie: %s", _movie));
-				_phase = 2;
-				_worker = this;
-				_thread.start(*_worker);
-
-			} else {
-				_log.warning(Poco::format("failed  movie: %s", _movie));
-			}
+			_worker = this;
+			_thread.start(*_worker);
+			_phase = 2;
 		}
 		break;
 	case 2: // 再生中
@@ -319,6 +230,100 @@ void FlashContent::process(const DWORD& frame) {
 
 void FlashContent::run() {
 	_log.information("start flash drawing thread");
+
+	IOleClientSite* clientSite = NULL;
+	HRESULT hr = _controlSite->QueryInterface(__uuidof(IOleClientSite), (void**) &clientSite);
+	if FAILED(hr) {
+		_log.warning("failed query IOleClientSite");
+		_phase = -1;
+		return;
+	}
+	hr = _ole->SetClientSite(clientSite);
+	if FAILED(hr) {
+		_log.warning("failed query IOleObject");
+		clientSite->Release();	
+		_phase = -1;
+		return;
+	}
+
+	// Set the to transparent window mode
+	hr = _ole->QueryInterface(__uuidof(IShockwaveFlash), (LPVOID*) &_flash);
+	if FAILED(hr) {
+		_log.warning("failed IShockwaveFlash");
+		clientSite->Release();	
+		_phase = -1;
+		return;
+	}
+	_flash->put_WMode(L"transparent");
+	//flashInterface->PutQuality2("low");
+	//flashInterface->PutQuality2("medium");
+	//flashInterface->PutQuality2("high");
+	//flashInterface->PutQuality2("best");
+	//flashInterface->PutQuality2("autolow");
+	//flashInterface->PutQuality2("autohigh");
+	//_flash->put_Quality2(L"medium");
+	_flash->put_BackgroundColor(_background);
+	//_flash->put_Scale(L"exactfit");
+	_flash->put_Scale(L"showAll");
+
+	// In-place activate the object
+	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
+	clientSite->Release();	
+		
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*) &_windowless);
+	if FAILED(hr) {
+		_log.warning("failed quey IOleInPlaceObjectWindowless");
+		_phase = -1;
+		return;
+	}
+
+	hr = _flash->QueryInterface(IID_IViewObject, (LPVOID*) &_view);   
+	if FAILED(hr) {
+		_log.warning("failed quey IViewObject");
+		_phase = -1;
+		return;
+	}
+	IOleInPlaceObject* inPlaceObject = NULL;     
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
+	if FAILED(hr) {
+		_log.warning("failed quey IOleInPlaceObject");
+		_phase = -1;
+		return;
+	}
+	if (inPlaceObject != NULL) {
+		RECT rect;
+		SetRect(&rect, 0, 0, _w, _h);
+		inPlaceObject->SetObjectRects(&rect, &rect);
+		inPlaceObject->Release();
+	}
+
+	_flash->put_Loop(VARIANT_FALSE);
+	if (!_params.empty()) {
+		string params;
+		svvitch::utf8_sjis(_params, params);
+		_bstr_t bstr((char*)params.c_str());
+		HRESULT hr = _flash->put_FlashVars(bstr);
+		if SUCCEEDED(hr) {
+			_log.information(Poco::format("flashvars: %s", _params));
+		} else {
+			_log.warning(Poco::format("failed flashvars: %s", _params));
+		}
+	}
+
+	string movie;
+	svvitch::utf8_sjis(_movie, movie);
+	_bstr_t bstr((char*)movie.c_str());
+	//HRESULT hr = _flash->LoadMovie(0, bstr);
+	hr = _flash->put_Movie(bstr);
+	if SUCCEEDED(hr) {
+		_log.information(Poco::format("load movie: %s", _movie));
+	} else {
+		_log.warning(Poco::format("failed  movie: %s", _movie));
+		_worker = NULL;
+		_phase = -1;
+		return;
+	}
+
 	PerformanceTimer timer;
 	while (_playing && _surface && _view) {
 		bool update = false;
@@ -331,12 +336,12 @@ void FlashContent::run() {
 		}
 		if (update) {
 			timer.start();
-			_renderer.colorFill(_texture, 0x00000000);
+			//_renderer.colorFill(_texture, 0x00000000);
 			HDC hdc = NULL;
 			HRESULT hr = _surface->GetDC(&hdc);
 			if SUCCEEDED(hr) {
 				_flash->Zoom(_zoom);
-				SetMapMode(hdc, MM_TEXT);
+				//SetMapMode(hdc, MM_TEXT);
 				hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
 				if FAILED(hr) _log.warning("failed drawing flash");
 				_surface->ReleaseDC(hdc);
@@ -348,7 +353,7 @@ void FlashContent::run() {
 			}
 			Poco::Thread::sleep(0);
 		} else {
-			Poco::Thread::sleep(10);
+			Poco::Thread::sleep(5);
 		}
 	}
 	_log.information("finished flash drawing thread");

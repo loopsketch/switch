@@ -1,9 +1,23 @@
 #pragma once
 
+#ifdef UNICODE
+#define FormatMessage FormatMessageW
+#define FindResource FindResourceW
+#define GetModuleFileName GetModuleFileNameW
+#define CreateFile CreateFileW
+#define LoadLibrary LoadLibraryW
+#define CreateEvent CreateEventW
+#else
+#define FormatMessage FormatMessageA
+#define FindResource FindResourceA
+#define GetModuleFileName GetModuleFileNameA
+#define CreateFile CreateFileA
+#define LoadLibrary LoadLibraryA
+#define CreateEvent CreateEventA
+#endif // !UNICODE
+#include <atlbase.h>
 #include <Poco/Logger.h>
-#include "flash.h"
-
-class FlashContent;
+#include "ComContent.h"
 
 
 class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
@@ -12,17 +26,16 @@ private:
 	Poco::Logger& _log;
 	int _ref;
 	RECT _rect;
-	FlashContent* _flash;
+	ComContentPtr _com;
 
 public:
-	ControlSite(FlashContent* flash);
+	ControlSite(ComContentPtr com);
 
 	virtual ~ControlSite();
 
 	void GetRect(LPRECT rect);
 
 	// IUnknown
-	
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID* ppv);
 
 	ULONG STDMETHODCALLTYPE AddRef();

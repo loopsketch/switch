@@ -40,10 +40,10 @@ bool IEContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(Poco::format("failed not navigated: %s", mif.file()));
 		return false;
 	}
-	long w, h;
-	_browser->get_Width(&w);
-	_browser->get_Height(&h);
-	_log.information(Poco::format("browser size: %ldx%ld", w, h));
+	//long w, h;
+	//_browser->get_Width(&w);
+	//_browser->get_Height(&h);
+	//_log.information(Poco::format("browser size: %ldx%ld", w, h));
 
 	VARIANT_BOOL busy = VARIANT_FALSE;
 	do {
@@ -55,7 +55,7 @@ bool IEContent::open(const MediaItemPtr media, const int offset) {
 		Sleep(100);
 	} while (busy == VARIANT_TRUE);
 
-	IDispatchPtr disp;
+	IDispatchPtr disp = NULL;
 	hr = _browser->get_Document(&disp);
 	if FAILED(hr) {
 		_log.warning("failed get_Document");

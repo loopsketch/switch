@@ -1,12 +1,10 @@
 #pragma once
 
-//#include <windows.h>
-//#include <queue>
 #include <Poco/Mutex.h>
 #include <Poco/Thread.h>
 #include <Poco/Runnable.h>
 
-#include "Content.h"
+#include "ComContent.h"
 #include "flash.h"
 #include "ControlSite.h"
 
@@ -15,10 +13,8 @@ using std::queue;
 using std::string;
 
 
-class FlashContent: public Content, Poco::Runnable {
+class FlashContent: public ComContent, Poco::Runnable {
 private:
-	Poco::FastMutex _lock;
-
 	int _phase;
 	HMODULE _module;
 	IClassFactory* _classFactory;
@@ -37,7 +33,6 @@ private:
 	string _movie;
 	string _params;
 	PerformanceTimer _playTimer;
-	bool _updated;
 	DWORD _background;
 	int _zoom;
 

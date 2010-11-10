@@ -6,7 +6,7 @@
 using std::string;
 
 
-ControlSite::ControlSite(FlashContentPtr flash): _log(Poco::Logger::get("")), _flash(flash)
+ControlSite::ControlSite(ComContentPtr com): _log(Poco::Logger::get("")), _com(com)
 {
 	_ref = 0;
 	::SetRect(&_rect, 0, 0, 2000, 2000);
@@ -249,7 +249,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::ReleaseDC(/* [in] */ HDC hDC) {
 HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(/* [in] */ LPCRECT rect, /* [in] */ BOOL erase) {
 	if (rect) {
 		SetRect(&_rect, rect->left, rect->top, rect->right, rect->bottom);
-		_flash->update();
+		_com->update();
 		//_log.information(Poco::format("invalidate rect: %ld,%ld %ldx%ld %s", rect->left, rect->top, rect->right, rect->bottom, string(erase?"true":"false")));
 	}
 	
