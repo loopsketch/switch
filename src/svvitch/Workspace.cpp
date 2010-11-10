@@ -121,6 +121,8 @@ bool Workspace::parse() {
 								files.push_back(MediaItemFile(MediaTypeText, file, params));
 							} else if (e->tagName() == "flash") {
 								files.push_back(MediaItemFile(MediaTypeFlash, file, params));
+							} else {
+								files.push_back(MediaItemFile(MediaTypeUnknown, file, params));
 							}
 						}
 						movies->release();
