@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mshtml.h>
 #include <Exdisp.h>
 #include "Content.h"
 
@@ -12,7 +11,7 @@ private:
 	int _phase;
 	string _url;
 	IWebBrowser2* _browser;
-	IHTMLDocument2* _doc;
+	LPUNKNOWN _doc;
 	IViewObject* _view;
 
 	LPDIRECT3DTEXTURE9 _texture;

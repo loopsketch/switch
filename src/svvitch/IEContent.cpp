@@ -9,6 +9,7 @@
 #include <comdef.h>
 #include <atlcomcli.h>
 #include <comutil.h>
+#include <mshtml.h>
 #include <Poco/UnicodeConverter.h>
 #include "Utils.h"
 
@@ -60,18 +61,21 @@ bool IEContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning("failed get_Document");
 		return false;
 	}
-	hr = disp->QueryInterface(IID_IHTMLDocument2, (void**)&_doc);
+	IHTMLDocument2* doc = NULL;
+	hr = disp->QueryInterface(IID_IHTMLDocument2, (void**)&doc);
+	//hr = disp->QueryInterface(IID_IUnknown, (void**)&_doc);
 	if FAILED(hr) {
 		_log.warning("failed quey IHTMLDocument2");
 		return false;
 	}
-	//hr = doc->QueryInterface(IID_IViewObject, (LPVOID*)&_view);   
-	//if FAILED(hr) {
-	//	_log.warning("failed quey IViewObject");
-	//	return false;
-	//}
+	hr = doc->QueryInterface(IID_IViewObject, (LPVOID*)&_view);
+	if FAILED(hr) {
+		_log.warning("failed quey IViewObject");
+		return false;
+	}
+	SAFE_RELEASE(doc);
 
-	_texture = _renderer.createTexture(_w, _h, D3DFMT_A8R8G8B8);
+	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
 	if (_texture) {
 		_log.information(Poco::format("browser texture: %.0hfx%.0hf", _w, _h));
 		_texture->GetSurfaceLevel(0, &_surface);
@@ -97,13 +101,14 @@ void IEContent::close() {
 }
 
 void IEContent::process(const DWORD& frame) {
-	if (_playing && _doc) {
+	if (_playing && _view) {
 		HDC hdc = NULL;
 		HRESULT hr = _surface->GetDC(&hdc);
 		if SUCCEEDED(hr) {
-			::OleDraw(_doc, DVASPECT_CONTENT, hdc, NULL);
+			RECT rect = {0, 0, _w, _h};
+			hr = OleDraw(_view, DVASPECT_CONTENT, hdc, &rect);
 			//hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
-			//if FAILED(hr) _log.warning("failed drawing browser");
+			if FAILED(hr) _log.warning("failed drawing browser");
 			_surface->ReleaseDC(hdc);
 		} else {
 			_log.warning("failed getDC");
@@ -112,4 +117,8 @@ void IEContent::process(const DWORD& frame) {
 }
 
 void IEContent::draw(const DWORD& frame) {
+	if (_playing) {
+		DWORD col = 0xffffffff;
+		_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
+	}
 }
