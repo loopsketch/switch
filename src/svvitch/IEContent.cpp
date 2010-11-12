@@ -14,31 +14,88 @@
 #include "Utils.h"
 
 
-IEContent::IEContent(Renderer& renderer, int splitType, float x, float y, float w, float h): Content(renderer, splitType, x, y, w, h),
-	_browser(NULL), _doc(NULL), _view(NULL), _texture(NULL), _surface(NULL)
+IEContent::IEContent(Renderer& renderer, int splitType, float x, float y, float w, float h): ComContent(renderer, splitType, x, y, w, h)
 {
-	CoCreateInstance(CLSID_InternetExplorer, NULL, CLSCTX_SERVER, IID_IWebBrowser2, (LPVOID*)&_browser);
 }
 
 IEContent::~IEContent() {
-	SAFE_RELEASE(_view);
-	SAFE_RELEASE(_browser);
-	SAFE_RELEASE(_surface);
-	SAFE_RELEASE(_texture);
+}
+
+void IEContent::createComComponents() {
+	HRESULT hr = CoCreateInstance(CLSID_InternetExplorer, NULL, CLSCTX_INPROC_SERVER, IID_IOleObject, (void**)&_ole);
+	if FAILED(hr) {
+		_log.warning("failed create IOleObject");
+	}
+
+	_log.information("InternetExplorer initialized");
+	_readCount = 0;
+	_avgTime = 0;
+	_phase = 1;
+}
+
+void IEContent::releaseComComponents() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	SAFE_RELEASE(_ole);
+	_phase = 3;
+	_log.information("flash released");
 }
 
 bool IEContent::open(const MediaItemPtr media, const int offset) {
-	if (!_browser) return false;
+	if (!_ole) return false;
 	if (media->files().empty() || media->files().size() <= offset) return false;
 	MediaItemFile mif = media->files()[offset];
+	string url;
+	if (mif.file().find("http://") == 0 || mif.file().find("https://") == 0) {
+		url = mif.file();
+	} else {
+		url = Path(mif.file()).absolute(config().dataRoot).toString();
+		Poco::File f(url);
+		if (!f.exists()) {
+			_log.warning(Poco::format("file not found: %s", url));
+			return false;
+		}
+	}
+	_url = url;
+
+	return ComContent::open(media, offset);
+}
+
+void IEContent::run() {
+	_log.information("start IE drawing thread");
+
+	IOleClientSite* clientSite = NULL;
+	HRESULT hr = _controlSite->QueryInterface(__uuidof(IOleClientSite), (void**)&clientSite);
+	if FAILED(hr) {
+		_log.warning("failed not query IOleClientSite");
+		_phase = -1;
+		return;
+	}
+	hr = _ole->SetClientSite(clientSite);
+	if FAILED(hr) {
+		_log.warning("failed not query IOleObject");
+		clientSite->Release();	
+		_phase = -1;
+		return;
+	}
+
+	// Set the to transparent window mode
+	IWebBrowser2* browser = NULL;
+	hr = _ole->QueryInterface(IID_IWebBrowser2, (LPVOID*)&browser);
+	if FAILED(hr) {
+		_log.warning("failed IWebBrowser2");
+		clientSite->Release();	
+		_phase = -1;
+		return;
+	}
 
 	wstring url;
-	Poco::UnicodeConverter::toUTF16(mif.file(), url);
+	Poco::UnicodeConverter::toUTF16(_url, url);
 	CComVariant empty;
-	HRESULT hr = _browser->Navigate(_bstr_t(url.c_str()), &empty, &empty, &empty, &empty);
+	hr = browser->Navigate(_bstr_t(url.c_str()), &empty, &empty, &empty, &empty);
 	if FAILED(hr) {
-		_log.warning(Poco::format("failed not navigated: %s", mif.file()));
-		return false;
+		_log.warning(Poco::format("failed not navigated: %s", _url));
+		_phase = -1;
+		return;
 	}
 	//long w, h;
 	//_browser->get_Width(&w);
@@ -47,78 +104,96 @@ bool IEContent::open(const MediaItemPtr media, const int offset) {
 
 	VARIANT_BOOL busy = VARIANT_FALSE;
 	do {
-		hr = _browser->get_Busy(&busy);
+		hr = browser->get_Busy(&busy);
 		if FAILED(hr) {
 			_log.warning("failed get_Busy");
-			return false;
+			_phase = -1;
+			return;
 		}
 		Sleep(100);
 	} while (busy == VARIANT_TRUE);
 
 	IDispatchPtr disp = NULL;
-	hr = _browser->get_Document(&disp);
+	hr = browser->get_Document(&disp);
 	if FAILED(hr) {
 		_log.warning("failed get_Document");
-		return false;
+		_phase = -1;
+		return;
 	}
 	IHTMLDocument2* doc = NULL;
 	hr = disp->QueryInterface(IID_IHTMLDocument2, (void**)&doc);
 	//hr = disp->QueryInterface(IID_IUnknown, (void**)&_doc);
 	if FAILED(hr) {
 		_log.warning("failed quey IHTMLDocument2");
-		return false;
+		_phase = -1;
+		return;
 	}
-	hr = doc->QueryInterface(IID_IViewObject, (LPVOID*)&_view);
+
+	// In-place activate the object
+	hr = _ole->DoVerb(OLEIVERB_INPLACEACTIVATE, NULL, clientSite, 0, NULL, NULL);
+	clientSite->Release();	
+		
+	IOleInPlaceObjectWindowless* windowless = NULL;
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObjectWindowless), (LPVOID*)&windowless);
 	if FAILED(hr) {
-		_log.warning("failed quey IViewObject");
-		return false;
+		_log.warning("failed not query IOleInPlaceObjectWindowless");
+		_phase = -1;
+		return;
+	}
+
+	IViewObject* view = NULL;
+	hr = doc->QueryInterface(IID_IViewObject, (LPVOID*)&view);   
+	if FAILED(hr) {
+		_log.warning("failed not query IViewObject");
+		_phase = -1;
+		return;
 	}
 	SAFE_RELEASE(doc);
-
-	_texture = _renderer.createTexture(_w, _h, D3DFMT_X8R8G8B8);
-	if (_texture) {
-		_log.information(Poco::format("browser texture: %.0hfx%.0hf", _w, _h));
-		_texture->GetSurfaceLevel(0, &_surface);
+	IOleInPlaceObject* inPlaceObject = NULL;     
+	hr = _ole->QueryInterface(__uuidof(IOleInPlaceObject), (LPVOID*) &inPlaceObject);
+	if FAILED(hr) {
+		_log.warning("failed not query IOleInPlaceObject");
+		_phase = -1;
+		return;
 	}
-	_mediaID = media->id();
-	return true;
-}
+	if (inPlaceObject != NULL) {
+		RECT rect;
+		SetRect(&rect, 0, 0, _w, _h);
+		inPlaceObject->SetObjectRects(&rect, &rect);
+		inPlaceObject->Release();
+	}
 
-void IEContent::play() {
-	_playing = true;
-}
 
-void IEContent::stop() {
-	_playing = false;
-}
-
-const bool IEContent::finished() {
-	return !_playing;
-}
-
-void IEContent::close() {
-	if (_browser) _browser->Quit();
-}
-
-void IEContent::process(const DWORD& frame) {
-	if (_playing && _view) {
-		HDC hdc = NULL;
-		HRESULT hr = _surface->GetDC(&hdc);
-		if SUCCEEDED(hr) {
-			RECT rect = {0, 0, _w, _h};
-			hr = OleDraw(_view, DVASPECT_CONTENT, hdc, &rect);
-			//hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, NULL, NULL, 0);
-			if FAILED(hr) _log.warning("failed drawing browser");
-			_surface->ReleaseDC(hdc);
+	PerformanceTimer timer;
+	while (_playing && _surface && view) {
+		if (hasInvalidateRect()) {
+			Rect rect = popInvalidateRect();
+			timer.start();
+			// _renderer.colorFill(_texture, 0x00000000);
+			HDC hdc = NULL;
+			HRESULT hr = _surface->GetDC(&hdc);
+			if SUCCEEDED(hr) {
+				SetMapMode(hdc, MM_TEXT);
+				RECTL rectl = {rect.x, rect.y, rect.w, rect.h};
+				hr = view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, &rectl, NULL, 0);
+				if FAILED(hr) {
+					_log.warning("failed drawing flash");
+					break;
+				}
+				_surface->ReleaseDC(hdc);
+				_readTime = timer.getTime();
+				_readCount++;
+				if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+			} else {
+				_log.warning("failed getDC");
+			}
+			Poco::Thread::sleep(0);
 		} else {
-			_log.warning("failed getDC");
+			Poco::Thread::sleep(3);
 		}
 	}
-}
-
-void IEContent::draw(const DWORD& frame) {
-	if (_playing) {
-		DWORD col = 0xffffffff;
-		_renderer.drawTexture(_x, _y, _texture, 0, col, col, col, col);
-	}
+	SAFE_RELEASE(browser);
+	SAFE_RELEASE(view);
+	SAFE_RELEASE(windowless);
+	_log.information("finished IE drawing thread");
 }

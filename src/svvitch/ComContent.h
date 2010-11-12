@@ -1,8 +1,11 @@
 #pragma once
 
 #include <Poco/Mutex.h>
+#include <Poco/Thread.h>
+#include <Poco/Runnable.h>
 
 #include "Content.h"
+#include "ControlSite.h"
 
 
 using std::queue;
@@ -38,12 +41,28 @@ public:
 };
 
 
-class ComContent: public Content {
+class ComContent: public Content, Poco::Runnable {
 private:
 protected:
 	Poco::FastMutex _lock;
 	queue<Rect> _invalidateRects;
-	//bool _updated;
+
+	IOleObject* _ole;
+	ControlSite* _controlSite;
+	Poco::Thread _thread;
+	Poco::Runnable* _worker;
+
+	LPDIRECT3DTEXTURE9 _texture;
+	LPDIRECT3DSURFACE9 _surface;
+	HDC _hdc;
+
+	int _phase;
+	DWORD _background;
+	PerformanceTimer _playTimer;
+	DWORD _readTime;
+	int _readCount;
+	float _avgTime;
+
 
 	ComContent(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
@@ -53,12 +72,38 @@ protected:
 
 	virtual void releaseComComponents() = 0;
 
-public:
-	void invalidateRect(int x, int y, int w, int h);
-
 	bool hasInvalidateRect();
 
 	Rect popInvalidateRect();
+
+
+public:
+	void invalidateRect(int x, int y, int w, int h);
+
+	/** ファイルをオープンします */
+	virtual bool open(const MediaItemPtr media, const int offset = 0);
+
+	/** 再生 */
+	void play();
+
+	/** 停止 */
+	void stop();
+
+	bool useFastStop();
+
+	/** 再生中かどうか */
+	const bool playing() const;
+
+	const bool finished();
+
+	/** ファイルをクローズします */
+	void close();
+
+	void process(const DWORD& frame);
+
+	virtual void run() = 0;
+
+	void draw(const DWORD& frame);
 };
 
 typedef ComContent* ComContentPtr;

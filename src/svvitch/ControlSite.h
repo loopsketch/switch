@@ -17,8 +17,8 @@
 #endif // !UNICODE
 #include <atlbase.h>
 #include <Poco/Logger.h>
-#include "ComContent.h"
 
+class ComContent;
 
 class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
 {
@@ -26,10 +26,10 @@ private:
 	Poco::Logger& _log;
 	int _ref;
 	RECT _rect;
-	ComContentPtr _com;
+	ComContent* _com;
 
 public:
-	ControlSite(ComContentPtr com);
+	ControlSite(ComContent* com);
 
 	virtual ~ControlSite();
 
