@@ -32,7 +32,8 @@ bool ComContent::open(const MediaItemPtr media, const int offset) {
 	_controlSite->AddRef();
 	_texture = _renderer.createTexture(_w, _h, D3DFMT_A8R8G8B8);
 	if (_texture) {
-		_log.information(Poco::format("flash texture: %.0hfx%.0hf", _w, _h));
+		_renderer.colorFill(_texture, 0x00000000);
+		_log.information(Poco::format("com component texture: %.0hfx%.0hf", _w, _h));
 		_texture->GetSurfaceLevel(0, &_surface);
 	}
 
@@ -51,7 +52,7 @@ void ComContent::play() {
 void ComContent::stop() {
 	_playing = false;
 	if (_phase >= 0) {
-		_thread.join();
+		if (_thread.isRunning())_thread.join();
 		releaseComComponents();
 	}
 }
@@ -90,7 +91,7 @@ void ComContent::close() {
 void ComContent::process(const DWORD& frame) {
 	switch (_phase) {
 	case 0: // 初期化フェーズ
-		if (!_mediaID.empty()) createComComponents();
+		if (_playing && !_mediaID.empty()) createComComponents();
 		break;
 	case 1: // 初期化済
 		if (_playing && !_mediaID.empty()) {

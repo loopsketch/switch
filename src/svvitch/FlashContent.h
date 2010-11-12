@@ -11,9 +11,13 @@ class FlashContent: public ComContent {
 private:
 	HMODULE _module;
 	IClassFactory* _classFactory;
+	IShockwaveFlash* _flash;
+	IViewObject* _view;
 
 	string _movie;
 	string _params;
+	string _quality;
+	string _scale;
 	int _zoom;
 
 	virtual void createComComponents();
