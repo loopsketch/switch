@@ -283,7 +283,7 @@ void FFVideoDecoder::run() {
 			}
 			_readTime = timer.getTime();
 			_readCount++;
-			_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+			if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
 			if (vf) {
 				//UINT textureMen = _renderer.getTextureMem() * 10 / 100;

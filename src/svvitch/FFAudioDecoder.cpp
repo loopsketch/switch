@@ -122,7 +122,7 @@ void FFAudioDecoder::decode() {
 			}
 			_readTime = timer.getTime();
 			_readCount++;
-			_avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+			if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
 		} else {
 			// throw error or something?

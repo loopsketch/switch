@@ -117,7 +117,9 @@ void MixContent::stop() {
 }
 
 bool MixContent::useFastStop() {
-	return true;
+	bool useFastStop = false;
+	for (vector<ContentPtr>::const_iterator it = _contents.begin(); it != _contents.end(); it++) useFastStop |= (*it)->useFastStop();
+	return useFastStop;
 }
 
 /**

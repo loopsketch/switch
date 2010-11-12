@@ -9,7 +9,6 @@
 #include "ControlSite.h"
 
 
-using std::queue;
 using std::string;
 
 
@@ -20,9 +19,6 @@ private:
 	IClassFactory* _classFactory;
 	ControlSite* _controlSite;
 	IOleObject* _ole;
-	IShockwaveFlash* _flash;
-	IOleInPlaceObjectWindowless* _windowless;
-	IViewObject* _view;
 	Poco::Thread _thread;
 	Poco::Runnable* _worker;
 
@@ -40,14 +36,14 @@ private:
 	int _readCount;
 	float _avgTime;
 
-	void createFlashComponents();
-	void releaseFlashComponents();
+	virtual void createComComponents();
+
+	virtual void releaseComComponents();
 
 public:
 	FlashContent(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
 	virtual ~FlashContent();
-
 
 	void initialize();
 

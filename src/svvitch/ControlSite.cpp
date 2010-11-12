@@ -249,7 +249,7 @@ HRESULT STDMETHODCALLTYPE ControlSite::ReleaseDC(/* [in] */ HDC hDC) {
 HRESULT STDMETHODCALLTYPE ControlSite::InvalidateRect(/* [in] */ LPCRECT rect, /* [in] */ BOOL erase) {
 	if (rect) {
 		SetRect(&_rect, rect->left, rect->top, rect->right, rect->bottom);
-		_com->update();
+		_com->invalidateRect(rect->left, rect->top, rect->right, rect->bottom);
 		//_log.information(Poco::format("invalidate rect: %ld,%ld %ldx%ld %s", rect->left, rect->top, rect->right, rect->bottom, string(erase?"true":"false")));
 	}
 	
