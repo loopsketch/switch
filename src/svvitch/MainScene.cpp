@@ -706,6 +706,7 @@ void MainScene::updateDelayedFiles() {
 						dst.remove();
 						(*it).renameTo(dst.path());
 						_log.information(Poco::format("delayed file updated: %s", dst.path()));
+						_messages.push(Poco::format("delayed file updated: %s", dst.path()));
 
 					} else {
 						if ((*it).exists()) (*it).remove();
@@ -1177,6 +1178,7 @@ void MainScene::process() {
 			} catch (Poco::FileException& ex) {
 				_log.warning(Poco::format("failed delete(not used): ", ex.displayText()));
 				_deletes.push(path);
+				if (_messages.size() <= 1) _messages.push(Poco::format("failed delete: %s", path));
 			}
 		}
 	}
@@ -1638,17 +1640,15 @@ void MainScene::draw2() {
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d current>%d state>%s", _nowTime, _playCount, _currentContent, wait));
-		DWORD frame = _frame / 300;
-		switch (frame % 2) {
-		case 0:
-			{
-				int deletes = _deletes.size();
-				_renderer.drawFontTextureText(600, config().subRect.bottom - 48, 12, 16, 0x996666cc, Poco::format("delete> %02d", _copyRemoteFiles, deletes));
+		if (!_messages.empty()) {
+			if (_messageFrame > 60 && _messages.size() > 1) {
+				_messageFrame = 0;
+				_messages.pop();
 			}
-			break;
-		case 1:
-			_renderer.drawFontTextureText(600, config().subRect.bottom - 48, 12, 16, 0x996666cc, Poco::format("remote copy files> %02d", _copyRemoteFiles));
-			break;
+			string s = _messages.front();
+			DWORD col = ((DWORD)((_messageFrame > 0x99?0x99:_messageFrame) << 24)) | 0xcc9900;
+			_renderer.drawFontTextureText(552, config().subRect.bottom - 48, 12, 16, col, s);
+			_messageFrame++;
 		}
 
 		string delayedUpdate = getStatus("delayed-update");

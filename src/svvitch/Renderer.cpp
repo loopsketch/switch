@@ -697,7 +697,12 @@ void Renderer::renderScene(const bool visibled, const DWORD current) {
 			}
 
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			drawFontTextureText(0, config().subRect.bottom - 16, 10, 16, 0x99669966, Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, time, memory, address));
+			string s = Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, time, memory, address);
+			if (s.size() * 12 > config().mainRect.right) {
+				drawFontTextureText(0, config().subRect.bottom - 16, config().mainRect.right / s.size(), 16, 0x99669966, s);
+			} else {
+				drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99669966, s);
+			}
 		}
 		_device->EndScene();
 	}

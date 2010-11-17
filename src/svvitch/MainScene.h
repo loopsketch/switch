@@ -145,6 +145,11 @@ private:
 	string _interruptted;
 	ContainerPtr _interrupttedContent;
 
+	/** メッセージ */
+	DWORD _messageFrame;
+	queue<string> _messages;
+
+
 	/** スタンバイメディアの準備 */
 	void preparedStanbyMedia();
 
