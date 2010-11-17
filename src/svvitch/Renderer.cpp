@@ -684,9 +684,20 @@ void Renderer::renderScene(const bool visibled, const DWORD current) {
 			string time = Poco::format("%02lu:%02lu:%02lu", current / 3600000, current / 60000 % 60, current / 1000 % 60);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
 			string address = svvitch::join(_addresses, "/");
-			string memory = Poco::format("ram>%03dMB(%03dMB) vram>%03uMB", (mem / 1024), availMem, _availableTextureMem);
+			string memory;
+			if (availMem > 1024) {
+				memory = Poco::format("ram>%03dMB(%0.1hfGB)", (mem / 1024), availMem / F(1024));
+			} else {
+				memory = Poco::format("ram>%03dMB(%03dMB)", (mem / 1024), availMem);
+			}
+			if (_availableTextureMem > 1024) {
+				memory += Poco::format(" vram>%0.1hfGB", _availableTextureMem / F(1024));
+			} else {
+				memory += Poco::format(" vram>%03uMB", _availableTextureMem);
+			}
+
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			drawFontTextureText(0, config().subRect.bottom - 16, 12, 16, 0x99669966, Poco::format("ver%s %02lufps run>%s ip>%s %s", svvitch::version(), fps, time, address, memory));
+			drawFontTextureText(0, config().subRect.bottom - 16, 10, 16, 0x99669966, Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, time, memory, address));
 		}
 		_device->EndScene();
 	}
