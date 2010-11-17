@@ -1144,13 +1144,15 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_updatedWorkspace && !_preparingNext && _prepareStack.empty()) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			vector<string> olds = _workspace->existsFiles();
-			vector<string> newFiles = _updatedWorkspace->existsFiles();
-			for (vector<string>::const_iterator it = olds.begin(); it != olds.end(); it++) {
-				vector<string>::const_iterator i = std::find(newFiles.begin(), newFiles.end(), *it);
-				if (i == newFiles.end()) {
-					_deletes.push(*it);
-					_log.information(Poco::format("file not used: %s", (*it)));
+			if (_workspace) {
+				vector<string> olds = _workspace->existsFiles();
+				vector<string> newFiles = _updatedWorkspace->existsFiles();
+				for (vector<string>::const_iterator it = olds.begin(); it != olds.end(); it++) {
+					vector<string>::const_iterator i = std::find(newFiles.begin(), newFiles.end(), *it);
+					if (i == newFiles.end()) {
+						_deletes.push(*it);
+						_log.information(Poco::format("file not used: %s", (*it)));
+					}
 				}
 			}
 			SAFE_DELETE(_workspace);
@@ -1173,7 +1175,7 @@ void MainScene::process() {
 				f.remove();
 				_log.information(Poco::format("file delete(not used): %s", f.path()));
 			} catch (Poco::FileException& ex) {
-				_log.warning(Poco::format("failed delete: ", ex.displayText()));
+				_log.warning(Poco::format("failed delete(not used): ", ex.displayText()));
 				_deletes.push(path);
 			}
 		}
@@ -1624,18 +1626,30 @@ void MainScene::draw2() {
 		_renderer.drawFontTextureText(264, config().subRect.bottom - 48, 12, 16, 0x99ccccff, "transition");
 		if (!_playNext.transition.empty()) _renderer.drawFontTextureText(396, config().subRect.bottom - 48, 12, 16, 0x99ffffff, _playNext.transition);
 
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 112, 12, 16, 0x99ccccff, " current");
-		_renderer.drawTexture(700, config().subRect.bottom - 112, _playlistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 96, _currentName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "    next");
-		_renderer.drawTexture(700, config().subRect.bottom - 80, _nextName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawFontTextureText(600, config().subRect.bottom - 64, 12, 16, 0x99ccccff, "prepared");
-		_renderer.drawTexture(700, config().subRect.bottom - 64, _preparedPlaylistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-		_renderer.drawTexture(700, config().subRect.bottom - 48, _preparedName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(504, config().subRect.bottom - 128, 12, 16, 0x99ccccff, " current");
+		_renderer.drawTexture(612, config().subRect.bottom - 128, _playlistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(612, config().subRect.bottom - 112, _currentName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(504, config().subRect.bottom - 96, 12, 16, 0x99ccccff, "    next");
+		_renderer.drawTexture(612, config().subRect.bottom - 96, _nextName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawFontTextureText(504, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "prepared");
+		_renderer.drawTexture(612, config().subRect.bottom - 80, _preparedPlaylistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
+		_renderer.drawTexture(612, config().subRect.bottom - 64, _preparedName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
-		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d copy>%02d current>%d state>%s", _nowTime, _playCount, _copyRemoteFiles, _currentContent, wait));
+		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d current>%d state>%s", _nowTime, _playCount, _currentContent, wait));
+		DWORD frame = _frame / 300;
+		switch (frame % 2) {
+		case 0:
+			{
+				int deletes = _deletes.size();
+				_renderer.drawFontTextureText(600, config().subRect.bottom - 48, 12, 16, 0x996666cc, Poco::format("delete> %02d", _copyRemoteFiles, deletes));
+			}
+			break;
+		case 1:
+			_renderer.drawFontTextureText(600, config().subRect.bottom - 48, 12, 16, 0x996666cc, Poco::format("remote copy files> %02d", _copyRemoteFiles));
+			break;
+		}
 
 		string delayedUpdate = getStatus("delayed-update");
 		if (delayedUpdate.empty()) {
