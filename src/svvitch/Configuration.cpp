@@ -74,8 +74,8 @@ bool Configuration::initialize() {
 		frameIntervals = xml->getInt("display.frameIntervals", 3);
 		frame = xml->getBool("display.frame", true);
 		fullsceen = xml->getBool("display.fullscreen", true);
-		draggable = xml->getBool("display.draggable", true);
-		mouse = xml->getBool("display.mouse", true);
+		draggable = xml->getBool("display.draggable", !fullsceen);
+		mouse = xml->getBool("display.mouse", !fullsceen);
 		string windowStyles(fullsceen?"fullscreen":"window");
 		_log.information(Poco::format("display %dx%d@%d %s", w, h, mainRate, windowStyles));
 		useClip = xml->getBool("display.clip.use", false);
