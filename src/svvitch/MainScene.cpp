@@ -87,6 +87,19 @@ MainScene::~MainScene() {
 	SAFE_RELEASE(_preparedName);
 	SAFE_RELEASE(_removableIcon);
 
+	while (!_deletes.empty()) {
+		string path = _deletes.front();
+		_deletes.pop();
+		File f(path);
+		if (f.exists()) {
+			try {
+				f.remove();
+				_log.information(Poco::format("file delete(not used): %s", f.path()));
+			} catch (Poco::FileException& ex) {
+				_log.warning(Poco::format("failed delete: ", ex.displayText()));
+			}
+		}
+	}
 	SAFE_DELETE(_workspace);
 	preparedStanbyMedia();
 	_log.information("*release main-scene");
@@ -1131,6 +1144,15 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		if (_updatedWorkspace && !_preparingNext && _prepareStack.empty()) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+			vector<string> olds = _workspace->existsFiles();
+			vector<string> newFiles = _updatedWorkspace->existsFiles();
+			for (vector<string>::const_iterator it = olds.begin(); it != olds.end(); it++) {
+				vector<string>::const_iterator i = std::find(newFiles.begin(), newFiles.end(), *it);
+				if (i == newFiles.end()) {
+					_deletes.push(*it);
+					_log.information(Poco::format("file not used: %s", (*it)));
+				}
+			}
 			SAFE_DELETE(_workspace);
 			_workspace = _updatedWorkspace;
 			_updatedWorkspace = NULL;
@@ -1138,6 +1160,22 @@ void MainScene::process() {
 				activePrepareNextContent(_playNext);
 			}
 			setStatus("workspace", _workspace->signature());
+		}
+	}
+	// 旧ワークスペースの未使用ファイルを削除
+	if (_frame % 50 == 0 && !_deletes.empty()) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+		string path = _deletes.front();
+		_deletes.pop();
+		File f(path);
+		if (f.exists()) {
+			try {
+				f.remove();
+				_log.information(Poco::format("file delete(not used): %s", f.path()));
+			} catch (Poco::FileException& ex) {
+				_log.warning(Poco::format("failed delete: ", ex.displayText()));
+				_deletes.push(path);
+			}
 		}
 	}
 

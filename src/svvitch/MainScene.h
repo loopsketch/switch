@@ -138,6 +138,7 @@ private:
 	vector<File> _delayUpdateFiles;
 
 	vector<ContainerPtr> _delayReleases;
+	queue<string> _deletes;
 
 	/** スタンバイメディア */
 	map<string, ContainerPtr> _stanbyMedias;

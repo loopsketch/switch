@@ -81,6 +81,7 @@ bool Workspace::parse() {
 			NodeList* nodes = doc->documentElement()->getElementsByTagName("medialist");
 			if (nodes) {
 				_media.clear();
+				_existsFiles.clear();
 				for (int i = 0; i < nodes->length(); i++) {
 					Element* e = (Element*)nodes->item(i);
 					NodeList* items = e->getElementsByTagName("item");
@@ -163,6 +164,22 @@ bool Workspace::parse() {
 						MediaItemPtr media  = new MediaItem(typeCode, id, name, start, duration, parameters, files);
 						_mediaMap[id] = media;
 						_media.push_back(media);
+						switch (media->type()) {
+						case MediaTypeMix:
+						case MediaTypeMovie:
+						case MediaTypeImage:
+						case MediaTypeText:
+						case MediaTypeFlash:
+							for (vector<MediaItemFile>::const_iterator it = files.begin(); it != files.end(); it++) {
+								if (!((*it).file().empty()) && (*it).file().find("http") == string::npos) {
+									try {
+										File f = File((*it).file());
+										if (f.exists()) _existsFiles.push_back(f.path());
+									} catch (Poco::FileException& ex) {
+									}
+								}
+							}
+						}
 //						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, _media[id]->name());
 //						_renderer.addCachedTexture(id, texture);
 //						_log.debug(Poco::format("media: <%s> %s %d", id, name, duration));
@@ -256,63 +273,6 @@ bool Workspace::parse() {
 					}
 				}
 			}
-
-			nodes = doc->documentElement()->getElementsByTagName("deletes");
-			if (nodes) {
-				int tzd = Poco::Timezone::tzd();
-				//Poco::LocalDateTime now;
-				Poco::DateTime now;
-				now.makeLocal(tzd);
-				Poco::Timespan span(7, 0, 0, 0, 0); // 7days
-				Poco::DateTime validateTime = now - span;
-				bool update = false;
-				for (int i = 0; i < nodes->length(); i++) {
-					Element* deletes = (Element*)nodes->item(i);
-					NodeList* files = deletes->getElementsByTagName("file");
-					for (int j = 0; j < files->length(); j++) {
-						Element* e = (Element*)files->item(j);
-						string path = e->innerText();
-						if (path.find("switch-data:/") == 0) {
-							path = Path(config().dataRoot, path.substr(13)).toString();
-						}
-						try {
-							File file(path);
-							if (file.exists()) {
-								file.remove();
-								_log.information(Poco::format("file delete: %s", file.path()));
-							}
-						} catch (Poco::FileException& ex) {
-							_log.warning(ex.displayText());
-						}
-
-						string date = e->getAttribute("date");
-						Poco::DateTime deleteDate;
-						Poco::DateTimeParser::tryParse(Poco::DateTimeFormat::ISO8601_FORMAT, date, deleteDate, tzd);
-						if (validateTime > deleteDate) {
-							_log.information(Poco::format("purge element: %s", e->innerText()));
-							deletes->removeChild(e);
-							update = true;
-						}
-					}
-					files->release();
-				}
-				nodes->release();
-				if (update) {
-					try {
-						Poco::FileOutputStream os(_file.toString());
-						if (os.good()) {
-							Poco::XML::DOMWriter writer;
-							writer.setNewLine("\r\n");
-							writer.setOptions(Poco::XML::XMLWriter::WRITE_XML_DECLARATION | Poco::XML::XMLWriter::PRETTY_PRINT);
-							writer.writeNode(os, doc);
-							_log.information(Poco::format("update: %s", _file.toString()));
-						}
-					} catch (Poco::Exception& ex) {
-						_log.warning(ex.displayText());
-					}
-					signature = svvitch::md5(_file);
-				}
-			}
 			doc->release();
 			_signature = signature;
 			return true;
@@ -385,6 +345,11 @@ const SchedulePtr Workspace::getSchedule(int i) {
 		return _schedule[i];
 	}
 	return NULL;
+}
+
+const vector<string> Workspace::existsFiles() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	return _existsFiles;
 }
 
 const string Workspace::signature() const {

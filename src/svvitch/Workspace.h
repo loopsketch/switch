@@ -28,6 +28,7 @@ private:
 
 	vector<MediaItemPtr> _media;
 	Poco::HashMap<string, MediaItemPtr> _mediaMap;
+	vector<string> _existsFiles;
 
 	vector<PlayListPtr> _playlist;
 	Poco::HashMap<string, PlayListPtr> _playlistMap;
@@ -66,6 +67,8 @@ public:
 	const int getScheduleCount();
 
 	const SchedulePtr getSchedule(int i);
+
+	const vector<string> existsFiles();
 
 	const string signature() const;
 };
