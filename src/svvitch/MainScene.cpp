@@ -47,8 +47,8 @@ using Poco::XML::Element;
 using Poco::XML::NodeList;
 
 
-MainScene::MainScene(Renderer& renderer):
-	Scene(renderer), _workspace(NULL), _updatedWorkspace(NULL),
+MainScene::MainScene(Renderer& renderer): Scene(renderer),
+	_workspace(NULL), _updatedWorkspace(NULL),
 	activePrepareContent(this, &MainScene::prepareContent),
 	activePrepareNextContent(this, &MainScene::prepareNextContent),
 	activeSwitchContent(this, &MainScene::switchContent),
@@ -60,7 +60,7 @@ MainScene::MainScene(Renderer& renderer):
 	_prepared(NULL), _preparedPlaylistName(NULL), _preparedName(NULL),
 	_initializing(false), _running(false), _castLog(NULL),
 	_removableIcon(NULL), _removableIconAlpha(0), _removableAlpha(0), _removableCover(0), _copySize(0), _currentCopySize(0), _copyProgress(0), _currentCopyProgress(0),
-	_delayedCopy(false), _copyRemoteFiles(0), _interrupttedContent(NULL)
+	_delayedCopy(false), _copyRemoteFiles(0), _interrupttedContent(NULL), _messageFrame(0)
 {
 	initialize();
 }
