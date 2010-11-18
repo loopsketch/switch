@@ -1163,6 +1163,7 @@ void MainScene::process() {
 				activePrepareNextContent(_playNext);
 			}
 			setStatus("workspace", _workspace->signature());
+			_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "workspace updated");
 		}
 	}
 	// 旧ワークスペースの未使用ファイルを削除
@@ -1203,9 +1204,16 @@ void MainScene::process() {
 							string t = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
 							//_log.information(Poco::format("%s %s", t, command));
 							if (command.find("playlist ") == 0) {
-								string playlistID = command.substr(9);
-								playlist = _workspace->getPlaylist(playlistID);
+								string params = command.substr(9);
+								string playlistID = params;
 								item = 0;
+								if (params.find("-") != string::npos) {
+									playlistID = params.substr(0, params.find("-"));
+									if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
+										// failed parse item no
+									}
+								}
+								playlist = _workspace->getPlaylist(playlistID);
 							} else if (command.find("next") == 0) {
 								item++;
 
@@ -1213,6 +1221,7 @@ void MainScene::process() {
 								int brightness = -1;
 								if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
 									setBrightness(brightness);
+									_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
 								}
 							}
 						}
@@ -1224,6 +1233,7 @@ void MainScene::process() {
 					args.playlistID = playlist->id();
 					args.i = item;
 					_log.information(Poco::format("auto preparing: %s-%d", playlist->id(), item));
+					_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s-%d", playlist->id(), item));
 					activePrepareNextContent(args);
 					_autoStart = true;
 					_frame = 0;
@@ -1484,18 +1494,28 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		_timeSecond = now.second();
 		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
-		Poco::Timespan span(0, 0, 0, 10, 0);
+		Poco::Timespan bf10(0, 0, 0, 10, 0);
 		for (int i = 0; i < _workspace->getScheduleCount(); i++) {
 			SchedulePtr schedule = _workspace->getSchedule(i);
-			if (schedule->match(now + span)) {
+			if (schedule->match(now + bf10)) {
 				// 10秒前チェック
 				string command = schedule->command();
 				if (command.find("playlist ") == 0) {
-					string playlistID = command.substr(9);
+					string params = command.substr(9);
+					string playlistID = params;
+					int item = 0;
+					if (params.find("-") != string::npos) {
+						playlistID = params.substr(0, params.find("-"));
+						if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
+							// failed parse item no
+						}
+					}
+
 					PlayListPtr playlist = _workspace->getPlaylist(playlistID);
 					if (playlist) {
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						stackPrepareContent(playlistID);
+						stackPrepareContent(playlistID, item);
+						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s", playlist->id()));
 					} else {
 						_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
 					}
@@ -1515,19 +1535,23 @@ void MainScene::process() {
 						activeSwitchContent();
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
 						//_doSwitchPrepared = true;
+						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched " + command);
 					} else {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
+						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "not switched " + command);
 					}
 					break;
 				} else if (command.find("next") == 0) {
 					_doSwitchNext = true;
 					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+					_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched next");
 					break;
 				} else if (command.find("brightness ") == 0) {
 					int brightness = -1;
 					if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
 						setBrightness(brightness);
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
 					}
 					break;
 				}
@@ -1646,8 +1670,8 @@ void MainScene::draw2() {
 				_messages.pop();
 			}
 			string s = _messages.front();
-			DWORD col = ((DWORD)((_messageFrame > 0x99?0x99:_messageFrame) << 24)) | 0xcc9900;
-			_renderer.drawFontTextureText(552, config().subRect.bottom - 48, 12, 16, col, s);
+			DWORD col = ((DWORD)((_messageFrame > 0x33?0x99:_messageFrame * 3) << 24)) | 0xcc9900;
+			_renderer.drawFontTextureText(config().subRect.right - s.length() * 12, config().subRect.bottom - 48, 12, 16, col, s);
 			_messageFrame++;
 		}
 
