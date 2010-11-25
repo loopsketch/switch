@@ -65,10 +65,12 @@ void SwitchRequestHandler::doRequest() {
 			if (urls.size() == 3) get(urls[2]);
 		} else if (urls[1] == "files") {
 			files();
-		} else if (urls[1] == "upload") {
-			upload();
 		} else if (urls[1] == "download") {
 			download();
+		} else if (urls[1] == "upload") {
+			upload();
+		} else if (urls[1] == "clear-stock") {
+			clearStock();
 		} else if (urls[1] == "copy") {
 			copy();
 
@@ -111,11 +113,13 @@ void SwitchRequestHandler::switchContent() {
 }
 
 void SwitchRequestHandler::updateWorkspace() {
+
 	try {
-		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-		if (scene) {
+		MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (main) {
+			bool result = main->flushStock() && main->updateWorkspace();
 			map<string, string> params;
-			params["update"] = scene->updateWorkspace()?"true":"false";
+			params["update"] = result?"true":"false";
 			sendJSONP(form().get("callback", ""), params);
 		} else {
 			sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, "scene not found");
@@ -228,11 +232,11 @@ void SwitchRequestHandler::get(const string& name) {
 						try {
 							response().setContentType("image/png");
 							response().sendBuffer(buf->GetBufferPointer(), buf->GetBufferSize());
-						} catch (...) {
+						} catch (Poco::Exception& ex) {
 						}
 						SAFE_RELEASE(buf);
 					} else {
-						_log.warning("failed snapshot");
+						_log.warning("failed snapshot image");
 					}
 				}
 				return;
@@ -380,52 +384,36 @@ void SwitchRequestHandler::upload() {
 	string path = form().get("path", "");
 	if (!path.empty()) {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
-		try {
-			if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
-			Path dst(config().dataRoot, Path(path).toString());
-			File parent(dst.makeDirectory());
-			if (!parent.exists()) parent.createDirectories();
-			File f(dst);
-			_log.information(Poco::format("upload: %s", f.path()));
+		if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
+		boolean result = true;
+		MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+		if (main) {
 			vector<File> list;
 			File("uploads").list(list);
-			boolean result = true;
 			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
-				File& src = *it;
-				try {
-					if (f.exists()) {
-						f.remove();
-						_log.information(Poco::format("deleted already file: %s", f.path()));
-					}
-					src.renameTo(f.path());
-					_log.information(Poco::format("rename: %s -> %s", src.path(), f.path()));
-				} catch (Poco::FileException& ex) {
-					_log.warning(Poco::format("failed upload file[%s]: %s", src.path(), ex.displayText()));
-					MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
-					if (scene) {
-						File tempFile(f.path() + ".part");
-						if (tempFile.exists()) {
-							scene->removeDelayedUpdateFile(tempFile);
-							tempFile.remove();
-						}
-						try {
-							src.renameTo(tempFile.path());
-							scene->addDelayedUpdateFile(src);
-						} catch (Poco::FileException& ex1) {
-							result = false;
-						}
-					}
-				}
+				File src = *it;
+				result &= main->addStock(path, src);
 			}
-			map<string, string> params;
-			params["upload"] = result?"true":"false";
-			sendJSONP(form().get("callback", ""), params);
-		} catch (Poco::PathSyntaxException& ex) {
-			_log.warning(ex.displayText());
-			sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 		}
+		map<string, string> params;
+		params["upload"] = result?"true":"false";
+		sendJSONP(form().get("callback", ""), params);
+	} else {
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, "path not found");
 	}
 }
+
+void SwitchRequestHandler::clearStock() {
+	MainScenePtr main = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
+	if (main) {
+		main->clearStock();
+
+		map<string, string> params;
+		params["clear"] = "true";
+		sendJSONP(form().get("callback", ""), params);
+	}
+}
+
 
 void SwitchRequestHandler::copy() {
 	string remote = form().get("remote", "");

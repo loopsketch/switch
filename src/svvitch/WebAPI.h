@@ -39,6 +39,9 @@ private:
 	/** アップロード */
 	void upload();
 
+	/** ストックファイルをクリアします */
+	void clearStock();
+
 	/** コピー */
 	void copy();
 

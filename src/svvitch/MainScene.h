@@ -122,6 +122,9 @@ private:
 	string _castLogDate;
 	Poco::FileOutputStream* _castLog;
 
+	/** 更新ストックファイル */
+	map<string, File> _stock;
+
 	/** USBアイコン */
 	LPDIRECT3DTEXTURE9 _removableIcon;
 	float _removableIconAlpha;
@@ -236,6 +239,12 @@ public:
 	/** 切替用コンテンツに切替(アクティブ版) */
 	ActiveMethod<bool, void, MainScene> activeSwitchContent;
 
+	bool addStock(const string& path, File file, bool copy = false);
+
+	void clearStock();
+
+	bool flushStock();
+
 	/** 遅延更新ファイルを追加します */
 	void addDelayedUpdateFile(File& file);
 
@@ -268,6 +277,9 @@ public:
 	 * 主にステータス系
 	 */
 	virtual void draw2();
+
+	/** コンソール表示 */
+	void drawConsole(string text);
 };
 
 typedef MainScene* MainScenePtr;

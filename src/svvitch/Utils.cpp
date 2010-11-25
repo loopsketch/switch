@@ -61,12 +61,14 @@ bool svvitch::readFile(const string& fileName, LPVOID* ref) {
 				log.information(Poco::format("load file size: %d", len));
 				*ref = (LPVOID)buf;
 				return true;
+			} else {
+				log.warning(Poco::format("failed not read file: %s", file.path()));
 			}
 		} else {
 			log.warning(Poco::format("file not found: %s", file.path()));
 		}
-	} catch (Poco::FileException ex) {
-		log.warning(ex.displayText());
+	} catch (Poco::IOException& ex) {
+		log.warning(Poco::format("failed read file: %s", ex.displayText()));
 	}
 	return false;
 }

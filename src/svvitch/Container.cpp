@@ -33,7 +33,7 @@ ContentPtr Container::get(int i) {
 	if (!_initialized) {
 		try {
 			return _list.at(i);
-		} catch (std::out_of_range ex) {
+		} catch (std::out_of_range& ex) {
 		}
 	}
 	return NULL;

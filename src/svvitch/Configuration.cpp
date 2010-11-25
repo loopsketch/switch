@@ -146,8 +146,9 @@ bool Configuration::initialize() {
 		multiByteFont = xml->getString("ui.multiByteFont", "A-OTF-ShinGoPro-Regular.ttf");
 //		vpCommandFile = xml->getString("vpCommand", "");
 //		monitorFile = xml->getString("monitor", "");
-		dataRoot = Path(xml->getString("data-root", "")).absolute();
-		_log.information(Poco::format("data root: %s", dataRoot.toString()));
+		dataRoot = Path(xml->getString("data-root", "datas")).absolute();
+		stockRoot = Path(xml->getString("stock-root", "stocks")).absolute();
+		_log.information(Poco::format("data root: %s (stock:%s)", dataRoot.toString(), stockRoot.toString()));
 		workspaceFile = Path(dataRoot, xml->getString("workspace", "workspace.xml"));
 		_log.information(Poco::format("workspace: %s", workspaceFile.toString()));
 		newsURL = xml->getString("newsURL", "https://led.avix.co.jp:8080/news");
@@ -177,11 +178,12 @@ bool Configuration::initialize() {
 
 void Configuration::save() {
 	_log.information("save configuration");
+	Poco::File config("switch-config.xml");
+	Poco::File save("switch-config-new.xml");
+	bool update = false;
 	try {
-		Poco::File f("switch-config.xml");
-		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration(f.path());
+		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration(config.path());
 		if (xml) {
-			bool update = false;
 			if (xml->getInt("stage.brightness", -1) != brightness) {
 				xml->setInt("stage.brightness", brightness);
 				update = true;
@@ -191,18 +193,27 @@ void Configuration::save() {
 				update = true;
 			}
 			if (update) {
-				Poco::File old("switch-config.xml.old");
-				if (old.exists()) old.remove();
-				f.renameTo(old.path());
-				Poco::FileOutputStream fos("switch-config.xml");
+				Poco::FileOutputStream fos(save.path());
 				Poco::OutputLineEndingConverter os(fos, Poco::LineEnding::NEWLINE_CRLF);
 				xml->save(os);
 				_log.information("saved configuration");
 			}
 			xml->release();
 		}
-	} catch (Poco::Exception& ex) {
+	} catch (Poco::IOException& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
+		return;
+	}
+
+	try {
+		if (update) {
+			Poco::File old("switch-config-old.xml");
+			if (old.exists()) old.remove();
+			config.renameTo(old.path());
+			save.renameTo(config.path());
+		}
+	} catch (Poco::IOException& ex) {
+		_log.warning(Poco::format("failed save configuration file(rename step): %s", ex.displayText()));
 	}
 }
 

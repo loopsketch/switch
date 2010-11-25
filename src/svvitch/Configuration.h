@@ -60,6 +60,7 @@ public:
 	// string vpCommandFile;
 	// string monitorFile;
 	Path dataRoot;
+	Path stockRoot;
 	Path workspaceFile;
 	string newsURL;
 

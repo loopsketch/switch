@@ -673,6 +673,88 @@ bool MainScene::switchContent() {
 	return true;
 }
 
+bool MainScene::addStock(const string& path, File src, bool copy) {
+	try {
+		File parent(Path(Path(config().stockRoot, path).toString()).makeParent());
+		_log.information(Poco::format("parent: %s", parent.path()));
+		if (!parent.exists()) {
+			parent.createDirectories();
+			_log.information(Poco::format("create directory: %s", parent.path()));
+		}
+		File dst(Path(config().stockRoot, Path(path).toString()).toString());
+		_log.information(Poco::format("add stock[%s] -> %s", path, dst.path()));
+		if (dst.exists()) {
+			dst.remove();
+			_log.information(Poco::format("deleted already stock file: %s", dst.path()));
+		}
+		if (copy) {
+			// copy mode
+			_log.information("not supported copy mode");
+			return false;
+
+		} else {
+			// move mode
+			src.renameTo(dst.path());
+		}
+		_stock[path] = dst;
+		return true;
+	} catch (Poco::FileException& ex) {
+		_log.warning(Poco::format("failed add stock file[%s]: %s", path, ex.displayText()));
+	} catch (Poco::PathSyntaxException& ex) {
+		_log.warning(Poco::format("failed add stock file[%s]: %s", path, ex.displayText()));
+	}
+	return false;
+}
+
+void MainScene::clearStock() {
+	for (map<string, File>::const_iterator it = _stock.begin(); it != _stock.end();) {
+		File f = it->second;
+		if (f.exists()) {
+			try {
+				f.remove();
+			} catch (Poco::FileException& ex) {
+				_log.warning(Poco::format("failed not remove stock file: %s", it->first));
+			}
+		}
+		it = _stock.erase(it);
+	}
+	_log.information("clear stock");
+}
+
+bool MainScene::flushStock() {
+	_log.information("flush stock");
+	for (map<string, File>::const_iterator it = _stock.begin(); it != _stock.end();) {
+		File dst(Path(config().dataRoot, it->first).toString());
+		_log.information(Poco::format("flush stock: %s", dst.path()));
+		File parent(Path(dst.path()).makeParent());
+		if (!parent.exists()) parent.createDirectories();
+		File f = it->second;
+		if (f.exists()) {
+			try {
+				if (dst.exists()) dst.remove();
+				f.renameTo(dst.path());
+			} catch (Poco::FileException& ex) {
+				_log.warning(Poco::format("failed not move stock file: %s <- %s", it->first, dst.path()));
+				File tempFile(dst.path() + ".part");
+				if (tempFile.exists()) {
+					removeDelayedUpdateFile(tempFile);
+					tempFile.remove();
+				}
+				try {
+					f.renameTo(tempFile.path());
+					addDelayedUpdateFile(tempFile);
+				} catch (Poco::FileException& ex1) {
+					//result = false;
+				}
+			}
+		} else {
+			_log.warning(Poco::format("file not found: %s", f.path()));
+		}
+		it = _stock.erase(it);
+	}
+	return true;
+}
+
 void MainScene::addDelayedUpdateFile(File& file) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);	
 	_delayUpdateFiles.push_back(file);
@@ -685,7 +767,6 @@ void MainScene::removeDelayedUpdateFile(File& file) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);	
 	vector<File>::iterator it = std::find(_delayUpdateFiles.begin(), _delayUpdateFiles.end(), file);
 	if (it != _delayUpdateFiles.end()) {
-
 		_delayUpdateFiles.erase(it);
 		_log.information(Poco::format("remove delayed update: %s", file.path()));
 	}
@@ -697,28 +778,29 @@ void MainScene::updateDelayedFiles() {
 	} else {
 		Poco::ScopedLock<Poco::FastMutex> lock(_delayedUpdateLock);
 		for (vector<File>::iterator it = _delayUpdateFiles.begin(); it != _delayUpdateFiles.end();) {
-			string path = (*it).path();
-			int pos = path.size() - 5;
-			if ((*it).exists() && pos >= 0 && path.substr(pos) == ".part") {
-				File dst(path.substr(0, pos));
+			string src = (*it).path();
+			int pos = src.size() - 5;
+			if ((*it).exists() && pos >= 0 && src.substr(pos) == ".part") {
+				File dst(src.substr(0, pos));
+				Path path(dst.path());
 				try {
-					if ((*it).exists() && dst.exists()) {
+					if (dst.exists()) {
 						dst.remove();
-						(*it).renameTo(dst.path());
-						_log.information(Poco::format("delayed file updated: %s", dst.path()));
-						_messages.push(Poco::format("delayed file updated: %s", dst.path()));
-
-					} else {
-						if ((*it).exists()) (*it).remove();
-						_log.warning(Poco::format("delayed updating file none: %s", path));
+						_log.warning(Poco::format("delayed updating file none: %s", src));
 					}
+					(*it).renameTo(dst.path());
+					_log.information(Poco::format("delayed file updated: %s", path.getFileName()));
+					drawConsole(Poco::format("delayed file updated: %s", path.getFileName()));
 					it = _delayUpdateFiles.erase(it);
 					continue;
 				} catch (Poco::FileException& ex) {
-					Path p(dst.path());
-					_log.warning(Poco::format("failed delayed file updating[%s]: %s", path, ex.displayText()));
-					setStatus("delayed-update", p.getFileName());
+					_log.warning(Poco::format("failed delayed file updating[%s]: %s", src, ex.displayText()));
+					setStatus("delayed-update", path.getFileName());
 				}
+			} else {
+				_log.warning(Poco::format("not found delayed file: %s", src));
+				it = _delayUpdateFiles.erase(it);
+				continue;
 			}
 			it++;
 		}
@@ -1163,7 +1245,7 @@ void MainScene::process() {
 				activePrepareNextContent(_playNext);
 			}
 			setStatus("workspace", _workspace->signature());
-			_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "workspace updated");
+			drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "workspace updated");
 		}
 	}
 	// 旧ワークスペースの未使用ファイルを削除
@@ -1179,7 +1261,7 @@ void MainScene::process() {
 			} catch (Poco::FileException& ex) {
 				_log.warning(Poco::format("failed delete(not used): ", ex.displayText()));
 				_deletes.push(path);
-				if (_messages.size() <= 1) _messages.push(Poco::format("failed delete: %s", path));
+				if (_messages.size() <= 1) drawConsole(Poco::format("failed delete: %s", path));
 			}
 		}
 	}
@@ -1221,7 +1303,7 @@ void MainScene::process() {
 								int brightness = -1;
 								if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
 									setBrightness(brightness);
-									_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
+									drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
 								}
 							}
 						}
@@ -1233,7 +1315,7 @@ void MainScene::process() {
 					args.playlistID = playlist->id();
 					args.i = item;
 					_log.information(Poco::format("auto preparing: %s-%d", playlist->id(), item));
-					_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s-%d", playlist->id(), item));
+					drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s-%d", playlist->id(), item));
 					activePrepareNextContent(args);
 					_autoStart = true;
 					_frame = 0;
@@ -1515,7 +1597,7 @@ void MainScene::process() {
 					if (playlist) {
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
 						stackPrepareContent(playlistID, item);
-						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s", playlist->id()));
+						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s", playlist->id()));
 					} else {
 						_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
 					}
@@ -1535,23 +1617,23 @@ void MainScene::process() {
 						activeSwitchContent();
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
 						//_doSwitchPrepared = true;
-						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched " + command);
+						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched " + command);
 					} else {
 						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
-						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "not switched " + command);
+						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "not switched " + command);
 					}
 					break;
 				} else if (command.find("next") == 0) {
 					_doSwitchNext = true;
 					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-					_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched next");
+					drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched next");
 					break;
 				} else if (command.find("brightness ") == 0) {
 					int brightness = -1;
 					if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
 						setBrightness(brightness);
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						_messages.push(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
+						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
 					}
 					break;
 				}
@@ -1716,4 +1798,9 @@ void MainScene::draw2() {
 //			_renderer.drawFontTextureText(tw, config().subRect.bottom - th / 2, 12, 16, 0xccffffff, Poco::format("%d %d(%d%%)", _currentCopySize, _copySize, _currentCopyProgress));
 		}
 	}
+}
+
+void MainScene::drawConsole(string s) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	_messages.push(s);
 }
