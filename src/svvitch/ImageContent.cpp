@@ -73,8 +73,8 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 				valid = false;
 			}
 		} else {
-			// 異なるメディアタイプで終了
-			break;
+			// MediaTypeMixの場合はファイル単位で処理するので繰り返さない
+			if (media->type() == MediaTypeMix) break;
 		}
 	}
 	_log.information(Poco::format("tiled texture size: %dx%d", _iw, _ih));
@@ -224,12 +224,12 @@ void ImageContent::draw(const DWORD& frame) {
 							sx += cw - cww;
 							ix += cw;
 							dxx = cww + cw - cww;
-//								if (ix >= _iw) _log.information(Poco::format("image check1: %d,%d %d", dx, dy, dxx));
+							// if (ix >= _iw) _log.information(Poco::format("image check1: %d,%d %d", dx, dy, dxx));
 						} else {
 							// dstの途中でsrcが全て終了
 							dxx = _iw - ix;
 							ix = _iw;
-//								if (ix >= _iw) _log.information(Poco::format("image check2: %d,%d %d", dx, dy, dxx));
+							// if (ix >= _iw) _log.information(Poco::format("image check2: %d,%d %d", dx, dy, dxx));
 						}
 					} else {
 						if (_iw - ix < (cw - dxx)) {
@@ -241,7 +241,7 @@ void ImageContent::draw(const DWORD& frame) {
 						sx += cww;
 						ix += cww;
 						dxx = cww;
-//							if (ix >= _iw) _log.information(Poco::format("image check3: %d,%d %d", dx, dy, dxx));
+						// if (ix >= _iw) _log.information(Poco::format("image check3: %d,%d %d", dx, dy, dxx));
 					}
 					if (ix >= _iw) {
 						sx = 0;
@@ -256,7 +256,7 @@ void ImageContent::draw(const DWORD& frame) {
 						dy = 0;
 					}
 				}
-//					_log.information("image check");
+				// _log.information("image check");
 				device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 				device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 				device->SetScissorRect(&scissorRect);
