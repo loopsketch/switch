@@ -5,6 +5,7 @@
 #include <Poco/Timezone.h>
 #include <Poco/DateTimeFormat.h>
 #include <Poco/DateTimeFormatter.h>
+#include <Poco/DateTimeParser.h>
 #include <Poco/NumberFormatter.h>
 #include <Poco/RegularExpression.h>
 #include <Poco/URI.h>
@@ -382,6 +383,7 @@ void SwitchRequestHandler::download() {
 
 void SwitchRequestHandler::upload() {
 	string path = form().get("path", "");
+	string modified = form().get("modified", "");
 	if (!path.empty()) {
 		form(); // フォームをパースしuploadsフォルダにアップロードファイルを取り込む
 		if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
@@ -392,6 +394,12 @@ void SwitchRequestHandler::upload() {
 			File("uploads").list(list);
 			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
 				File src = *it;
+				if (!modified.empty()) {
+					int tz = 0;
+					Poco::DateTime time;
+					Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, modified, time, tz);
+					src.setLastModified(time.timestamp());
+				}
 				result &= main->addStock(path, src);
 			}
 		}
