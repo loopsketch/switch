@@ -171,8 +171,9 @@ bool MainScene::initialize() {
 		if (!logDir.exists()) logDir.createDirectories();
 	}
 
-	_workspace = new Workspace(config().workspaceFile);
-	if (_workspace->parse()) {
+	WorkspacePtr workspace = new Workspace(config().workspaceFile);
+	if (workspace->parse()) {
+		_workspace = workspace;
 		setStatus("workspace", _workspace->signature());
 		preparedStanbyMedia();
 		preparedFont(_workspace);
@@ -295,7 +296,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+			PlayListPtr playlist = _workspace?_workspace->getPlaylist(playlistID):NULL;
 			if (playlist && playlist->itemCount() > 0) {
 				playlistName = playlist->name();
 				i = i % playlist->itemCount();
@@ -368,7 +369,7 @@ const void MainScene::setDescription(const string& description) {
 
 const string MainScene::getPlaylistText(const string& playlistID) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+	PlayListPtr playlist = _workspace?_workspace->getPlaylist(playlistID):NULL;
 	if (playlist) {
 		return playlist->text();
 	}
@@ -377,7 +378,7 @@ const string MainScene::getPlaylistText(const string& playlistID) {
 
 bool MainScene::setPlaylistText(const string& playlistID, const string& text) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-	PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+	PlayListPtr playlist = _workspace?_workspace->getPlaylist(playlistID):NULL;
 	if (playlist) {
 		playlist->text(text);
 		// _status["set-text"] = Poco::format("%s:%s", playlistID, text);
@@ -426,7 +427,7 @@ bool MainScene::prepareContent(const PlayParameters& params) {
 		string itemName = "ready";
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+			PlayListPtr playlist = _workspace?_workspace->getPlaylist(playlistID):NULL;
 			if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > params.i) {
 				playlistName = playlist->name();
 				PlayListItemPtr item = playlist->items()[params.i];
@@ -468,7 +469,7 @@ bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID
 	PlayListPtr playlist = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-		playlist = _workspace->getPlaylist(playlistID);
+		playlist = _workspace?_workspace->getPlaylist(playlistID):NULL;
 	}
 	container->initialize();
 	if (playlist && playlist->itemCount() > 0 && (round || playlist->itemCount() > i)) {
@@ -1271,12 +1272,12 @@ void MainScene::process() {
 	if (!_startup && _frame > 100) {
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			if (_workspace->getPlaylistCount() > 0) {
+			if (_workspace && _workspace->getPlaylistCount() > 0) {
 				// playlistがある場合は最初のplaylistを自動スタートする
 				PlayListPtr playlist = _workspace->getPlaylist(0);
 				int item = 0;
 
-				if (_workspace->getScheduleCount() > 0) {
+				if (_workspace && _workspace->getScheduleCount() > 0) {
 					Poco::LocalDateTime now;
 					Poco::Timespan span(0, 0, 0, 10, 0);
 					for (int i = 0; i < _workspace->getScheduleCount(); i++) {
@@ -1381,7 +1382,7 @@ void MainScene::process() {
 				}
 				if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-				PlayListPtr playlist = _workspace->getPlaylist(_playPrepared.playlistID);
+				PlayListPtr playlist = _workspace?_workspace->getPlaylist(_playPrepared.playlistID):NULL;
 				if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > _playPrepared.i) {
 					PlayListItemPtr item = playlist->items()[_playPrepared.i];
 					if (item) {
@@ -1572,7 +1573,7 @@ void MainScene::process() {
 	}
 
 	// スケジュール処理
-	if (now.second() != _timeSecond) {
+	if (_workspace && now.second() != _timeSecond) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		_timeSecond = now.second();
 		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
@@ -1720,7 +1721,7 @@ void MainScene::draw2() {
 		}
 	}
 
-	if (config().viewStatus) {
+	if (config().viewStatus && _workspace) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 128, 24, 32, 0x996699ff, config().name);
 		_renderer.drawTexture((config().name.size() + 1) * 24, config().subRect.bottom - 128, _description, 0, 0xcc6666ff, 0xcc6666ff, 0x993333cc, 0x993333cc);
