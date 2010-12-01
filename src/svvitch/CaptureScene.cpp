@@ -11,7 +11,7 @@ CaptureScene::CaptureScene(Renderer& renderer): Scene(renderer),
 	_deviceNo(0), _routePinNo(0), _deviceW(640), _deviceH(480), _deviceFPS(30),
 	_autoWhiteBalance(true), _whiteBalance(-100), _autoExposure(true), _exposure(-100),
 	_flipMode(3), _deviceVideoType(MEDIASUBTYPE_YUY2),
-	_previewX(0), _previewY(0),_previewW(320), _previewH(240),
+	_px(0), _py(0),_pw(320), _ph(240), _spx(320), _spy(0),_spw(320), _sph(240),
 	_device(NULL), _gb(NULL), _capture(NULL), _vr(NULL), _mc(NULL), _cameraImage(NULL),
 	_sample(NULL), _surface(NULL), _fx(NULL), _data1(NULL), _data2(NULL), _data3(NULL),
 	_lookup(NULL), _block(NULL), _activeBlock(NULL),
@@ -86,15 +86,19 @@ bool CaptureScene::initialize() {
 			Poco::NumberParser::tryParse(exposure, _exposure);
 		}
 
-		_previewX = xml->getInt("preview.x", 0);
-		_previewY = xml->getInt("preview.y", 0);
-		_previewW = xml->getInt("preview.width", 320);
-		_previewH = xml->getInt("preview.height", 240);
+		_px = xml->getInt("preview.x", 0);
+		_py = xml->getInt("preview.y", 0);
+		_pw = xml->getInt("preview.width", 320);
+		_ph = xml->getInt("preview.height", 240);
 
 		useSampling = xml->hasProperty("sampling");
 		if (useSampling) {
 			_sw = xml->getInt("sampling.width", 0);
 			_sh = xml->getInt("sampling.height", 0);
+			_spx = xml->getInt("sampling.preview.x", _px + _pw);
+			_spy = xml->getInt("sampling.preview.y", _py);
+			_spw = xml->getInt("sampling.preview.width", _pw);
+			_sph = xml->getInt("sampling.preview.height", _ph);
 			_intervalsBackground = xml->getInt("sampling.intervalsBackground", 3600);
 			_intervalsForeground = xml->getInt("sampling.intervalsForeground", 30);
 			_blockThreshold = xml->getInt("sampling.blockThreshold", 20);
@@ -547,52 +551,52 @@ void CaptureScene::draw2() {
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 			DWORD col = 0xffffffff;
-			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
+			_renderer.drawTexture(_px, _py, _pw, _ph, _cameraImage, 0, col, col, col, col);
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 			if (_sample) {
 				col = 0xccffffff;
-				_renderer.drawTexture(_previewX + _previewW, _previewY, _previewW, _previewH, _sample, 0, col, col, col, col);
-				const int sw = _previewW / _sw;
-				const int sh = _previewH / _sh;
+				_renderer.drawTexture(_spx, _spy, _spw, _sph, _sample, 0, col, col, col, col);
+				const int sw = _spw / _sw;
+				const int sh = _sph / _sh;
 				for (int y = 0; y < _sh; y++) {
 					for (int x = 0; x < _sw; x++) {
 						const int i = y * _sw + x;
 						if (_activeBlock[i]) {
 							if (_lookup[i]) {
-								_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccff3333, "*");
+								_renderer.drawFontTextureText(_spx + x * sw, _spy + y * sh, sw, sh, 0xccff3333, "*");
 							} else {
-								_renderer.drawFontTextureText(_previewX + _previewW + x * sw, _previewY + y * sh, sw, sh, 0xccffffff, "*");
+								_renderer.drawFontTextureText(_spx + x * sw, _spy + y * sh, sw, sh, 0xccffffff, "*");
 							}
 						}
 						const BYTE data1 = _data1[i];
 						const BYTE data2 = _data2[i];
 						const BYTE data3 = _data3[i];
 						const BYTE block = _block[i];
-						const int px = _previewW * 2 + x * 22;
-						_renderer.drawFontTextureText(_previewX + px                     , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data1));
-						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22)    , _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data2));
-						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 2, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data3));
-						_renderer.drawFontTextureText(_previewX + px + (5 + _sw * 22) * 3, _previewY + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", block));
+						const int px = _spw + x * 22;
+						_renderer.drawFontTextureText(_spx + px                     , _spy + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data1));
+						_renderer.drawFontTextureText(_spx + px + (5 + _sw * 22)    , _spy + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data2));
+						_renderer.drawFontTextureText(_spx + px + (5 + _sw * 22) * 2, _spy + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", data3));
+						_renderer.drawFontTextureText(_spx + px + (5 + _sw * 22) * 3, _spy + y * 10, 10, 10, 0xccff3333, Poco::format("%2?X", block));
 					}
 				}
-				_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect:%3d ignore:%3d", _detectCount, _ignoreDetectCount));
+				_renderer.drawFontTextureText(_spx + _spw, _spy + _sh * 10, 10, 10, 0xcc33ccff, Poco::format("detect:%3d ignore:%3d", _detectCount, _ignoreDetectCount));
 				if (_forceUpdate) {
-					_renderer.drawFontTextureText(_previewX + _previewW * 2, _previewY + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
+					_renderer.drawFontTextureText(_spx + _spw, _spy + _sh * 10 + 10, 10, 10, 0xccffcc00, "*");
 				}
 			}
 			string s = Poco::format("LIVE! read %03lums", _vr->readTime());
-			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, s);
+			_renderer.drawFontTextureText(_px, _py, 10, 10, 0xccff3333, s);
 		} else if (_useStageCapture) {
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 			DWORD col = 0xffffffff;
-			_renderer.drawTexture(_previewX, _previewY, _previewW, _previewH, _cameraImage, 0, col, col, col, col);
+			_renderer.drawTexture(_px, _py, _pw, _ph, _cameraImage, 0, col, col, col, col);
 			device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 			device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, "STAGE RECORDING");
+			_renderer.drawFontTextureText(_px, _py, 10, 10, 0xccff3333, "STAGE RECORDING");
 		} else {
-			_renderer.drawFontTextureText(_previewX, _previewY, 10, 10, 0xccff3333, "NO SIGNAL");
+			_renderer.drawFontTextureText(_px, _py, 10, 10, 0xccff3333, "NO SIGNAL");
 		}
 	}
 }

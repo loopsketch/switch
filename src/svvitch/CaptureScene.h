@@ -33,10 +33,15 @@ private:
 	GUID _deviceVideoType;
 	RECT _clip;
 
-	int _previewX;
-	int _previewY;
-	int _previewW;
-	int _previewH;
+	int _px;
+	int _py;
+	int _pw;
+	int _ph;
+
+	int _spx;
+	int _spy;
+	int _spw;
+	int _sph;
 
 	IBaseFilter* _device;
 	IGraphBuilder* _gb;
