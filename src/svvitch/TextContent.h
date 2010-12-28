@@ -36,6 +36,7 @@ private:
 	bool _async;
 	float _dx;
 	float _dy;
+	int _frameWait;
 	string _align;
 	bool _fitBounds;
 	Gdiplus::FontFamily _ff[16];

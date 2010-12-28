@@ -60,12 +60,14 @@ bool TextContent::open(const MediaItemPtr media, const int offset) {
 			_cw = mif.getNumProperty("cw", _w);
 			_ch = mif.getNumProperty("ch", _h);
 			_move = mif.getProperty("move");
+			_frameWait = mif.getNumProperty("fw", 0);
 			_async = mif.getProperty("async") == "true";
 			//_dx = mif.getFloatProperty("dx", F(0));
 			//_dy = mif.getFloatProperty("dy", F(0));
 			_align = mif.getProperty("align");
 			_fitBounds = mif.getProperty("fit") == "true";
 			string pos = Poco::format("(%0.1hf,%0.1hf) %0.1hfx%0.1hf dx:%0.1hf dy:%0.1hf", _x, _y, _w, _h, _dx, _dy);
+			pos += Poco::format(" fw:%d", _frameWait);
 			_log.information(Poco::format("text: [%s] %s", _textFont, pos));
 
 			if (!mif.file().empty() && mif.file().find("$") == string::npos) {
@@ -140,6 +142,12 @@ void TextContent::play() {
 		Poco::NumberParser::tryParse(_move.substr(10), dx);
 		_dx = -dx;
 		_log.debug(Poco::format("move: scroll-left: %0.1hf", _dx));
+	} else if (_move.find("roll-up-") == 0) {
+		_y = _cy + _ch;
+		int dy = 0;
+		Poco::NumberParser::tryParse(_move.substr(8), dy);
+		_dy = -dy;
+		_log.debug(Poco::format("move: scroll-up: %0.1hf", _dy));
 	}
 	_playing = true;
 }
@@ -199,16 +207,30 @@ void TextContent::process(const DWORD& frame) {
 	}
 	if (!_mediaID.empty() && _texture && _playing) {
 		if (!_move.empty()) {
-			_x += _dx;
+			if (_frameWait <= 0 || (frame % _frameWait) == 0) {
+				_x += _dx;
+				_y += _dy;
+			}
 			if (!_async) {
-				if (_x < (_cx - _iw)) {
-					// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
-					_dx = 0;
-					_move.clear();
-					//_playing = false;
+				if (_move.find("roll-left-") == 0) {
+					if (_x < (_cx - _iw)) {
+						// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
+						_dx = 0;
+						_move.clear();
+						//_playing = false;
+					}
+				} else if (_move.find("roll-up-") == 0) {
+					if (_y < (_cy - _ih)) {
+						_dy = 0;
+						_move.clear();
+					}
 				}
+			} else {
+				if (_x < (_cx - _iw)) _x = _cx + _cw;
 			}
 		}
+		//_x+=_dx;
+		//_y+=_dy;
 	}
 }
 
@@ -356,12 +378,9 @@ void TextContent::draw(const DWORD& frame) {
 							_renderer.drawTexture(_x + _ax + i * _tw, _y, _tw, _ih, 0, i * _ih, _tw, _ih, _texture, 0, col, col, col, col);
 						}
 					} else {
-						_renderer.drawTexture(_x + _ax, _y, _texture, 0, col, col, col, col);
+						_renderer.drawTexture((int)_x + _ax, (int)_y, _texture, 0, col, col, col, col);
 					}
 				}
-				_x+=_dx;
-				if (_x < -_iw) _x = config().stageRect.right;
-				_y+=_dy;
 			}
 		}
 	} else {
