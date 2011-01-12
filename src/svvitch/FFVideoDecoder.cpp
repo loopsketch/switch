@@ -1,3 +1,5 @@
+#ifdef USE_FFMPEG
+
 #include "FFVideoDecoder.h"
 #include "PerformanceTimer.h"
 
@@ -379,3 +381,5 @@ VideoFrame* FFVideoDecoder::viewFrame() {
 	}
 	return NULL;
 }
+
+#endif

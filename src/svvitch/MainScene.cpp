@@ -25,7 +25,9 @@
 #include <Poco/URI.h>
 
 #include "ImageContent.h"
+#ifdef USE_FFMPEG
 #include "FFMovieContent.h"
+#endif
 #include "TextContent.h"
 #include "DSContent.h"
 #include "SlideTransition.h"
@@ -116,9 +118,11 @@ void MainScene::delayedReleaseContainer() {
 }
 
 bool MainScene::initialize() {
+#ifdef USE_FFMPEG
 	avcodec_register_all();
 	avdevice_register_all();
 	av_register_all();
+#endif
 
 	_contents.clear();
 	_contents.push_back(new Container(_renderer));
@@ -526,6 +530,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 			{
 				for (vector<string>::iterator it = config().movieEngines.begin(); it < config().movieEngines.end(); it++) {
 					string engine = Poco::toLower(*it);
+#ifdef USE_FFMPEG
 					if (engine == "ffmpeg") {
 						FFMovieContentPtr movie = new FFMovieContent(_renderer, config().splitType);
 						if (movie->open(media)) {
@@ -538,6 +543,9 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 							SAFE_DELETE(movie);
 						}
 					} else if (engine == "directshow") {
+#else
+					if (engine == "directshow") {
+#endif
 						DSContentPtr movie = new DSContent(_renderer, config().splitType);
 						if (movie->open(media)) {
 							movie->setPosition(x, y);

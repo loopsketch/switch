@@ -1,3 +1,5 @@
+#ifdef USE_FFMPEG
+
 #include "FFBaseDecoder.h"
 #include <Poco/format.h>
 
@@ -55,3 +57,5 @@ AVPacketList* FFBaseDecoder::popPacket() {
 const float FFBaseDecoder::getAvgTime() const {
 	return _avgTime;
 }
+
+#endif

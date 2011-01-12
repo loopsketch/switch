@@ -1,3 +1,5 @@
+#ifdef USE_FFMPEG
+
 #include <Poco/format.h>
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
@@ -230,3 +232,5 @@ void FFAudioDecoder::stop() {
 		}
 	}
 }
+
+#endif

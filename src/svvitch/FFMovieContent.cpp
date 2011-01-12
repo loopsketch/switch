@@ -1,3 +1,5 @@
+#ifdef USE_FFMPEG
+
 #include "FFMovieContent.h"
 #include "Utils.h"
 
@@ -602,3 +604,5 @@ const DWORD FFMovieContent::timeLeft() {
 	if (left < 0) left = 0;
 	return left;
 }
+
+#endif

@@ -8,7 +8,9 @@
 
 #include "MixContent.h"
 #include "ImageContent.h"
+#ifdef USE_FFMPEG
 #include "FFMovieContent.h"
+#endif
 #include "DSContent.h"
 #include "TextContent.h"
 #include "FlashContent.h"
@@ -67,10 +69,14 @@ bool MixContent::open(const MediaItemPtr media, const int offset) {
 		case MediaTypeMovie:
 			for (vector<string>::iterator it = config().movieEngines.begin(); it < config().movieEngines.end(); it++) {
 				string engine = Poco::toLower(*it);
+#ifdef USE_FFMPEG
 				if (engine == "ffmpeg") {
 					c = new FFMovieContent(_renderer, config().splitType);
 					if (c->open(media, i)) break;
 				} else if (engine == "directshow") {
+#else
+				if (engine == "directshow") {
+#endif
 					c = new DSContent(_renderer, config().splitType);
 					if (c->open(media, i)) break;
 				} else {
