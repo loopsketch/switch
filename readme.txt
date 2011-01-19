@@ -55,6 +55,12 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+1.0
+・スケジュール 'playlist' 'next'コマンドの追加
+・Dissolve時などに斜めに掛かってしまっていたのを修正
+・静止画にJPEG形式も使用できるように修正
+・ファイルコピーのWebAPIを修正し、ストックしてから一気に入替えるコマンドを追加したので古いairSwitchとの互換性が無くなりました
+
 0.9f
 ・Flash(10.1)の対応
 ・airSwitchを複数個所で起動していた場合の更新通知機能を追加
