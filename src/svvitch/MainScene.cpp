@@ -685,7 +685,7 @@ bool MainScene::switchContent() {
 bool MainScene::addStock(const string& path, File src, bool copy) {
 	try {
 		File parent(Path(Path(config().stockRoot, path).toString()).makeParent());
-		_log.information(Poco::format("parent: %s", parent.path()));
+		//_log.information(Poco::format("parent: %s", parent.path()));
 		if (!parent.exists()) {
 			parent.createDirectories();
 			_log.information(Poco::format("create directory: %s", parent.path()));
@@ -824,6 +824,7 @@ bool MainScene::updateWorkspace() {
 			_log.information("updated workspace. repreparing next contents");
 			_updatedWorkspace = workspace;
 			preparedFont(workspace);
+			drawConsole("updated workspace");
 			return true;
 		} else {
 			_log.warning("failed update workspace.");
@@ -849,10 +850,17 @@ void MainScene::copyRemote(const string& remote) {
 		_copyingRemote = remote;
 	}
 	_log.information(Poco::format("remote copy: %s", remote));
+	drawConsole("start remote copy");
 	setRemoteStatus(remote, "delayed-update", "");
 	setRemoteStatus(remote, "remote-copy", "1");
 	File copyDir("copys");
-	if (copyDir.exists()) copyDir.remove(true);
+	if (copyDir.exists()) {
+		try {
+			copyDir.remove(true);
+		} catch (Poco::IOException& ex) {
+			_log.warning(Poco::format("failed remove copy dir: %s", ex.displayText()));
+		}
+	}
 	//bool result = copyRemoteDir(remote, "/");
 
 	Path remoteWorkspace("tmp/workspace.xml");
@@ -934,6 +942,7 @@ void MainScene::copyRemote(const string& remote) {
 	File tmp(remoteWorkspace);
 	if (tmp.exists()) tmp.remove();
 	setRemoteStatus(remote, "remote-copy", "10");
+	drawConsole("remote copy finished");
 
 	// ëΩèdÇ≈remoteCopyÇ™åƒÇŒÇÍÇƒÇ¢ÇΩèÍçáÇÕçƒé¿çs
 	bool delayedCopy = false;
@@ -947,7 +956,10 @@ void MainScene::copyRemote(const string& remote) {
 		copyingRemote = _copyingRemote;
 		_copyingRemote.clear();
 	}
-	if (delayedCopy) copyRemote(copyingRemote);
+	if (delayedCopy) {
+		drawConsole("retry remote copy");
+		copyRemote(copyingRemote);
+	}
 }
 
 bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck) {
@@ -995,7 +1007,13 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 	if (!parent.exists()) parent.createDirectories();
 	bool updating = false;
 	File tempFile(out.toString() + ".part");
-	if (tempFile.exists()) tempFile.remove();
+	if (tempFile.exists()) {
+		try {
+			tempFile.remove();
+		} catch (Poco::IOException& ex) {
+			_log.warning(Poco::format("failed remove temp dir: %s", ex.displayText()));
+		}
+	}
 	try {
 		Poco::URI uri(Poco::format("%s/download?path=%s", remote, path));
 		std::auto_ptr<std::istream> is(Poco::URIStreamOpener::defaultOpener().open(uri));
@@ -1007,13 +1025,15 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		File outFile(out);
 		if (outFile.exists()) outFile.remove();
 		tempFile.renameTo(out.toString());
-		_log.information(Poco::format("remote file copy %s %ld %ld", path, size, readSize));
+		_log.information(Poco::format("remote file copy %s %Lu %ld", path, size, readSize));
+		drawConsole(Poco::format("remote copy: %s", out.getFileName()));
 		return true;
 	} catch (Poco::FileException& ex) {
 		_log.warning(Poco::format("failed file: %s", ex.displayText()));
 		if (updating && tempFile.exists()) {
 			addDelayedUpdateFile(tempFile);
 			setRemoteStatus(remote, "delayed-update", out.getFileName());
+			drawConsole(Poco::format("delayed: %s", out.getFileName()));
 			return true;
 		}
 	} catch (Poco::Exception& ex) {
@@ -1756,36 +1776,32 @@ void MainScene::draw2() {
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d current>%d state>%s", _nowTime, _playCount, _currentContent, wait));
 		if (!_messages.empty()) {
-			if (_messageFrame > 60 && _messages.size() > 1) {
+			if (_messageFrame > 30 && _messages.size() > 1) {
 				_messageFrame = 0;
 				_messages.pop();
 			}
 			string s = _messages.front();
-			DWORD col = ((DWORD)((_messageFrame > 0x33?0x99:_messageFrame * 3) << 24)) | 0xcc9900;
+			DWORD col = ((DWORD)((_messageFrame > 0x33?0x99:_messageFrame * 6) << 24)) | 0xcc9900;
 			_renderer.drawFontTextureText(config().subRect.right - s.length() * 12, config().subRect.bottom - 48, 12, 16, col, s);
 			_messageFrame++;
 		}
 
-		string delayedUpdate = getStatus("delayed-update");
-		if (delayedUpdate.empty()) {
+		//string delayedUpdate = getStatus("delayed-update");
+		//if (delayedUpdate.empty()) {
 			string remoteCopy = getStatus("remote-copy");
 			if (!remoteCopy.empty()) {
-				if (remoteCopy == "10") {
-					int x = config().subRect.right - 168;
-					int y = config().subRect.bottom - 16;
-					_renderer.drawFontTextureText(x, y, 12, 16, 0x993399ff, "[remoteCopyed]");
-				} else {
+				if (remoteCopy != "10") {
 					int x = config().subRect.right - 180;
 					int y = config().subRect.bottom - 16;
 					DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
-					_renderer.drawFontTextureText(x, y, 12, 16, col, "[remoteCopy]");
+					_renderer.drawFontTextureText(x, y, 12, 16, col, "[copy master]");
 				}
 			}
-		} else {
-			int x = config().subRect.right - 204;
-			int y = config().subRect.bottom - 16;
-			_renderer.drawFontTextureText(x, y, 12, 16, 0x99ff9933, "[delayedUpdating]");
-		}
+		//} else {
+		//	int x = config().subRect.right - 204;
+		//	int y = config().subRect.bottom - 16;
+		//	_renderer.drawFontTextureText(x, y, 12, 16, 0x99ff9933, "[delayedUpdating]");
+		//}
 	}
 
 	{
