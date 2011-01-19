@@ -1503,7 +1503,7 @@ void MainScene::process() {
 				removeStatus("next-content");
 
 				if (config().outCastLog) {
-					string d = Poco::DateTimeFormatter::format(now, "%Y%m%d");
+					string d = Poco::DateTimeFormatter::format(now.timestamp(), "%Y%m%d");
 					if (_castLogDate != d) {
 						if (_castLog) {
 							_castLog->close();
@@ -1521,7 +1521,7 @@ void MainScene::process() {
 						}
 					}
 					if (_castLog) {
-						string time = Poco::DateTimeFormatter::format(now, "%Y-%m-%d %H:%M:%S.%i");
+						string time = Poco::DateTimeFormatter::format(now.timestamp(), "%Y-%m-%d %H:%M:%S.%i");
 						string s = time + "," + _status["current-content"] + "\r\n";
 						_castLog->write(s.c_str(), s.length());
 						_castLog->flush();
@@ -1781,7 +1781,7 @@ void MainScene::draw2() {
 				_messages.pop();
 			}
 			string s = _messages.front();
-			DWORD col = ((DWORD)((_messageFrame > 0x33?0x99:_messageFrame * 6) << 24)) | 0xcc9900;
+			DWORD col = ((DWORD)((0x99 * (_messageFrame > 30?30:_messageFrame) / 30) << 24)) | 0xcc9900;
 			_renderer.drawFontTextureText(config().subRect.right - s.length() * 12, config().subRect.bottom - 48, 12, 16, col, s);
 			_messageFrame++;
 		}
