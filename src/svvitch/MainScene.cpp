@@ -1601,70 +1601,72 @@ void MainScene::process() {
 	}
 
 	// スケジュール処理
-	if (_workspace && now.second() != _timeSecond) {
-		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+	if (now.second() != _timeSecond) {
 		_timeSecond = now.second();
 		_nowTime = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
-		Poco::Timespan bf10(0, 0, 0, 10, 0);
-		for (int i = 0; i < _workspace->getScheduleCount(); i++) {
-			SchedulePtr schedule = _workspace->getSchedule(i);
-			if (schedule->match(now + bf10)) {
-				// 10秒前チェック
-				string command = schedule->command();
-				if (command.find("playlist ") == 0) {
-					string params = command.substr(9);
-					string playlistID = params;
-					int item = 0;
-					if (params.find("-") != string::npos) {
-						playlistID = params.substr(0, params.find("-"));
-						if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
-							// failed parse item no
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+		if (_workspace) {
+			Poco::Timespan bf10(0, 0, 0, 10, 0);
+			for (int i = 0; i < _workspace->getScheduleCount(); i++) {
+				SchedulePtr schedule = _workspace->getSchedule(i);
+				if (schedule->match(now + bf10)) {
+					// 10秒前チェック
+					string command = schedule->command();
+					if (command.find("playlist ") == 0) {
+						string params = command.substr(9);
+						string playlistID = params;
+						int item = 0;
+						if (params.find("-") != string::npos) {
+							playlistID = params.substr(0, params.find("-"));
+							if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
+								// failed parse item no
+							}
 						}
-					}
 
-					PlayListPtr playlist = _workspace->getPlaylist(playlistID);
-					if (playlist) {
-						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						stackPrepareContent(playlistID, item);
-						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s", playlist->id()));
+						PlayListPtr playlist = _workspace->getPlaylist(playlistID);
+						if (playlist) {
+							_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+							stackPrepareContent(playlistID, item);
+							drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s", playlist->id()));
+						} else {
+							_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
+						}
+						break;
+					} else if (command.find("next") == 0) {
+						break;
+					} else if (command.find("brightness ") == 0) {
+						break;
 					} else {
 						_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
 					}
-					break;
-				} else if (command.find("next") == 0) {
-					break;
-				} else if (command.find("brightness ") == 0) {
-					break;
-				} else {
-					_log.warning(Poco::format("[%s]failed command: %s", _nowTime, command));
-				}
-			} else if (schedule->match(now)) {
-				// 実時間チェック
-				string command = schedule->command();
-				if (command.find("playlist ") == 0) {
-					if (_prepared) {
-						activeSwitchContent();
+				} else if (schedule->match(now)) {
+					// 実時間チェック
+					string command = schedule->command();
+					if (command.find("playlist ") == 0) {
+						if (_prepared) {
+							activeSwitchContent();
+							_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+							//_doSwitchPrepared = true;
+							drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched " + command);
+						} else {
+							_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
+							drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "not switched " + command);
+						}
+						break;
+					} else if (command.find("next") == 0) {
+						_doSwitchNext = true;
 						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						//_doSwitchPrepared = true;
-						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched " + command);
-					} else {
-						_log.warning(Poco::format("[%s]failed next content not prepared %s", _nowTime, command));
-						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "not switched " + command);
+						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched next");
+						break;
+					} else if (command.find("brightness ") == 0) {
+						int brightness = -1;
+						if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
+							setBrightness(brightness);
+							_log.information(Poco::format("[%s]exec %s", _nowTime, command));
+							drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
+						}
+						break;
 					}
-					break;
-				} else if (command.find("next") == 0) {
-					_doSwitchNext = true;
-					_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-					drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + "switched next");
-					break;
-				} else if (command.find("brightness ") == 0) {
-					int brightness = -1;
-					if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
-						setBrightness(brightness);
-						_log.information(Poco::format("[%s]exec %s", _nowTime, command));
-						drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
-					}
-					break;
 				}
 			}
 		}
