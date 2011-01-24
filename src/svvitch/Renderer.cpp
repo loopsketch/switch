@@ -119,7 +119,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	}
 
 	// ディスプレイアダプタを表すためのデバイスを作成
-	DWORD flag = D3DCREATE_MULTITHREADED;
+	DWORD flag = D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE;
 	if (_displayAdpters > 1) flag  |= D3DCREATE_ADAPTERGROUP_DEVICE;
 	if (FAILED(_d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, flag | D3DCREATE_HARDWARE_VERTEXPROCESSING, &_presentParams[0], &_device))) {
 		// 上記の設定が失敗したら
