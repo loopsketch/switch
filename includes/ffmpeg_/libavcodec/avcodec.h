@@ -32,8 +32,8 @@
 #include "libavutil/cpu.h"
 
 #define LIBAVCODEC_VERSION_MAJOR 52
-#define LIBAVCODEC_VERSION_MINOR 97
-#define LIBAVCODEC_VERSION_MICRO  2
+#define LIBAVCODEC_VERSION_MINOR 108
+#define LIBAVCODEC_VERSION_MICRO  0
 
 #define LIBAVCODEC_VERSION_INT  AV_VERSION_INT(LIBAVCODEC_VERSION_MAJOR, \
                                                LIBAVCODEC_VERSION_MINOR, \
@@ -83,9 +83,11 @@
 #define FF_API_OLD_AUDIOCONVERT (LIBAVCODEC_VERSION_MAJOR < 53)
 #endif
 
-#define AV_NOPTS_VALUE          INT64_C(0x8000000000000000)
-#define AV_TIME_BASE            1000000
-#define AV_TIME_BASE_Q          (AVRational){1, AV_TIME_BASE}
+#if LIBAVCODEC_VERSION_MAJOR < 53
+#   define FF_INTERNALC_MEM_TYPE unsigned int
+#else
+#   define FF_INTERNALC_MEM_TYPE size_t
+#endif
 
 /**
  * Identify the syntax and semantics of the bitstream.
@@ -256,6 +258,8 @@ enum CodecID {
     CODEC_ID_A64_MULTI,
     CODEC_ID_A64_MULTI5,
     CODEC_ID_R10K,
+    CODEC_ID_MXPEG,
+    CODEC_ID_LAGARITH,
 
     /* various PCM "codecs" */
     CODEC_ID_PCM_S16LE= 0x10000,
@@ -403,6 +407,7 @@ enum CodecID {
 
     CODEC_ID_MPEG2TS= 0x20000, /**< _FAKE_ codec to indicate a raw MPEG-2 TS
                                 * stream (only used by libavformat) */
+    CODEC_ID_FFMETADATA=0x21000,   ///< Dummy codec for streams containing only metadata information.
 };
 
 #if LIBAVCODEC_VERSION_MAJOR < 53
@@ -717,7 +722,10 @@ typedef struct RcOverride{
  * Codec should fill in channel configuration and samplerate instead of container
  */
 #define CODEC_CAP_CHANNEL_CONF     0x0400
-
+/**
+ * Codec is able to deal with negative linesizes
+ */
+#define CODEC_CAP_NEG_LINESIZES    0x0800
 
 //The following defines may change, don't expect compatibility if you use them.
 #define MB_TYPE_INTRA4x4   0x0001
@@ -985,8 +993,13 @@ typedef struct AVPanScan{
     int8_t *ref_index[2];\
 \
     /**\
-     * reordered opaque 64bit number (generally a PTS) from AVCodecContext.reordered_opaque\
-     * output in AVFrame.reordered_opaque\
+     * reordered opaque 64bit (generally an integer or a double precision float\
+     * PTS but can be anything). \
+     * The user sets AVCodecContext.reordered_opaque to represent the input at\
+     * that time,\
+     * the decoder reorders values as needed and sets AVFrame.reordered_opaque\
+     * to exactly one of the values provided by the user through AVCodecContext.reordered_opaque \
+     * @deprecated in favor of pkt_pts\
      * - encoding: unused\
      * - decoding: Read by user.\
      */\
@@ -998,6 +1011,20 @@ typedef struct AVPanScan{
      * - decoding: Set by libavcodec\
      */\
     void *hwaccel_picture_private;\
+\
+    /**\
+     * reordered pts from the last AVPacket that has been input into the decoder\
+     * - encoding: unused\
+     * - decoding: Read by user.\
+     */\
+    int64_t pkt_pts;\
+\
+    /**\
+     * dts from the last AVPacket that has been input into the decoder\
+     * - encoding: unused\
+     * - decoding: Read by user.\
+     */\
+    int64_t pkt_dts;\
 
 
 #define FF_QSCALE_TYPE_MPEG1 0
@@ -2227,6 +2254,12 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_AAC_SSR  2
 #define FF_PROFILE_AAC_LTP  3
 
+#define FF_PROFILE_DTS         20
+#define FF_PROFILE_DTS_ES      30
+#define FF_PROFILE_DTS_96_24   40
+#define FF_PROFILE_DTS_HD_HRA  50
+#define FF_PROFILE_DTS_HD_MA   60
+
 #define FF_PROFILE_H264_BASELINE    66
 #define FF_PROFILE_H264_MAIN        77
 #define FF_PROFILE_H264_EXTENDED    88
@@ -2554,6 +2587,7 @@ typedef struct AVCodecContext {
     /**
      * opaque 64bit number (generally a PTS) that will be reordered and
      * output in AVFrame.reordered_opaque
+     * @deprecated in favor of pkt_pts
      * - encoding: unused
      * - decoding: Set by user.
      */
@@ -2774,7 +2808,24 @@ typedef struct AVCodecContext {
      */
     uint8_t *subtitle_header;
     int subtitle_header_size;
+
+    /**
+     * Current packet as passed into the decoder, to avoid having
+     * to pass the packet into every function. Currently only valid
+     * inside lavc and get/release_buffer callbacks.
+     * - decoding: set by avcodec_decode_*, read by get_buffer() for setting pkt_pts
+     * - encoding: unused
+     */
+    AVPacket *pkt;
 } AVCodecContext;
+
+/**
+ * AVProfile.
+ */
+typedef struct AVProfile {
+    int profile;
+    const char *name; ///< short name for the profile
+} AVProfile;
 
 /**
  * AVCodec.
@@ -2817,6 +2868,7 @@ typedef struct AVCodec {
     const int64_t *channel_layouts;         ///< array of support channel layouts, or NULL if unknown. array is terminated by 0
     uint8_t max_lowres;                     ///< maximum value for lowres supported by the decoder
     AVClass *priv_class;                    ///< AVClass for the private context
+    const AVProfile *profiles;              ///< array of recognized profiles, or NULL if unknown, array is terminated by {FF_PROFILE_UNKNOWN}
 } AVCodec;
 
 /**
@@ -3274,18 +3326,13 @@ int avcodec_get_pix_fmt_loss(enum PixelFormat dst_pix_fmt, enum PixelFormat src_
 enum PixelFormat avcodec_find_best_pix_fmt(int64_t pix_fmt_mask, enum PixelFormat src_pix_fmt,
                               int has_alpha, int *loss_ptr);
 
-
+#if LIBAVCODEC_VERSION_MAJOR < 53
 /**
- * Print in buf the string corresponding to the pixel format with
- * number pix_fmt, or an header if pix_fmt is negative.
- *
- * @param[in] buf the buffer where to write the string
- * @param[in] buf_size the size of buf
- * @param[in] pix_fmt the number of the pixel format to print the corresponding info string, or
- * a negative value to print the corresponding header.
- * Meaningful values for obtaining a pixel format info vary from 0 to PIX_FMT_NB -1.
+ * @deprecated Use av_get_pix_fmt_string() instead.
  */
+attribute_deprecated
 void avcodec_pix_fmt_string (char *buf, int buf_size, enum PixelFormat pix_fmt);
+#endif
 
 #define FF_ALPHA_TRANSP       0x0001 /* image has some totally transparent pixels */
 #define FF_ALPHA_SEMI_TRANSP  0x0002 /* image has some transparent pixels */
@@ -3380,6 +3427,15 @@ AVCodec *avcodec_find_decoder(enum CodecID id);
  */
 AVCodec *avcodec_find_decoder_by_name(const char *name);
 void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode);
+
+/**
+ * Return a name for the specified profile, if available.
+ *
+ * @param codec the codec that is searched for the given profile
+ * @param profile the profile value for which a name is requested
+ * @return A name for the profile if found, NULL otherwise.
+ */
+const char *av_get_profile_name(const AVCodec *codec, int profile);
 
 /**
  * Set the fields of the given AVCodecContext to default values.
@@ -4006,7 +4062,7 @@ AVBitStreamFilter *av_bitstream_filter_next(AVBitStreamFilter *f);
  *
  * @see av_realloc
  */
-void *av_fast_realloc(void *ptr, unsigned int *size, unsigned int min_size);
+void *av_fast_realloc(void *ptr, unsigned int *size, FF_INTERNALC_MEM_TYPE min_size);
 
 /**
  * Allocate a buffer, reusing the given one if large enough.
@@ -4020,7 +4076,7 @@ void *av_fast_realloc(void *ptr, unsigned int *size, unsigned int min_size);
  * @param min_size minimum size of *ptr buffer after returning, *ptr will be NULL and
  *                 *size 0 if an error occurred.
  */
-void av_fast_malloc(void *ptr, unsigned int *size, unsigned int min_size);
+void av_fast_malloc(void *ptr, unsigned int *size, FF_INTERNALC_MEM_TYPE min_size);
 
 #if LIBAVCODEC_VERSION_MAJOR < 53
 /**
