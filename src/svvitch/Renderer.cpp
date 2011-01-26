@@ -516,7 +516,7 @@ void Renderer::drawUnlock() {
 /**
  *  Scene‚ðƒŒƒ“ƒ_ƒŠƒ“ƒO‚µ‚Ü‚·
  */
-void Renderer::renderScene(const bool visibled, const DWORD current) {
+void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	MEMORYSTATUS ms;
 	ms.dwLength = sizeof(MEMORYSTATUS);
 	GlobalMemoryStatus(&ms);
@@ -681,7 +681,6 @@ void Renderer::renderScene(const bool visibled, const DWORD current) {
 		}
 
 		if (config().viewStatus) {
-			string time = Poco::format("%02lu:%02lu:%02lu", current / 3600000, current / 60000 % 60, current / 1000 % 60);
 			_availableTextureMem = _device->GetAvailableTextureMem() / 1024 / 1024;
 			string address = svvitch::join(_addresses, "/");
 			string memory;
@@ -697,7 +696,9 @@ void Renderer::renderScene(const bool visibled, const DWORD current) {
 			}
 
 	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
-			string s = Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, time, memory, address);
+			DWORD time = current / 1000;
+			string runTime = Poco::format("%lud%02lu:%02lu:%02lu", time / 86400, time / 3600 % 24, time / 60 % 60, time % 60);
+			string s = Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, runTime, memory, address);
 			if (s.size() * 12 > config().mainRect.right) {
 				drawFontTextureText(0, config().subRect.bottom - 16, config().mainRect.right / s.size(), 16, 0x99669966, s);
 			} else {

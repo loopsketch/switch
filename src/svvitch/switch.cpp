@@ -246,7 +246,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	::QueryPerformanceCounter(&start);
 
 //	DWORD lastSwapout = 0;
-	DWORD last = 0;
+	LONGLONG last = 0;
 	while (_renderer->peekMessage()) {
 		// 処理するメッセージが無いときは描画を行う
 		//if (_interruptFile.length() > 0) {
@@ -255,7 +255,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//}
 
 		::QueryPerformanceCounter(&current);
-		DWORD time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+		LONGLONG time = (current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart;
 		last = time;
 
 		// ウィンドウが見えている時だけ描画するための処理
@@ -268,11 +268,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
 	server->stop();
-	DWORD time = last;
+	LONGLONG time = last;
 	while (time - last < 500) {
 		_renderer->peekMessage();
 		::QueryPerformanceCounter(&current);
-		time = (DWORD)((current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart);
+		time = (current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart;
 	}
 	SAFE_DELETE(server);
 

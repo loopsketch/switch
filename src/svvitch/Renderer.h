@@ -233,7 +233,7 @@ public:
 	/**
 	 * Scene‚ðƒŒƒ“ƒ_ƒŠƒ“ƒO‚µ‚Ü‚·
 	 */
-	void renderScene(const bool visibled, const DWORD current);
+	void renderScene(const bool visibled, const LONGLONG current);
 
 	const UINT getDisplayAdapters() const;
 
