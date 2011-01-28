@@ -714,9 +714,12 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	} else {
 		if (_device->Present(0, 0, 0, 0) == D3DERR_DEVICELOST) {
 			_log.warning("failed device lost");
-			if (_device->TestCooperativeLevel() == D3DERR_DEVICENOTRESET) {
-				hr = _device->Reset(&_presentParams[0]);
-				if FAILED(hr) _log.warning("failed reset device");
+			if (_device->TestCooperativeLevel() == D3DERR_DEVICELOST) {
+				return;
+			}
+			hr = _device->Reset(&_presentParams[0]);
+			if FAILED(hr) {
+				_log.warning("failed reset device");
 			}
 
 		} else {

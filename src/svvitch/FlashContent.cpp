@@ -204,7 +204,7 @@ void FlashContent::releaseComComponents() {
 	SAFE_RELEASE(_flash);
 	SAFE_RELEASE(_ole);
 	_phase = 3;
-	_log.information("flash released");
+	//_log.information("flash released");
 }
 
 /** ファイルをオープンします */
