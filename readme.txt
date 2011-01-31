@@ -59,7 +59,9 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 ・スケジュール 'playlist' 'next'コマンドの追加
 ・Dissolve時などに斜めに掛かってしまっていたのを修正
 ・静止画にJPEG形式も使用できるように修正
-・ファイルコピーのWebAPIを修正し、ストックしてから一気に入替えるコマンドを追加したので古いairSwitchとの互換性が無くなりました
+・ファイルコピーのWebAPIを修正し、ストックしてから一気に入替えるコマンドを追加したので
+  古いairSwitchとの互換性が無くなりました
+・倍精度の精度による時計ずれの修正
 
 0.9f
 ・Flash(10.1)の対応
