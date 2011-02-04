@@ -415,9 +415,9 @@ void FFMovieContent::draw(const DWORD& frame) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_frameLock);
 		if (_vf && _playing) {
 			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-			float alpha = getF("alpha");
-			int cw = config().splitSize.cx;
-			int ch = config().splitSize.cy;
+			const float alpha = getF("alpha");
+			const int cw = config().splitSize.cx;
+			const int ch = config().splitSize.cy;
 			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 			switch (_splitType) {
 			case 1:
@@ -447,6 +447,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 							dx += cw;
 							dy = 0;
 						}
+						if (dx * config().splitCycles + dy / config().splitSize.cy * config().splitSize.cx >= config().stageRect.right) break;
 					}
 				}
 				break;

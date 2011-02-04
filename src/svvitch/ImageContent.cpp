@@ -189,8 +189,8 @@ void ImageContent::draw(const DWORD& frame) {
 		// if (_dy <= -32) _dy = 32;
 		float alpha = getF("alpha", 1.0f);
 		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
-		int cw = config().splitSize.cx;
-		int ch = config().splitSize.cy;
+		const int cw = config().splitSize.cx;
+		const int ch = config().splitSize.cy;
 		switch (_splitType) {
 		case 1:
 			{

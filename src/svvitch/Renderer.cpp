@@ -742,7 +742,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 								int dw = config().splitSize.cx * config().splitCycles;
 								rect.left = config().mainRect.left;
 								rect.top = config().mainRect.top;
-								rect.right = config().mainRect.left + (config().stageRect.right + dw) / dw * config().splitSize.cx;
+								rect.right = config().mainRect.left + config().stageRect.right / dw * config().splitSize.cx;
 								rect.bottom = config().mainRect.top + config().stageRect.bottom * config().splitCycles;
 							}
 							break;
