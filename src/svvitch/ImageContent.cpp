@@ -246,6 +246,7 @@ void ImageContent::draw(const DWORD& frame) {
 					if (ix >= _iw) {
 						sx = 0;
 						sy = 0;
+						chh = (ch > _ih)?_ih:ch;
 						ix = 0;
 						if (dxx < cw) continue;
 					}
