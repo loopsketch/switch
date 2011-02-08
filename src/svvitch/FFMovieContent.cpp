@@ -432,16 +432,21 @@ void FFMovieContent::draw(const DWORD& frame) {
 							_vf->draw(dx, dy, cww, chh, 0, col, sx, sy, cww, chh);
 							sx = 0;
 							sy += ch;
-							if (sy >= _vf->height()) break;
-							if (_vf->height() - sy < ch) chh = _vf->height() - sy;
-							// クイの分
-							_vf->draw(dx + cww, dy, cw - cww, chh, 0, col, sx, sy, cw - cww, chh);
-							sx += (cw - cww);
+							if (sy >= _vf->height()) {
+								sy = 0;
+								_vf->draw(dx + cww, dy, cw - cww, chh, 0, col, sx, sy, cw - cww, chh);
+								sx += (cw - cww);
+							} else {
+								if (_vf->height() - sy < ch) chh = _vf->height() - sy;
+								// クイの分
+								_vf->draw(dx + cww, dy, cw - cww, chh, 0, col, sx, sy, cw - cww, chh);
+								sx += (cw - cww);
+							}
 						} else {
 							_vf->draw(dx, dy, cw, chh, 0, col, sx, sy, cw, chh);
 							sx += cw;
 						}
-//						_log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
+						// _log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
 						dy += ch;
 						if (dy >= config().stageRect.bottom * config().splitCycles) {
 							dx += cw;
