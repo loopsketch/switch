@@ -830,6 +830,25 @@ bool MainScene::updateWorkspace() {
 			_log.warning("failed update workspace.");
 			SAFE_DELETE(workspace);
 		}
+	} else if (!_workspace) {
+		WorkspacePtr workspace = new Workspace(config().workspaceFile);
+		if (workspace->parse()) {
+			_running = false;
+			_workspace = workspace;
+			setStatus("workspace", _workspace->signature());
+			preparedStanbyMedia();
+			preparedFont(_workspace);
+			drawConsole("updated workspace");
+			_frame = 0;
+			_startup = false;
+			_autoStart = false;
+			_running = true;
+			return true;
+		} else {
+			_log.warning("failed parse workspace");
+			SAFE_DELETE(workspace);
+		}
+
 	} else {
 		_log.information("there is no need for updates.");
 		return true;
@@ -914,14 +933,16 @@ void MainScene::copyRemote(const string& remote) {
 
 				setRemoteStatus(remote, "remote-copy", "3");
 				_copyRemoteFiles = remoteFiles.size();
+				int i = 0;
 				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
 					Path out(config().dataRoot, Path(*it).toString());
 					_log.information(Poco::format("remote: %s", out.toString()));
 					setRemoteStatus(remote, "remote-copy", "3:" + out.getFileName());
 					if (copyRemoteFile(remote, *it, out, true)) {
-					} else {
+						drawConsole(Poco::format("remote copy: %d", _copyRemoteFiles));
 					}
 					_copyRemoteFiles--;
+					++i;
 				}
 				_copyRemoteFiles = 0;
 				setRemoteStatus(remote, "remote-copy", "4");
@@ -964,8 +985,6 @@ void MainScene::copyRemote(const string& remote) {
 
 bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& out, bool equalityCheck) {
 	Poco::DateTime modified;
-	int tzd = Poco::Timezone::tzd();
-	modified.makeLocal(tzd);
 	Poco::File::FileSize size = 0;
 	try {
 		Poco::URI uri(Poco::format("%s/files?path=%s", remote, path));
@@ -980,12 +999,13 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		//	_log.information(Poco::format("[%s]=%s", it->first, it->second));
 		//}
 		int tz = 0;
-		Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tzd);
-		//modified.makeUTC(tzd);
+		Poco::DateTimeParser::parse(Poco::DateTimeFormat::SORTABLE_FORMAT, m["modified"], modified, tz);
+		int tzd = Poco::Timezone::tzd();
+		modified.makeUTC(tzd);
 		Poco::UInt64 num = 0;
 		Poco::NumberParser::tryParseUnsigned64(m["size"], num);
 		size = num;
-		_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
+		//_log.information(Poco::format("modified: %s", Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT)));
 		File outFile(out);
 		if (equalityCheck && outFile.exists()) {
 			long modifiedDiff = abs((long)((modified.timestamp() - outFile.getLastModified())));
@@ -1026,7 +1046,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 		if (outFile.exists()) outFile.remove();
 		tempFile.renameTo(out.toString());
 		_log.information(Poco::format("remote file copy %s %Lu %ld", path, size, readSize));
-		drawConsole(Poco::format("remote copy: %s", out.getFileName()));
+		//drawConsole(Poco::format("remote copy: %s", out.getFileName()));
 		return true;
 	} catch (Poco::FileException& ex) {
 		_log.warning(Poco::format("failed file: %s", ex.displayText()));
@@ -1739,7 +1759,8 @@ void MainScene::draw2() {
 	string status1;
 	string status2;
 	if (_currentContent >= 0) {
-		ContentPtr c = _contents[_currentContent]->get(0);
+		int i = _contents[_currentContent]->size() - 1;
+		ContentPtr c = _contents[_currentContent]->get(i);
 		if (c && !c->opened().empty()) {
 			int current = c->current();
 			int duration = c->duration();
@@ -1773,7 +1794,9 @@ void MainScene::draw2() {
 		_renderer.drawFontTextureText(504, config().subRect.bottom - 80, 12, 16, 0x99ccccff, "prepared");
 		_renderer.drawTexture(612, config().subRect.bottom - 80, _preparedPlaylistName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
 		_renderer.drawTexture(612, config().subRect.bottom - 64, _preparedName, 0, 0xccffffff, 0xccffffff,0x99ffffff, 0x99ffffff);
-
+	}
+	if (config().viewStatus) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int next = (_currentContent + 1) % _contents.size();
 		string wait(_contents[next]->opened().empty()?"preparing":"ready");
 		_renderer.drawFontTextureText(0, config().subRect.bottom - 32, 12, 16, 0x99669966, Poco::format("[%s] played>%04d current>%d state>%s", _nowTime, _playCount, _currentContent, wait));
@@ -1790,15 +1813,15 @@ void MainScene::draw2() {
 
 		//string delayedUpdate = getStatus("delayed-update");
 		//if (delayedUpdate.empty()) {
-			string remoteCopy = getStatus("remote-copy");
-			if (!remoteCopy.empty()) {
-				if (remoteCopy != "10") {
-					int x = config().subRect.right - 180;
-					int y = config().subRect.bottom - 16;
-					DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
-					_renderer.drawFontTextureText(x, y, 12, 16, col, "[copy master]");
-				}
+		string remoteCopy = getStatus("remote-copy");
+		if (!remoteCopy.empty()) {
+			if (remoteCopy != "10") {
+				int x = config().subRect.right - 180;
+				int y = config().subRect.bottom - 16;
+				DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
+				_renderer.drawFontTextureText(x, y, 12, 16, col, "[copy master]");
 			}
+		}
 		//} else {
 		//	int x = config().subRect.right - 204;
 		//	int y = config().subRect.bottom - 16;
@@ -1822,7 +1845,7 @@ void MainScene::draw2() {
 			DWORD col1 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x33ccff;
 			DWORD col2 = ((DWORD)(0x66 * _removableAlpha) << 24) | 0x3399cc;
 			_renderer.drawTexture(tw + 2, config().subRect.bottom - th / 2 + 1, (config().subRect.right - tw - 2) * _currentCopyProgress / 100, 8, NULL, 0, col1, col1, col2, col2);
-//			_renderer.drawFontTextureText(tw, config().subRect.bottom - th / 2, 12, 16, 0xccffffff, Poco::format("%d %d(%d%%)", _currentCopySize, _copySize, _currentCopyProgress));
+			// _renderer.drawFontTextureText(tw, config().subRect.bottom - th / 2, 12, 16, 0xccffffff, Poco::format("%d %d(%d%%)", _currentCopySize, _copySize, _currentCopyProgress));
 		}
 	}
 }
