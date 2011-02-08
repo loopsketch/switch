@@ -288,9 +288,9 @@ void SwitchRequestHandler::get(const string& name) {
 				map<string, string> status = targetScene->getStatus();
 				if (!name.empty()) {
 					map<string, string>::const_iterator it = status.find(name);
-					string playlistID;
-					if (it != status.end()) playlistID = it->second;
-					sendResponse(HTTPResponse::HTTP_OK, playlistID);
+					string value;
+					if (it != status.end()) value = it->second;
+					sendResponse(HTTPResponse::HTTP_OK, value);
 				} else {
 					map<string, string> params;
 					for (map<string, string>::const_iterator it = status.begin(); it != status.end(); it++) {
