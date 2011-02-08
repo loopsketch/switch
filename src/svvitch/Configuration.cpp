@@ -178,7 +178,8 @@ bool Configuration::initialize() {
 
 void Configuration::save() {
 	_log.information("save configuration");
-	Poco::File config("switch-config.xml");
+	string configPath = "switch-config.xml";
+	Poco::File config(configPath);
 	Poco::File save("switch-config-new.xml");
 	bool update = false;
 	try {
@@ -210,7 +211,7 @@ void Configuration::save() {
 			Poco::File old("switch-config-old.xml");
 			if (old.exists()) old.remove();
 			config.renameTo(old.path());
-			save.renameTo(config.path());
+			save.renameTo(configPath);
 		}
 	} catch (Poco::IOException& ex) {
 		_log.warning(Poco::format("failed save configuration file(rename step): %s", ex.displayText()));
