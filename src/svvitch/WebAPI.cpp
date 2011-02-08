@@ -129,12 +129,12 @@ void SwitchRequestHandler::updateWorkspace() {
 	}
 }
 
-void SwitchRequestHandler::set(const string& name) {
+void SwitchRequestHandler::set(const string& command) {
 	try {
 		string message;
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
-			if (name == "playlist") {
+			if (command == "playlist") {
 				string playlistID = form().get("pl", "");
 				int playlistIndex = 0;
 				if (form().has("i")) Poco::NumberParser::tryParse(form().get("i"), playlistIndex);
@@ -152,7 +152,7 @@ void SwitchRequestHandler::set(const string& name) {
 				}
 				sendJSONP(form().get("callback", ""), params);
 				return;
-			} else if (name == "text") {
+			} else if (command == "text") {
 				string playlistID = form().get("pl", "");
 				string text = form().get("t", "");
 				map<string, string> params;
@@ -160,7 +160,7 @@ void SwitchRequestHandler::set(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "brightness") {
+			} else if (command == "brightness") {
 				int i = 0;
 				Poco::NumberParser::tryParse(form().get("v"), i);
 				scene->setBrightness(i);
@@ -169,7 +169,7 @@ void SwitchRequestHandler::set(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "action") {
+			} else if (command == "action") {
 				string action = form().get("v");
 				scene->setAction(action);
 				map<string, string> params;
@@ -177,7 +177,7 @@ void SwitchRequestHandler::set(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "transition") {
+			} else if (command == "transition") {
 				string transition = form().get("v");
 				scene->setTransition(transition);
 				map<string, string> params;
@@ -185,7 +185,7 @@ void SwitchRequestHandler::set(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "status") {
+			} else if (command == "status") {
 				bool result = false;
 				string name = form().get("n");
 				string value = form().get("v");
@@ -215,15 +215,16 @@ void SwitchRequestHandler::set(const string& name) {
 		}
 		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 	} catch (...) {
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, Poco::format("failed set '%s'", command));
 	}
 }
 
-void SwitchRequestHandler::get(const string& name) {
+void SwitchRequestHandler::get(const string& command) {
 	try {
 		string message;
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
-			if (name == "snapshot") {
+			if (command == "snapshot") {
 				LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
 				if (capture) {
 					// capture-lock
@@ -242,7 +243,7 @@ void SwitchRequestHandler::get(const string& name) {
 				}
 				return;
 
-			} else if (name == "fonts") {
+			} else if (command == "fonts") {
 				vector<string> fonts;
 				scene->renderer().getPrivateFontFamilies(fonts);
 				//vector<string> arrays;
@@ -254,7 +255,7 @@ void SwitchRequestHandler::get(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "text") {
+			} else if (command == "text") {
 				string playlistID = form().get("pl", "");
 				string text = scene->getPlaylistText(playlistID);
 				Poco::RegularExpression re("\\r|\\n");
@@ -264,7 +265,7 @@ void SwitchRequestHandler::get(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "display-status") {
+			} else if (command == "display-status") {
 				map<string, string> status = scene->getStatus();
 				map<string, string>::const_iterator it = status.find("remote-copy");
 				map<string, string> params;
@@ -274,8 +275,8 @@ void SwitchRequestHandler::get(const string& name) {
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
-			} else if (name == "status") {
-				ScenePtr targetScene = scene;
+			} else if (command == "status") {
+				ScenePtr targetScene = dynamic_cast<MainScenePtr>(scene);
 				string s = form().get("s", "");
 				string name = form().get("n", "");
 				if (!s.empty()) {
@@ -308,15 +309,18 @@ void SwitchRequestHandler::get(const string& name) {
 		}
 		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, message);
 	} catch (...) {
+		sendResponse(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR, Poco::format("failed get '%s'", command));
 	}
 }
 
 void SwitchRequestHandler::files() {
 	string path = form().get("path", "");
 	//_log.information(Poco::format("files: %s", path));
-	Path dir = config().dataRoot;
+	if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
+	Path dir(config().dataRoot, Path(path).toString());
+	//Path dir = config().dataRoot;
 	try {
-		if (!path.empty()) dir = dir.append(path);
+		//if (!path.empty()) dir = dir.append(path);
 		map<string, string> result;
 		result["count"] = Poco::format("%d", svvitch::fileCount(dir));
 		result["path"] = "\"" + path + "\"";
