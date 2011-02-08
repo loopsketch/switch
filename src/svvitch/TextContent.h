@@ -32,6 +32,8 @@ private:
 	int _cy;
 	int _cw;
 	int _ch;
+	int _sx;
+	int _sy;
 	string _move;
 	bool _async;
 	float _dx;

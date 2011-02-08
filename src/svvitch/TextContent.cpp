@@ -137,6 +137,7 @@ void TextContent::setReference(TextContent* text) {
 void TextContent::play() {
 	if (_move.find("roll-left-") == 0) {
 		_x = _cx + _cw;
+		_sx = _x;
 		//_y = 0;
 		int dx = 0;
 		Poco::NumberParser::tryParse(_move.substr(10), dx);
@@ -144,6 +145,7 @@ void TextContent::play() {
 		_log.debug(Poco::format("move: scroll-left: %0.1hf", _dx));
 	} else if (_move.find("roll-up-") == 0) {
 		_y = _cy + _ch;
+		_sy = _y;
 		int dy = 0;
 		Poco::NumberParser::tryParse(_move.substr(8), dy);
 		_dy = -dy;
@@ -213,6 +215,18 @@ void TextContent::process(const DWORD& frame) {
 			}
 			if (!_async) {
 				if (_move.find("roll-left-") == 0) {
+					if (_dx != 0) {
+						int current = abs((_sx - _x) / _dx);
+						int dt = abs((_x - (_cx - _iw)) / _dx);
+						const int fps = 60;
+						unsigned long cu = current / fps;
+						unsigned long re = dt / fps;
+						string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (current % fps) / 2);
+						string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (dt % fps) / 2);
+						set("time", Poco::format("%s %s", t1, t2));
+						set("time_current", t1);
+						set("time_remain", t2);
+					}
 					if (_x < (_cx - _iw)) {
 						// _log.information(Poco::format("text move finished: %hf %d %d", _x, _cx, _iw));
 						_dx = 0;
@@ -220,6 +234,18 @@ void TextContent::process(const DWORD& frame) {
 						//_playing = false;
 					}
 				} else if (_move.find("roll-up-") == 0) {
+					if (_dy != 0) {
+						int current = abs((_sy - _y) / _dy);
+						int dt = abs((_y - (_cy - _ih)) / _dy);
+						const int fps = 60;
+						unsigned long cu = current / fps;
+						unsigned long re = dt / fps;
+						string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (current % fps) / 2);
+						string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (dt % fps) / 2);
+						set("time", Poco::format("%s %s", t1, t2));
+						set("time_current", t1);
+						set("time_remain", t2);
+					}
 					if (_y < (_cy - _ih)) {
 						_dy = 0;
 						_move.clear();
