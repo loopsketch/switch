@@ -245,8 +245,20 @@ string svvitch::formatJSON(const string& s) {
 		} else if (s.c_str()[0] == '{' && s.c_str()[i] == '}') {
 			return s;
 		}
+		string rep;
+		for (i = 0; i < s.length(); ++i) {
+			char c = s.at(i);
+			if (c == '\"') {
+				rep.append("&quot;");
+			} else if (c == '\\') {
+				rep.append("\\\\");
+			} else {
+				rep += c;
+			}
+		}
+		return "\"" + rep + "\"";
 	}
-	return "\"" + s + "\"";
+	return "\"\"";
 }
 
 string svvitch::formatJSON(const map<string, string>& obj) {
