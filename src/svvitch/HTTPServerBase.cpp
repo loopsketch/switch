@@ -173,7 +173,7 @@ bool BaseRequestHandler::sendFile(Path& path) {
 
 void BaseRequestHandler::sendJSONP(const string& functionName, const map<string, string>& json) {
 	//response().setChunkedTransferEncoding(true);
-	string userAgent = request().get("User-Agent");
+	string userAgent = request().get("User-Agent", "");
 	if (!userAgent.empty() && userAgent.find("MSIE") != string::npos) {
 		response().setContentType("text/plain");
 	} else {
