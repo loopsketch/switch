@@ -426,14 +426,21 @@ void FFMovieContent::draw(const DWORD& frame) {
 					int cww = 0;
 					int chh = ch;
 					while (dx < config().mainRect.right) {
+						int ix = dx * config().splitCycles + dy / ch * cw;
+						if (ix >= config().stageRect.right) break;
 						if ((sx + cw) >= _vf->width()) {
 							// ‚Í‚Ýo‚é
 							cww = _vf->width() - sx;
+							if (ix + cww > config().stageRect.right) {
+								cww = config().stageRect.right - ix;
+							}
 							_vf->draw(dx, dy, cww, chh, 0, col, sx, sy, cww, chh);
 							sx = 0;
 							sy += ch;
+							if (ix + cww >= config().stageRect.right) break;
 							if (sy >= _vf->height()) {
 								sy = 0;
+								chh = ch;
 								_vf->draw(dx + cww, dy, cw - cww, chh, 0, col, sx, sy, cw - cww, chh);
 								sx += (cw - cww);
 							} else {
@@ -443,8 +450,14 @@ void FFMovieContent::draw(const DWORD& frame) {
 								sx += (cw - cww);
 							}
 						} else {
-							_vf->draw(dx, dy, cw, chh, 0, col, sx, sy, cw, chh);
-							sx += cw;
+							cww = config().stageRect.right - ix;
+							if (cw > cww) {
+								_vf->draw(dx, dy, cww, chh, 0, col, sx, sy, cww, chh);
+								break;
+							} else {
+								_vf->draw(dx, dy, cw, chh, 0, col, sx, sy, cw, chh);
+								sx += cw;
+							}
 						}
 						// _log.information(Poco::format("split dst: %04d,%03d src: %04d,%03d", dx, dy, sx, sy));
 						dy += ch;
@@ -452,7 +465,6 @@ void FFMovieContent::draw(const DWORD& frame) {
 							dx += cw;
 							dy = 0;
 						}
-						if (dx * config().splitCycles + dy / config().splitSize.cy * config().splitSize.cx >= config().stageRect.right) break;
 					}
 				}
 				break;
