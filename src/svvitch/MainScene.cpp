@@ -885,6 +885,7 @@ void MainScene::copyRemote(const string& remote) {
 	Path remoteWorkspace("tmp/workspace.xml");
 	if (copyRemoteFile(remote, "/workspace.xml", remoteWorkspace)) {
 		setRemoteStatus(remote, "remote-copy", "2");
+		drawConsole("check remote workspace");
 		vector<string> remoteFiles;
 		try {
 			Poco::XML::DOMParser parser;
@@ -932,18 +933,21 @@ void MainScene::copyRemote(const string& remote) {
 				doc->release();
 
 				setRemoteStatus(remote, "remote-copy", "3");
-				_copyRemoteFiles = remoteFiles.size();
-				int i = 0;
-				for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
-					Path out(config().dataRoot, Path(*it).toString());
-					_log.information(Poco::format("remote: %s", out.toString()));
-					setRemoteStatus(remote, "remote-copy", "3:" + out.getFileName());
-					if (copyRemoteFile(remote, *it, out, true)) {
-						drawConsole(Poco::format("remote copy: %d", _copyRemoteFiles));
+				if (!remoteFiles.empty()) {
+					int size = remoteFiles.size();
+					drawConsole(Poco::format("remote copy %d files...", size));
+					_copyRemoteFiles = size;
+					for (vector<string>::iterator it = remoteFiles.begin(); it != remoteFiles.end(); it++) {
+						Path out(config().dataRoot, Path(*it).toString());
+						_log.information(Poco::format("remote: %s", out.toString()));
+						setRemoteStatus(remote, "remote-copy", "3:" + out.getFileName());
+						if (copyRemoteFile(remote, *it, out, true)) {
+							drawConsole(Poco::format("remote copy: %d%%", 100 * (size - _copyRemoteFiles) / size));
+						}
+						_copyRemoteFiles--;
 					}
-					_copyRemoteFiles--;
-					++i;
 				}
+				drawConsole("remote copy: 100%");
 				_copyRemoteFiles = 0;
 				setRemoteStatus(remote, "remote-copy", "4");
 				File dst(config().workspaceFile);
@@ -1012,7 +1016,7 @@ bool MainScene::copyRemoteFile(const string& remote, const string& path, Path& o
 			if (size == outFile.getSize() && modifiedDiff <= 1000) {
 				// サイズと更新日時(秒精度)があっていれば同一ファイルとする
 				_log.information(Poco::format("remote file already exists: %s", path));
-				return true;
+				return false;
 			}
 		}
 	} catch (Poco::SyntaxException& ex) {
@@ -1318,63 +1322,62 @@ void MainScene::process() {
 	if (!_running) return;
 
 	if (!_startup && _frame > 100) {
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
-			if (_workspace && _workspace->getPlaylistCount() > 0) {
-				// playlistがある場合は最初のplaylistを自動スタートする
-				PlayListPtr playlist = _workspace->getPlaylist(0);
-				int item = 0;
+		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
+		if (_workspace && _workspace->getPlaylistCount() > 0) {
+			// playlistがある場合は最初のplaylistを自動スタートする
+			PlayListPtr playlist = _workspace->getPlaylist(0);
+			int item = 0;
 
-				if (_workspace && _workspace->getScheduleCount() > 0) {
-					Poco::LocalDateTime now;
-					Poco::Timespan span(0, 0, 0, 10, 0);
-					for (int i = 0; i < _workspace->getScheduleCount(); i++) {
-						SchedulePtr schedule = _workspace->getSchedule(i);
-						if (schedule->matchPast(now + span)) {
-							string command = schedule->command();
-							string t = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
-							//_log.information(Poco::format("%s %s", t, command));
-							if (command.find("playlist ") == 0) {
-								string params = command.substr(9);
-								string playlistID = params;
-								item = 0;
-								if (params.find("-") != string::npos) {
-									playlistID = params.substr(0, params.find("-"));
-									if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
-										// failed parse item no
-									}
+			if (_workspace && _workspace->getScheduleCount() > 0) {
+				Poco::LocalDateTime now;
+				Poco::Timespan span(0, 0, 0, 10, 0);
+				for (int i = 0; i < _workspace->getScheduleCount(); i++) {
+					SchedulePtr schedule = _workspace->getSchedule(i);
+					if (schedule->matchPast(now + span)) {
+						string command = schedule->command();
+						string t = Poco::DateTimeFormatter::format(now, "%Y/%m/%d(%w) %H:%M:%S");
+						//_log.information(Poco::format("%s %s", t, command));
+						if (command.find("playlist ") == 0) {
+							string params = command.substr(9);
+							string playlistID = params;
+							item = 0;
+							if (params.find("-") != string::npos) {
+								playlistID = params.substr(0, params.find("-"));
+								if (!Poco::NumberParser::tryParse(params.substr(params.find("-") + 1), item)) {
+									// failed parse item no
 								}
-								playlist = _workspace->getPlaylist(playlistID);
-							} else if (command.find("next") == 0) {
-								item++;
+							}
+							playlist = _workspace->getPlaylist(playlistID);
+						} else if (command.find("next") == 0) {
+							item++;
 
-							} else if (command.find("brightness ") == 0) {
-								int brightness = -1;
-								if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
-									setBrightness(brightness);
-									drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
-								}
+						} else if (command.find("brightness ") == 0) {
+							int brightness = -1;
+							if (Poco::NumberParser::tryParse(command.substr(10), brightness) && brightness >= 0 && brightness <= 100) {
+								setBrightness(brightness);
+								drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("set brightness %d", brightness));
 							}
 						}
 					}
 				}
-
-				if (playlist) {
-					PlayParameters args;
-					args.playlistID = playlist->id();
-					args.i = item;
-					_log.information(Poco::format("auto preparing: %s-%d", playlist->id(), item));
-					drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s-%d", playlist->id(), item));
-					activePrepareNextContent(args);
-					_autoStart = true;
-					_frame = 0;
-					_startup = true;
-				}
-			} else {
-				if (_frame == 101) _log.warning("no playlist, no auto starting");
-				// _frame = 0;
 			}
+
+			if (playlist) {
+				PlayParameters args;
+				args.playlistID = playlist->id();
+				args.i = item;
+				_log.information(Poco::format("auto preparing: %s-%d", playlist->id(), item));
+				drawConsole(Poco::DateTimeFormatter::format(now, "[%H:%M:%S]") + Poco::format("preparing playlist %s-%d", playlist->id(), item));
+				activePrepareNextContent(args);
+				_autoStart = true;
+				_frame = 0;
+				_startup = true;
+			}
+		} else {
+			if (_frame == 101) _log.warning("no playlist, no auto starting");
+			// _frame = 0;
 		}
+
 	} else if (_startup) {
 		_status["action"] = _playCurrent.action;
 		_status["transition"] = _playNext.transition;
@@ -1816,7 +1819,7 @@ void MainScene::draw2() {
 		string remoteCopy = getStatus("remote-copy");
 		if (!remoteCopy.empty()) {
 			if (remoteCopy != "10") {
-				int x = config().subRect.right - 180;
+				int x = config().subRect.right - 156;
 				int y = config().subRect.bottom - 16;
 				DWORD col = ((_frame / 10) % 2 == 0)?0x99ff9933:0x99000000;
 				_renderer.drawFontTextureText(x, y, 12, 16, col, "[copy master]");
