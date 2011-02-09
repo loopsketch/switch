@@ -11,6 +11,7 @@
 #include <Poco/URI.h>
 
 #include "MainScene.h"
+#include "CaptureScene.h"
 #include "Utils.h"
 
 
@@ -225,12 +226,11 @@ void SwitchRequestHandler::get(const string& command) {
 		MainScenePtr scene = dynamic_cast<MainScenePtr>(_renderer.getScene("main"));
 		if (scene) {
 			if (command == "snapshot") {
-				LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
-				if (capture) {
+				LPDIRECT3DTEXTURE9 texture = _renderer.getCaptureTexture();
+				if (texture) {
 					// capture-lock
 					LPD3DXBUFFER buf = NULL;
-					if SUCCEEDED(D3DXSaveTextureToFileInMemory(&buf, D3DXIFF_PNG, capture, NULL)) {
-						//response().sendFile("snapshot.png", "image/png");
+					if SUCCEEDED(D3DXSaveTextureToFileInMemory(&buf, D3DXIFF_PNG, texture, NULL)) {
 						try {
 							response().setContentType("image/png");
 							response().sendBuffer(buf->GetBufferPointer(), buf->GetBufferSize());
@@ -239,6 +239,27 @@ void SwitchRequestHandler::get(const string& command) {
 						SAFE_RELEASE(buf);
 					} else {
 						_log.warning("failed snapshot image");
+					}
+				}
+				return;
+
+			} else if (command == "camera") {
+				CaptureScenePtr capture = dynamic_cast<CaptureScenePtr>(_renderer.getScene("capture"));
+				if (capture) {
+					LPDIRECT3DTEXTURE9 texture = capture->getCameraImage();
+					if (texture) {
+						// capture-lock
+						LPD3DXBUFFER buf = NULL;
+						if SUCCEEDED(D3DXSaveTextureToFileInMemory(&buf, D3DXIFF_PNG, texture, NULL)) {
+							try {
+								response().setContentType("image/png");
+								response().sendBuffer(buf->GetBufferPointer(), buf->GetBufferSize());
+							} catch (Poco::Exception& ex) {
+							}
+							SAFE_RELEASE(buf);
+						} else {
+							_log.warning("failed snapshot image");
+						}
 					}
 				}
 				return;

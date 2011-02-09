@@ -26,7 +26,12 @@ Configuration::~Configuration() {
 void Configuration::release() {
 //	_log.shutdown();
 	if (logFile) {
-		logFile->release(); logFile = NULL;
+		try {
+			//logFile->close();
+			logFile->release();
+			logFile = NULL;
+		} catch (...) {
+		}
 	}
 }
 
@@ -204,6 +209,8 @@ void Configuration::save() {
 	} catch (Poco::IOException& ex) {
 		_log.warning(Poco::format("failed save configuration file: %s", ex.displayText()));
 		return;
+	} catch (...) {
+		_log.warning("failed save configuration file(save step)");
 	}
 
 	try {
@@ -215,6 +222,8 @@ void Configuration::save() {
 		}
 	} catch (Poco::IOException& ex) {
 		_log.warning(Poco::format("failed save configuration file(rename step): %s", ex.displayText()));
+	} catch (...) {
+		_log.warning("failed save configuration file(rename step)");
 	}
 }
 

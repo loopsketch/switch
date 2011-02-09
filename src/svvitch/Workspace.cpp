@@ -180,9 +180,6 @@ bool Workspace::parse() {
 								}
 							}
 						}
-//						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, _media[id]->name());
-//						_renderer.addCachedTexture(id, texture);
-//						_log.debug(Poco::format("media: <%s> %s %d", id, name, duration));
 					}
 					items->release();
 				}
@@ -206,8 +203,6 @@ bool Workspace::parse() {
 						}
 						string text = e->getAttribute("text");
 						PlayListPtr playlist = new PlayList(id, name, text);
-//						LPDIRECT3DTEXTURE9 texture = _renderer.createTexturedText(L"", 18, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, name);
-//						_renderer.addCachedTexture(name, texture);
 						NodeList* items = e->getElementsByTagName("item");
 						for (int k = 0; k < items->length(); k++) {
 							e = (Element*)items->item(k);

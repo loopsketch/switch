@@ -188,6 +188,7 @@ public:
 	virtual ~MediaItem(void) {
 //		for (vector<MediaItemFile>::iterator it = _files.begin(); it != _files.end(); it++) SAFE_DELETE(*it);
 		_files.clear();
+		_properties.clear();
 	}
 
 	const MediaType type() const {

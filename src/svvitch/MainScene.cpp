@@ -92,14 +92,17 @@ MainScene::~MainScene() {
 	while (!_deletes.empty()) {
 		string path = _deletes.front();
 		_deletes.pop();
-		File f(path);
-		if (f.exists()) {
-			try {
-				f.remove();
-				_log.information(Poco::format("file delete(not used): %s", f.path()));
-			} catch (Poco::FileException& ex) {
-				_log.warning(Poco::format("failed delete: ", ex.displayText()));
+		try {
+			File f(path);
+			if (f.exists()) {
+				try {
+					f.remove();
+					_log.information(Poco::format("file delete(not used): %s", f.path()));
+				} catch (Poco::FileException& ex) {
+					_log.warning(Poco::format("failed delete: ", ex.displayText()));
+				}
 			}
+		} catch (...) {
 		}
 	}
 	SAFE_DELETE(_workspace);
@@ -1306,15 +1309,21 @@ void MainScene::process() {
 		Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 		string path = _deletes.front();
 		_deletes.pop();
-		File f(path);
-		if (f.exists()) {
+		if (path.find("http") != 0) {
 			try {
-				f.remove();
-				_log.information(Poco::format("file delete(not used): %s", f.path()));
-			} catch (Poco::FileException& ex) {
-				_log.warning(Poco::format("failed delete(not used): ", ex.displayText()));
-				_deletes.push(path);
-				if (_messages.size() <= 1) drawConsole(Poco::format("failed delete: %s", path));
+				File f(path);
+				if (f.exists()) {
+					try {
+						f.remove();
+						_log.information(Poco::format("file delete(not used): %s", f.path()));
+					} catch (Poco::FileException& ex) {
+						_log.warning(Poco::format("failed delete(not used): ", ex.displayText()));
+						_deletes.push(path);
+						if (_messages.size() <= 1) drawConsole(Poco::format("failed delete: %s", path));
+					}
+				}
+			} catch (...) {
+				_log.warning(Poco::format("failed not delete(not used): %s", path));
 			}
 		}
 	}
