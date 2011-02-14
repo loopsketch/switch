@@ -244,26 +244,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LARGE_INTEGER current;
 	::QueryPerformanceFrequency(&freq);
 	::QueryPerformanceCounter(&start);
-
-//	DWORD lastSwapout = 0;
 	LONGLONG last = 0;
-	while (_renderer->peekMessage()) {
-		// 処理するメッセージが無いときは描画を行う
-		//if (_interruptFile.length() > 0) {
-		//	scene->prepareInterruptFile(_interruptFile);
-		//	_interruptFile.clear();
-		//}
 
-		::QueryPerformanceCounter(&current);
-		LONGLONG time = (current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart;
-		last = time;
+	try {
+		SetErrorMode(SEM_NOGPFAULTERRORBOX);
+		//	DWORD lastSwapout = 0;
+		while (_renderer->peekMessage()) {
+			// 処理するメッセージが無いときは描画を行う
+			//if (_interruptFile.length() > 0) {
+			//	scene->prepareInterruptFile(_interruptFile);
+			//	_interruptFile.clear();
+			//}
 
-		// ウィンドウが見えている時だけ描画するための処理
-		WINDOWPLACEMENT wndpl;
-		GetWindowPlacement(hWnd, &wndpl);	// ウインドウの状態を取得
-		bool visibled = (wndpl.showCmd != SW_HIDE) && (wndpl.showCmd != SW_MINIMIZE) && (wndpl.showCmd != SW_SHOWMINIMIZED) && (wndpl.showCmd != SW_SHOWMINNOACTIVE);
-		_renderer->renderScene(visibled, time);
-		Poco::Thread::sleep(_conf.frameIntervals);
+			::QueryPerformanceCounter(&current);
+			LONGLONG time = (current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart;
+			last = time;
+
+			// ウィンドウが見えている時だけ描画するための処理
+			WINDOWPLACEMENT wndpl;
+			GetWindowPlacement(hWnd, &wndpl);	// ウインドウの状態を取得
+			bool visibled = (wndpl.showCmd != SW_HIDE) && (wndpl.showCmd != SW_MINIMIZE) && (wndpl.showCmd != SW_SHOWMINIMIZED) && (wndpl.showCmd != SW_SHOWMINNOACTIVE);
+			_renderer->renderScene(visibled, time);
+			Poco::Thread::sleep(_conf.frameIntervals);
+		}
+	} catch (const std::exception& ex) {
+		log.warning(Poco::format("failed exception main thread: %s", string(ex.what())));
 	}
 
 	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
