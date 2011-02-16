@@ -165,7 +165,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					_intervals = config().mainRate / _rate;
 					_lastIntervals = -1;
 
-					_log.information(Poco::format("open decoder: %s %.3hf %.3hf %dkbps", string(avcodec->long_name), _rate, _intervals, avctx->bit_rate / 1024));
+					_log.information(Poco::format("open decoder: %s %.3hf(%d/%d) %.3hf %dkbps", string(avcodec->long_name), _rate, stream->r_frame_rate.num, stream->r_frame_rate.den, _intervals, avctx->bit_rate / 1024));
 					_video = i;
 					_videoDecoder = new FFVideoDecoder(_renderer, _ic, _video);
 					_videoDecoder->start();
