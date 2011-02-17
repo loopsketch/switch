@@ -95,32 +95,34 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	_presentParams[0].PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
 	//_presentParams[0].PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 
-	HWND hWnd2 = hWnd;
-	for (int i = 1; i < _displayAdpters; i++) {
-		//アダプタが2以上あればマルチヘッド用のD3DPRESENT_PARAMETERのデータを入力
-		_presentParams[i] = _presentParams[0];
-		WNDCLASSEX wc = {sizeof(WNDCLASSEX), CS_CLASSDC, WindowProc, 0, 0, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"multihead", NULL};
-		RegisterClassEx(&wc);
-		std::wstring wtitle;
-		Poco::UnicodeConverter::toUTF16(config().windowTitle, wtitle);
-		if (SUCCEEDED(_d3d->GetAdapterDisplayMode(i, &d3ddm))) {
-			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, d3ddm.Width, d3ddm.Height, NULL, NULL, wc.hInstance, NULL);
-			_presentParams[i].BackBufferWidth = d3ddm.Width;
-			_presentParams[i].BackBufferHeight = d3ddm.Height;
-			_presentParams[i].FullScreen_RefreshRateInHz = d3ddm.RefreshRate;
-			Configuration& conf = (Configuration)config();
-			conf.subRect.right = d3ddm.Width;
-			conf.subRect.bottom = d3ddm.Height;
-		} else {
-			hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, config().subRect.right, config().subRect.bottom, NULL, NULL, wc.hInstance, NULL);
-			_presentParams[i].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+	if (config().fullsceen) {
+		HWND hWnd2 = hWnd;
+		for (int i = 1; i < _displayAdpters; i++) {
+			//アダプタが2以上あればマルチヘッド用のD3DPRESENT_PARAMETERのデータを入力
+			_presentParams[i] = _presentParams[0];
+			WNDCLASSEX wc = {sizeof(WNDCLASSEX), CS_CLASSDC, WindowProc, 0, 0, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"multihead", NULL};
+			RegisterClassEx(&wc);
+			std::wstring wtitle;
+			Poco::UnicodeConverter::toUTF16(config().windowTitle, wtitle);
+			if (SUCCEEDED(_d3d->GetAdapterDisplayMode(i, &d3ddm))) {
+				hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, d3ddm.Width, d3ddm.Height, NULL, NULL, wc.hInstance, NULL);
+				_presentParams[i].BackBufferWidth = d3ddm.Width;
+				_presentParams[i].BackBufferHeight = d3ddm.Height;
+				_presentParams[i].FullScreen_RefreshRateInHz = d3ddm.RefreshRate;
+				Configuration& conf = (Configuration)config();
+				conf.subRect.right = d3ddm.Width;
+				conf.subRect.bottom = d3ddm.Height;
+			} else {
+				hWnd2 = CreateWindow(wc.lpszClassName, wtitle.c_str(), WS_POPUP, 0, 0, config().subRect.right, config().subRect.bottom, NULL, NULL, wc.hInstance, NULL);
+				_presentParams[i].FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
+			}
+			_presentParams[i].hDeviceWindow = hWnd2;
 		}
-		_presentParams[i].hDeviceWindow = hWnd2;
 	}
 
 	// ディスプレイアダプタを表すためのデバイスを作成
 	DWORD flag = D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE;
-	if (_displayAdpters > 1) flag  |= D3DCREATE_ADAPTERGROUP_DEVICE;
+	if (config().fullsceen && _displayAdpters > 1) flag  |= D3DCREATE_ADAPTERGROUP_DEVICE;
 	if (FAILED(_d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, flag | D3DCREATE_HARDWARE_VERTEXPROCESSING, &_presentParams[0], &_device))) {
 		// 上記の設定が失敗したら
 		// 描画をハードウェアで行い、頂点処理はCPUで行なう
@@ -129,6 +131,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 			// 描画と頂点処理をCPUで行なう
 			if (FAILED(_d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hWnd, flag | D3DCREATE_SOFTWARE_VERTEXPROCESSING,& _presentParams[0], &_device))) {
 				// 初期化失敗
+				_log.warning("failed not create Direct3D device");
 				return E_FAIL;
 			} else {
 				_log.information("device: REF/SOFTWARE_VERTEXPROCESSING");
@@ -617,7 +620,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	} else if (config().captureFilter == "gaussianquad") {
 		filter = D3DTEXF_GAUSSIANQUAD;
 	}
-	if (_displayAdpters > 1) {
+	if (config().fullsceen && _displayAdpters > 1) {
 		swapChain1->Present(NULL, NULL, NULL, NULL, 0);
 
 		if (_captureTexture) {
@@ -668,7 +671,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	}
 
 	_drawLock.lock();
-	if (_displayAdpters == 1) {
+	if (!config().fullsceen || _displayAdpters == 1) {
 		LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
 		hr = swapChain1->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 		hr = _device->SetRenderTarget(0, backBuffer);
@@ -708,8 +711,8 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 		_device->EndScene();
 	}
 	_drawLock.unlock();
-	if (_displayAdpters > 1) {
-		swapChain2->Present(NULL, NULL, NULL, NULL, 0);
+	if (config().fullsceen && _displayAdpters > 1) {
+		if (swapChain2) swapChain2->Present(NULL, NULL, NULL, NULL, 0);
 
 	} else {
 		if (_device->Present(0, 0, 0, 0) == D3DERR_DEVICELOST) {
@@ -765,10 +768,6 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 
 	SAFE_RELEASE(swapChain1);
 	SAFE_RELEASE(swapChain2);
-
-	//if (timer.getTime() < 6) {
-	//	Poco::Thread::sleep(5);
-	//}
 }
 
 const UINT Renderer::getTextureMem() const {

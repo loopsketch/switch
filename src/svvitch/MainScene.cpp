@@ -1737,7 +1737,7 @@ void MainScene::draw1() {
 }
 
 void MainScene::draw2() {
-	if (_renderer.getDisplayAdapters() > 1) {
+	if (config().fullsceen && _renderer.getDisplayAdapters() > 1) {
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
 		LPDIRECT3DTEXTURE9 capture = _renderer.getCaptureTexture();
 		if (capture) {
