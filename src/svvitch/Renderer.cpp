@@ -236,6 +236,7 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	PROCESS_MEMORY_COUNTERS pmc = {0};
 	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(PROCESS_MEMORY_COUNTERS));
 	_mem = pmc.WorkingSetSize / 1024;
+	if (config().mainRate == 0) config().mainRate = 60;
 
 	return S_OK;
 }
