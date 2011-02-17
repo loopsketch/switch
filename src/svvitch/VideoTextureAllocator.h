@@ -28,6 +28,8 @@ public:
 	/** テクスチャ取得 */
 	LPDIRECT3DTEXTURE9 getTexture();
 
+	float getDisplayAspectRatio();
+
 	// IVMRSurfaceAllocator9
 	/** デバイスの初期化 */
 	virtual HRESULT STDMETHODCALLTYPE InitializeDevice(DWORD_PTR userID, VMR9AllocationInfo* info, DWORD* buffers);

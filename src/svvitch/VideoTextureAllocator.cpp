@@ -14,6 +14,12 @@ LPDIRECT3DTEXTURE9 VideoTextureAllocator::getTexture() {
 	return _texture;
 }
 
+float VideoTextureAllocator::getDisplayAspectRatio() {
+	if (_h > 0) return F(_w) / _h;
+	return 1;
+}
+
+
 // IVMRSurfaceAllocator9
 HRESULT VideoTextureAllocator::InitializeDevice(DWORD_PTR userID, VMR9AllocationInfo* info, DWORD* buffers) {
 	if (buffers == NULL || info == NULL) return E_POINTER;
@@ -34,13 +40,14 @@ HRESULT VideoTextureAllocator::InitializeDevice(DWORD_PTR userID, VMR9Allocation
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		SAFE_RELEASE(_texture);
 		_texture = texture;
+		_log.information(Poco::format("texture ready %lux%lu", info->dwWidth, info->dwHeight));
 		return S_OK;
 	}
 	return E_FAIL;
 }
 
 HRESULT VideoTextureAllocator::TerminateDevice(DWORD_PTR userID) {
-	//_log.information("** terminate device");
+	_log.information("** terminate device");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	SAFE_RELEASE(_texture);
 	return S_OK;
@@ -67,11 +74,10 @@ HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD s
 		return hr;
 	}
 
-	//_log.information("** get surfaced");
-	while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
-		// block
-		Sleep(1);
-	}
+	//while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
+	//	// block
+	//	Sleep(0);
+	//}
 	return hr;
 }
 
@@ -105,7 +111,7 @@ HRESULT VideoTextureAllocator::StopPresenting(DWORD_PTR userID) {
 
 HRESULT VideoTextureAllocator::PresentImage(DWORD_PTR userID, VMR9PresentationInfo *info) {
 	// レンダリング可能状態
-	_renderer.drawUnlock();
+	//_renderer.drawUnlock();
 	//D3DLOCKED_RECT locked_rect;
 	//HRESULT hr =info->lpSurf->LockRect(&locked_rect, NULL, D3DLOCK_READONLY);
 	//if SUCCEEDED(hr) {
@@ -223,7 +229,7 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 		//_timePerFrames = tpf;
 		// hr = S_OK;
 	}
-	_log.information(Poco::format("allocator format[%s] stream[%s] %ldx%ld(%.2hf)", formatType, subType, w, h, (F(10000000) / tpf)));
+	_log.information(Poco::format("allocator format[%s] stream[%s] %ldx%ld(%.2hf) [%s]", formatType, subType, w, h, (F(10000000) / tpf), string(fTexture == TRUE?"texture":"not texture")));
 
 	if (SUCCEEDED(hr) && (_w != w || _h != h || _format != format) && _h == 0) {
 		// サイズ変化があり、_h=0 ならテクスチャを再生成します
@@ -242,19 +248,19 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 }
 
 HRESULT VideoTextureAllocator::CompositeImage(IUnknown* pD3DDevice, IDirect3DSurface9* rt, AM_MEDIA_TYPE* pmt, REFERENCE_TIME start, REFERENCE_TIME end, D3DCOLOR background, VMR9VideoStreamInfo* info, UINT streams) {
-	LPDIRECT3DSWAPCHAIN9 swapChain = NULL;
 	LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-	HRESULT hr = device->GetSwapChain(0, &swapChain);
-	if SUCCEEDED(hr) {
-		LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
-		hr = swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
-		hr = device->SetRenderTarget(0, backBuffer);
-		SAFE_RELEASE(backBuffer);
-		SAFE_RELEASE(swapChain);
-	}
+	HRESULT hr;
+	//LPDIRECT3DSWAPCHAIN9 swapChain = NULL;
+	//hr = device->GetSwapChain(0, &swapChain);
+	//if SUCCEEDED(hr) {
+	//	LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
+	//	hr = swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
+	//	hr = device->SetRenderTarget(0, backBuffer);
+	//	SAFE_RELEASE(backBuffer);
+	//	SAFE_RELEASE(swapChain);
+	//}
 
 	hr = device->StretchRect(info->pddsVideoSurface, NULL, rt, NULL, D3DTEXF_NONE);
-	//_renderer.drawUnlock();
 	return S_OK;
 }
 

@@ -22,18 +22,13 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 	if (media->files().empty()) return false;
 
 	HRESULT hr;
-	//hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-	//if (FAILED(hr)) {
-	//	_log.warning(Poco::format("failed CoInitializeEx: hr=0x%lx", ((unsigned long)hr)));
-	//	return false;
-	//}
 	hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&_gb);
 	if (FAILED(hr)) {
 		_log.warning(Poco::format("failed create filter graph: hr=0x%lx", ((unsigned long)hr)));
 		return false;
 	}
 
-	if (false) {
+	if (true) {
 		hr = CoCreateInstance(CLSID_VideoMixingRenderer9, NULL, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void**)&_vmr9);
 		if (FAILED(hr)) {
 			//SAFE_RELEASE(s->gb);
@@ -90,13 +85,13 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 			return false;
 		}
 
-		//hr = fc->SetImageCompositor(_allocator);
-		//if (FAILED(hr)) {
-		//	SAFE_RELEASE(allocatorNotify);
-		//	SAFE_RELEASE(fc);
-		//	_log.warning("***ImageCompositor creation failed");
-		//	return false;
-		//}
+		hr = fc->SetImageCompositor(_allocator);
+		if (FAILED(hr)) {
+			SAFE_RELEASE(allocatorNotify);
+			SAFE_RELEASE(fc);
+			_log.warning("***ImageCompositor creation failed");
+			return false;
+		}
 		SAFE_RELEASE(allocatorNotify);
 		SAFE_RELEASE(fc);
 
@@ -136,9 +131,12 @@ bool DSContent::open(const MediaItemPtr media, const int offset) {
 						break;
 					}
 				}
+				_log.information("rendered outpin");
 			} else {
 				_log.warning("failed render outpin");
 			}
+		} else {
+			_log.warning("not found outpin");
 		}
 	} else if (hr == VFW_E_NOT_FOUND) {
 		_log.warning(Poco::format("source not found: %s", mif.file()));
@@ -272,12 +270,12 @@ void DSContent::process(const DWORD& frame) {
 
 void DSContent::draw(const DWORD& frame) {
 	if (!_mediaID.empty() && _playing) {
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+		float alpha = getF("alpha");
+		int cw = config().splitSize.cx;
+		int ch = config().splitSize.cy;
+		DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 		if (_vr) {
-			LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-			float alpha = getF("alpha");
-			int cw = config().splitSize.cx;
-			int ch = config().splitSize.cy;
-			DWORD col = ((DWORD)(0xff * alpha) << 24) | 0xffffff;
 			switch (_splitType) {
 			case 1:
 				{
@@ -383,6 +381,44 @@ void DSContent::draw(const DWORD& frame) {
 							}
 						}
 
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+					}
+				}
+				break;
+			}
+		} else if (_allocator) {
+			LPDIRECT3DTEXTURE9 texture = _allocator->getTexture();
+			switch (_splitType) {
+			default:
+				{
+					RECT rect = config().stageRect;
+					string aspectMode = get("aspect-mode");
+					if (aspectMode == "fit") {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						_renderer.drawTexture(L(_x), L(_y), L(_w), L(_h), texture, 0, col, col, col, col);
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+
+					} else {
+						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+						if (alpha > 0.0f) {
+							DWORD base = ((DWORD)(0xff * alpha) << 24) | 0x000000;
+							_renderer.drawTexture(_x, _y, _w, _h, NULL, 0, base, base, base, base);
+							float dar = _allocator->getDisplayAspectRatio();
+							if (_h * dar > _w) {
+								// 画角よりディスプレイサイズは横長
+								long h = _w / dar;
+								long dy = (_h - h) / 2;
+								_renderer.drawTexture(L(_x), L(_y + dy), L(_w), h, texture, 0, col, col, col, col);
+							} else {
+								long w = _h * dar;
+								long dx = (_w - w) / 2;
+								_renderer.drawTexture(L(_x + dx), L(_y), w, L(_h), texture, 0, col, col, col, col);
+							}
+						}
 						device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 						device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 					}
