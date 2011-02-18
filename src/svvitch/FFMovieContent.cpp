@@ -159,10 +159,13 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
-					//_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
-					_duration = L((stream->duration * F(stream->time_base.num) / stream->time_base.den) * 30);
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
 					_intervals = config().mainRate / _rate;
+					if (_rate <= 30) {
+						_duration = L((stream->duration * F(stream->time_base.num) / stream->time_base.den) * 60);
+					} else {
+						_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
+					}
 					_lastIntervals = -1;
 
 					_log.information(Poco::format("open decoder: %s %.3hf(%d/%d) %.3hf %dkbps", string(avcodec->long_name), _rate, stream->r_frame_rate.num, stream->r_frame_rate.den, _intervals, avctx->bit_rate / 1024));
@@ -195,8 +198,8 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 	_log.information(Poco::format("opened: %s", mif.file()));
 	_mediaID = media->id();
-	_current = media->start() * 30 / 1000;
-	if (media->duration() > 0) _duration = media->duration() * 30 / 1000;
+	_current = media->start() * 60 / 1000;
+	if (media->duration() > 0) _duration = media->duration() * 60 / 1000;
 	set("alpha", 1.0f);
 	_starting = false;
 	_finished = false;
@@ -357,10 +360,18 @@ void FFMovieContent::close() {
 
 void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
+		int fps = _rate;
+		if (_rate <= 30) {
+			fps = 30;
+		} else {
+			fps = 60;
+		}
+
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int vbufs = 0;
 		int abufs = 0;
 		if (_playing) {
+			long t = _current * 1000 / 60;
 			if (_starting) {
 				_frameOddEven = frame % 2;
 				if (_audioDecoder) _audioDecoder->play();
@@ -371,17 +382,15 @@ void FFMovieContent::process(const DWORD& frame) {
 			case 21:
 				break;
 			default:
-				{
-					if (_frameOddEven == (frame % 2)) {
-						VideoFrame* vf = _videoDecoder->popFrame();
-						if (vf) {
-							if (_vf) _videoDecoder->pushFrame(_vf);
-							_vf = vf;
-							_current++;
-							_fpsCounter.count();
-						}
+				if (fps == 60 || _frameOddEven == (frame % 2)) {
+					VideoFrame* vf = _videoDecoder->popFrame();
+					if (vf) {
+						if (_vf) _videoDecoder->pushUsedFrame(_vf);
+						_vf = vf;
+						_fpsCounter.count();
 					}
 				}
+				_current++;
 			}
 			if (_videoDecoder) vbufs = _videoDecoder->bufferedFrames();
 			if (_audioDecoder) abufs = _audioDecoder->bufferedFrames();
@@ -394,17 +403,16 @@ void FFMovieContent::process(const DWORD& frame) {
 				if (vf) _prepareVF = vf;
 			}
 		}
-		int fps = _rate + 0.03f;
-		unsigned long cu = _current / fps;
+		unsigned long cu = _current / 60;
 		int remain = _duration - _current;
 		if (remain < 0) remain = 0;
-		unsigned long re = remain / fps;
-		string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, _current % fps);
-		string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, remain % fps);
+		unsigned long re = remain / 60;
+		string t1 = Poco::format("%02lu:%02lu:%02lu.%02d", cu / 3600, cu / 60, cu % 60, (_current / 2) % 30);
+		string t2 = Poco::format("%02lu:%02lu:%02lu.%02d", re / 3600, re / 60, re % 60, (remain / 2) % 30);
 		set("time", Poco::format("%s %s", t1, t2));
 		set("time_current", t1);
 		set("time_remain", t2);
-		set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
+		//set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 
 		set("status", Poco::format("%03lufps(%03.2hfms) %02d:%02d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
 	}
@@ -577,7 +585,7 @@ void FFMovieContent::draw(const DWORD& frame) {
 							int w = vf->width();
 							int h = vf->height();
 							vf->draw(L(x * w), L(y * h), L(w), L(h), 0, 0xffffffff);
-							_videoDecoder->pushFrame(vf);
+							_videoDecoder->pushUsedFrame(vf);
 							_fpsCounter.count();
 							_current++;
 						}

@@ -54,13 +54,17 @@ private:
 
 	void run();
 
-	VideoFrame* popUsedFrame();
-
-	VideoFrame* popFrame();
+	VideoFrame* parseAVFrame(AVCodecContext* avctx, AVFrame* frame);
 
 	void pushFrame(VideoFrame* vf);
+
+	VideoFrame* popFrame();
 
 	VideoFrame* frontFrame();
 
 	VideoFrame* viewFrame();
+
+	VideoFrame* popUsedFrame();
+
+	void pushUsedFrame(VideoFrame* vf);
 };

@@ -28,7 +28,7 @@ private:
 	int _oh;
 	int _w[3];
 	int _h[3];
-	LPDIRECT3DTEXTURE9 texture[3];
+	LPDIRECT3DTEXTURE9 _texture[3];
 	LPD3DXEFFECT _fx;
 
 	const Float toTexelU(const int pixel) {
@@ -41,14 +41,21 @@ private:
 
 
 public:
+	VideoFrame(Renderer& renderer): _log(Poco::Logger::get("")), _renderer(renderer) {
+		_texture[0] = NULL;
+		_texture[1] = NULL;
+		_texture[2] = NULL;
+		_fx = NULL;
+	}
+
 	VideoFrame(Renderer& renderer, const int w, const int h, const int linesize[], const D3DFORMAT format): _log(Poco::Logger::get("")), _renderer(renderer) {
 		_ow = abs(linesize[0]) / 4;
 		_oh = h;
 		_w[0] = w;
 		_h[0] = h;
-		texture[0] = renderer.createTexture(_ow, _oh, format);
-		texture[1] = NULL;
-		texture[2] = NULL;
+		_texture[0] = renderer.createTexture(_ow, _oh, format);
+		_texture[1] = NULL;
+		_texture[2] = NULL;
 		_fx = NULL;
 	}
 
@@ -64,15 +71,15 @@ public:
 		_w[2] = w / 2;
 		_h[2] = h2;
 		for (int i = 0; i < 3; i++) {
-			texture[i] = renderer.createTexture(linesize[i], _h[i], format);
+			_texture[i] = renderer.createTexture(linesize[i], _h[i], format);
 			// _log.information(Poco::format("texture: <%d>%dx%d", i, linesize[i], _h[i]));
 		}
 	}
 
 	virtual ~VideoFrame() {
-		SAFE_RELEASE(texture[0]);
-		SAFE_RELEASE(texture[1]);
-		SAFE_RELEASE(texture[2]);
+		SAFE_RELEASE(_texture[0]);
+		SAFE_RELEASE(_texture[1]);
+		SAFE_RELEASE(_texture[2]);
 	}
 
 	const int frameNumber() const {
@@ -88,16 +95,37 @@ public:
 	}
 
 	const bool equals(const int w, const int h, const D3DFORMAT format) {
-		if (texture[0]) {
+		if (_texture[0]) {
 			D3DSURFACE_DESC desc;
-			HRESULT hr = texture[0]->GetLevelDesc(0, &desc);
+			HRESULT hr = _texture[0]->GetLevelDesc(0, &desc);
 			if (SUCCEEDED(hr) && desc.Format == format && _ow == w && _oh == h) return true;
 		}
 		return false;
 	}
 
+	void copy(VideoFrame* frame) {
+		_ow = frame->_ow;
+		_oh = frame->_oh;
+		_fx = frame->_fx;
+		for (int i = 0; i < 3; i++) {
+			_w[i] = frame->_w[i];
+			_h[i] = frame->_h[i];
+			if (frame->_texture[i]) {
+				D3DSURFACE_DESC desc;
+				HRESULT hr = frame->_texture[i]->GetLevelDesc(0, &desc);
+				if SUCCEEDED(hr) {
+					SAFE_RELEASE(_texture[i]);
+					_texture[i] = _renderer.createTexture(desc.Width, desc.Height, desc.Format);
+					_renderer.copyTexture(frame->_texture[i], _texture[i]);
+				}
+			} else {
+				SAFE_RELEASE(_texture[i]);
+			}
+		}
+	}
+
 	void write(const AVFrame* frame) {
-		if (texture[1]) {
+		if (_texture[1]) {
 			// プレナー
 			D3DLOCKED_RECT lockRect = {0};
 			int i;
@@ -105,13 +133,13 @@ public:
 			//#pragma omp for private(i)
 			//#endif
 			for (i = 0; i < 3; i++) {
-				if (texture[i]) {
-					HRESULT hr = texture[i]->LockRect(0, &lockRect, NULL, 0);
+				if (_texture[i]) {
+					HRESULT hr = _texture[i]->LockRect(0, &lockRect, NULL, 0);
 					if (SUCCEEDED(hr)) {
 						uint8_t* dst8 = (uint8_t*)lockRect.pBits;
 						uint8_t* src8 = frame->data[i];
 						CopyMemory(dst8, src8, lockRect.Pitch * _h[i]);
-						hr = texture[i]->UnlockRect(0);
+						hr = _texture[i]->UnlockRect(0);
 					} else {
 						_log.warning(Poco::format("failed texture[%d] unlock", i));
 					}
@@ -121,12 +149,12 @@ public:
 		} else {
 			// パックド
 			D3DLOCKED_RECT lockRect = {0};
-			HRESULT hr = texture[0]->LockRect(0, &lockRect, NULL, 0);
+			HRESULT hr = _texture[0]->LockRect(0, &lockRect, NULL, 0);
 			if (SUCCEEDED(hr)) {
 				uint8_t* dst8 = (uint8_t*)lockRect.pBits;
 				uint8_t* src8 = frame->data[0];
 				CopyMemory(dst8, src8, lockRect.Pitch * _h[0]);
-				hr = texture[0]->UnlockRect(0);
+				hr = _texture[0]->UnlockRect(0);
 			} else {
 				_log.warning("failed lock texture");
 			}
@@ -169,7 +197,7 @@ public:
 		if (th == -1) th = _h[0];
 
 		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
-		if (texture[1]) {
+		if (_texture[1]) {
 			// プレナー
 			VERTEX dst[] =
 				{
@@ -178,14 +206,14 @@ public:
 					{F(x     + dx - 0.5), F(y + h + dy - 0.5), 0.0f, 1.0f, col, toTexelU(tx     ), toTexelV(ty + th)},
 					{F(x + w + dx - 0.5), F(y + h + dy - 0.5), 0.0f, 1.0f, col, toTexelU(tx + tw), toTexelV(ty + th)}
 				};
-			device->SetTexture(0, texture[0]);
-			device->SetTexture(1, texture[1]);
-			device->SetTexture(2, texture[2]);
+			device->SetTexture(0, _texture[0]);
+			device->SetTexture(1, _texture[1]);
+			device->SetTexture(2, _texture[2]);
 			if (_fx) {
 				_fx->SetTechnique("conversionTech");
-				_fx->SetTexture("stage0", texture[0]);
-				_fx->SetTexture("stage1", texture[1]);
-				_fx->SetTexture("stage2", texture[2]);
+				_fx->SetTexture("stage0", _texture[0]);
+				_fx->SetTexture("stage1", _texture[1]);
+				_fx->SetTexture("stage2", _texture[2]);
 				_fx->Begin(NULL, 0);
 				_fx->BeginPass(0);
 			}
@@ -208,7 +236,7 @@ public:
 					{F(x     - 0.5), F(y + h - 0.5), 0.0f, 1.0f, col, toTexelU(tx     ), toTexelV(ty + th)},
 					{F(x + w - 0.5), F(y + h - 0.5), 0.0f, 1.0f, col, toTexelU(tx + tw), toTexelV(ty + th)}
 				};
-			device->SetTexture(0, texture[0]);
+			device->SetTexture(0, _texture[0]);
 			device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, dst, sizeof(VERTEX));
 			device->SetTexture(0, NULL);
 		}

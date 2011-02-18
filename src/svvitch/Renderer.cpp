@@ -699,7 +699,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 				memory += Poco::format(" vram>%03uMB", _availableTextureMem);
 			}
 
-	//		string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
+			// string mouse = Poco::format("mouse: %04ld,%03ld,%03ld", _dims.lX, _dims.lY, _dims.lZ);
 			DWORD time = current / 1000;
 			string runTime = Poco::format("%lud%02lu:%02lu:%02lu", time / 86400, time / 3600 % 24, time / 60 % 60, time % 60);
 			string s = Poco::format("ver%s %02lufps run>%s %s ip>%s", svvitch::version(), fps, runTime, memory, address);
@@ -712,6 +712,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 		_device->EndScene();
 	}
 	_drawLock.unlock();
+
 	if (config().fullsceen && _displayAdpters > 1) {
 		if (swapChain2) swapChain2->Present(NULL, NULL, NULL, NULL, 0);
 

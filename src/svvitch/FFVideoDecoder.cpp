@@ -161,6 +161,17 @@ void FFVideoDecoder::run() {
 	_log.information("video decoder thread start");
 	PerformanceTimer timer;
 
+	float r = F(_ic->streams[_streamNo]->r_frame_rate.num) / _ic->streams[_streamNo]->r_frame_rate.den;
+	int frameRate;
+	if (r <= 24) {
+		frameRate = 24;
+	} else if (r <= 30) {
+		frameRate = 30;
+	} else {
+		frameRate = 60;
+	}
+	_log.information(Poco::format("fixed video frame rate: %d", frameRate));
+	queue<VideoFrame*> frames;
 	AVFrame* frame = avcodec_alloc_frame();
 	int gotPicture = 0;
 	_readCount = 0;
@@ -178,133 +189,12 @@ void FFVideoDecoder::run() {
 		AVCodecContext* avctx = _ic->streams[packetList->pkt.stream_index]->codec;
 		int bytes = avcodec_decode_video2(avctx, frame, &gotPicture, &packetList->pkt);
 		if (gotPicture) {
-			const uint8_t* src[4] = {frame->data[0], frame->data[1], frame->data[2], frame->data[3]};
-			int pos = avctx->frame_number;
-			int w = avctx->width;
-			int h = avctx->height;
-			bool interlaced = frame->interlaced_frame != 0;
-			PixelFormat format = avctx->pix_fmt;
-			VideoFrame* vf = popUsedFrame();
-			if (PIX_FMT_BGRA == format) {
-				if (_swsCtx) {
-					if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
-						if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
-							SAFE_DELETE(vf);
-							vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_A8R8G8B8);
-						}
-						vf->write(_outFrame);
-					} else {
-						_log.warning("failed sws_scale");
-						SAFE_DELETE(vf);
-					}
-
-				} else {
-					if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
-						SAFE_DELETE(vf);
-						vf = new VideoFrame(_renderer, w, h, frame->linesize, D3DFMT_A8R8G8B8);
-					}
-					vf->write(frame);
-				}
-			} else {
-				if (_swsCtx) {
-					if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
-						if (!vf || !vf->equals(w, h, D3DFMT_X8R8G8B8)) {
-							SAFE_DELETE(vf);
-							vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_X8R8G8B8);
-						}
-						vf->write(_outFrame);
-					} else {
-						_log.warning("failed sws_scale");
-						SAFE_DELETE(vf);
-					}
-
-				} else {
-					if (interlaced) {
-						// deinterlace
-						if (!_diFrame) {
-							// deinterlace用のバッファ
-							int size = avpicture_get_size(avctx->pix_fmt, frame->linesize[0], h);
-							_diBuffer = (uint8_t*)av_malloc(size * sizeof(uint8_t));
-							if (_diBuffer) {
-								ZeroMemory(_diBuffer, size);
-								_diFrame = avcodec_alloc_frame();
-								if (_diFrame) {
-									avpicture_fill((AVPicture*)_diFrame, _diBuffer, avctx->pix_fmt, frame->linesize[0], h);
-									_log.information(Poco::format("created deinterlace buffer: %dx%d %d", frame->linesize[0], h, frame->interlaced_frame));
-								} else {
-									av_free(_diBuffer);
-									_diBuffer = NULL;
-								}
-							}
-						}
-						if (_diFrame && avpicture_deinterlace((AVPicture*)_diFrame, (AVPicture*)frame, format, w, h) < 0) {
-							_log.warning("failed deinterlace");
-							// movのMJPEGがinterlacedではないのにも関わらず、ここに来てしまう。
-							if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
-								SAFE_DELETE(vf);
-								switch (format) {
-								case PIX_FMT_YUV420P:
-									vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
-									break;
-								case PIX_FMT_YUVJ422P:
-									vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
-									break;
-								}
-							}
-							vf->write(frame);
-						} else {
-							//インタレ解除できた
-							if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
-								SAFE_DELETE(vf);
-								switch (format) {
-								case PIX_FMT_YUV420P:
-									vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
-									break;
-								case PIX_FMT_YUVJ422P:
-									vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
-									break;
-								}
-							}
-							vf->write(_diFrame);
-						}
-					} else {
-						if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
-							SAFE_DELETE(vf);
-							switch (format) {
-							case PIX_FMT_YUV420P:
-								vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
-								break;
-							case PIX_FMT_YUVJ422P:
-								vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
-								break;
-							}
-						}
-						vf->write(frame);
-					}
-				}
-			}
-			_readTime = timer.getTime();
-			_readCount++;
-			if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
-
+			VideoFrame* vf = parseAVFrame(avctx, frame);
 			if (vf) {
-				//UINT textureMen = _renderer.getTextureMem() * 10 / 100;
-				//UINT availableTextureMem = _renderer.getAvailableTextureMem();
-				while (_worker != NULL && _frames.size() >= 50) {
-				//while (_worker != NULL && availableTextureMem < textureMen) {
-					// キュー空き待ち
-					Poco::Thread::sleep(10);
-					//availableTextureMem = _renderer.getAvailableTextureMem();
-				}
-				{
-					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-					_frames.push(vf);
-					// std::wstring wfile;
-					// string file = Poco::format("image%04?i.png", packet.dts);
-					// Poco::UnicodeConverter::toUTF16(file, wfile);
-					// D3DXSaveTextureToFile(wfile.c_str(), D3DXIFF_PNG, vf->texture[0], NULL);
-					// _log.information("queue frame");
-				}
+				_readTime = timer.getTime();
+				_readCount++;
+				if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+				frames.push(vf);
 			} else {
 				_log.warning("failed not created video frame");
 			}
@@ -312,10 +202,30 @@ void FFVideoDecoder::run() {
 		} else {
 			// _log.information(Poco::format("video decode not finished: %d", bytes));
 		}
-
 		av_free_packet(&packetList->pkt);
 		av_freep(&packetList);
+
+		if (!frames.empty()) {
+			if (frameRate <= 30) {
+				if (frames.size() > 1) {
+					VideoFrame* vf = frames.front();
+					frames.pop();
+					pushFrame(vf);
+				}
+
+			} else {
+				VideoFrame* vf = frames.front();
+				frames.pop();
+				pushFrame(vf);
+			}
+		}
 	}
+	while (!frames.empty()) {
+		VideoFrame* vf = frames.front();
+		frames.pop();
+		pushFrame(vf);
+	}
+
 	if (_swsCtx) {
 		_log.information("release scaler");
 		av_free(_outFrame);
@@ -339,14 +249,122 @@ void FFVideoDecoder::run() {
 	_log.information("video decoder thread end");
 }
 
-VideoFrame* FFVideoDecoder::popUsedFrame() {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (_usedFrames.size() > 10) {
-		VideoFrame* vf = _usedFrames.front();
-		_usedFrames.pop();
-		return vf;
+VideoFrame* FFVideoDecoder::parseAVFrame(AVCodecContext* avctx, AVFrame* frame) {
+	const uint8_t* src[4] = {frame->data[0], frame->data[1], frame->data[2], frame->data[3]};
+	int pos = avctx->frame_number;
+	int w = avctx->width;
+	int h = avctx->height;
+	bool interlaced = frame->interlaced_frame != 0;
+	PixelFormat format = avctx->pix_fmt;
+	VideoFrame* vf = popUsedFrame();
+	if (PIX_FMT_BGRA == format) {
+		if (_swsCtx) {
+			if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
+				if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
+					SAFE_DELETE(vf);
+					vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_A8R8G8B8);
+				}
+				vf->write(_outFrame);
+			} else {
+				_log.warning("failed sws_scale");
+				SAFE_DELETE(vf);
+			}
+
+		} else {
+			if (!vf || !vf->equals(w, h, D3DFMT_A8R8G8B8)) {
+				SAFE_DELETE(vf);
+				vf = new VideoFrame(_renderer, w, h, frame->linesize, D3DFMT_A8R8G8B8);
+			}
+			vf->write(frame);
+		}
+	} else {
+		if (_swsCtx) {
+			if (sws_scale(_swsCtx, src, frame->linesize, 0, h, _outFrame->data, _outFrame->linesize) >= 0) {
+				if (!vf || !vf->equals(w, h, D3DFMT_X8R8G8B8)) {
+					SAFE_DELETE(vf);
+					vf = new VideoFrame(_renderer, w, h, _outFrame->linesize, D3DFMT_X8R8G8B8);
+				}
+				vf->write(_outFrame);
+			} else {
+				_log.warning("failed sws_scale");
+				SAFE_DELETE(vf);
+			}
+
+		} else {
+			if (interlaced) {
+				// deinterlace
+				if (!_diFrame) {
+					// deinterlace用のバッファ
+					int size = avpicture_get_size(avctx->pix_fmt, frame->linesize[0], h);
+					_diBuffer = (uint8_t*)av_malloc(size * sizeof(uint8_t));
+					if (_diBuffer) {
+						ZeroMemory(_diBuffer, size);
+						_diFrame = avcodec_alloc_frame();
+						if (_diFrame) {
+							avpicture_fill((AVPicture*)_diFrame, _diBuffer, avctx->pix_fmt, frame->linesize[0], h);
+							_log.information(Poco::format("created deinterlace buffer: %dx%d %d", frame->linesize[0], h, frame->interlaced_frame));
+						} else {
+							av_free(_diBuffer);
+							_diBuffer = NULL;
+						}
+					}
+				}
+				if (_diFrame && avpicture_deinterlace((AVPicture*)_diFrame, (AVPicture*)frame, format, w, h) < 0) {
+					_log.warning("failed deinterlace");
+					// movのMJPEGがinterlacedではないのにも関わらず、ここに来てしまう。
+					if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
+						SAFE_DELETE(vf);
+						switch (format) {
+						case PIX_FMT_YUV420P:
+							vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
+							break;
+						case PIX_FMT_YUVJ422P:
+							vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
+							break;
+						}
+					}
+					vf->write(frame);
+				} else {
+					//インタレ解除できた
+					if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
+						SAFE_DELETE(vf);
+						switch (format) {
+						case PIX_FMT_YUV420P:
+							vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
+							break;
+						case PIX_FMT_YUVJ422P:
+							vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
+							break;
+						}
+					}
+					vf->write(_diFrame);
+				}
+			} else {
+				if (!vf || !vf->equals(w, h, D3DFMT_L8)) {
+					SAFE_DELETE(vf);
+					switch (format) {
+					case PIX_FMT_YUV420P:
+						vf = new VideoFrame(_renderer, w, h, frame->linesize, h / 2, D3DFMT_L8, _fx);
+						break;
+					case PIX_FMT_YUVJ422P:
+						vf = new VideoFrame(_renderer, w, h, frame->linesize, h, D3DFMT_L8, _fx);
+						break;
+					}
+				}
+				vf->write(frame);
+			}
+		}
 	}
-	return NULL;
+	return vf;
+}
+
+void FFVideoDecoder::pushFrame(VideoFrame* vf) {
+	// キュー空き待ち
+	while (_worker != NULL && _frames.size() >= 50) Poco::Thread::sleep(10);
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		_frames.push(vf);
+	}
 }
 
 VideoFrame* FFVideoDecoder::popFrame() {
@@ -357,11 +375,6 @@ VideoFrame* FFVideoDecoder::popFrame() {
 		return vf;
 	}
 	return NULL;
-}
-
-void FFVideoDecoder::pushFrame(VideoFrame* vf) {
-	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	_usedFrames.push(vf);
 }
 
 VideoFrame* FFVideoDecoder::frontFrame() {
@@ -381,5 +394,21 @@ VideoFrame* FFVideoDecoder::viewFrame() {
 	}
 	return NULL;
 }
+
+VideoFrame* FFVideoDecoder::popUsedFrame() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	if (_usedFrames.size() > 10) {
+		VideoFrame* vf = _usedFrames.front();
+		_usedFrames.pop();
+		return vf;
+	}
+	return NULL;
+}
+
+void FFVideoDecoder::pushUsedFrame(VideoFrame* vf) {
+	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	_usedFrames.push(vf);
+}
+
 
 #endif
