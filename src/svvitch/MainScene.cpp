@@ -111,11 +111,17 @@ MainScene::~MainScene() {
 }
 
 void MainScene::delayedReleaseContainer() {
+	while (_transition) {
+		Poco::Thread::sleep(100);
+		//_log.information("delayed release executing, after transition");
+		//return;
+	}
 	int count = 0;
 	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end(); ) {
 		SAFE_DELETE(*it);
 		it = _delayReleases.erase(it);
 		count++;
+		Poco::Thread::sleep(0);
 	}
 	_log.information(Poco::format("delayed release: %d", count));
 }
@@ -318,6 +324,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 				}
 			}
 		}
+
 		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlistName);
 		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, itemName);
 		ContainerPtr oldNextContainer = NULL;
@@ -333,7 +340,8 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 			oldNextName = _nextName;
 			_nextName = t2;
 		}
-		SAFE_DELETE(oldNextContainer);
+		if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
+		//SAFE_DELETE(oldNextContainer);
 		SAFE_RELEASE(oldNextPlaylistName);
 		SAFE_RELEASE(oldNextName);
 		_status["next-playlist-id"] = playlistID;
@@ -734,6 +742,7 @@ void MainScene::clearStock() {
 }
 
 bool MainScene::flushStock() {
+	Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 	_log.information("flush stock");
 	for (map<string, File>::const_iterator it = _stock.begin(); it != _stock.end();) {
 		File dst(Path(config().dataRoot, it->first).toString());
@@ -742,6 +751,20 @@ bool MainScene::flushStock() {
 		if (!parent.exists()) parent.createDirectories();
 		File f = it->second;
 		if (f.exists()) {
+			if (!_deletes.empty()) {
+				queue<string> deletes;
+				while (!_deletes.empty()) {
+					string path = _deletes.front();
+					_deletes.pop();
+					if (dst.path() != path) {
+						deletes.push(path);
+					} else {
+						_log.information(Poco::format("clear delete: %s", path));							
+						if (!_messages.empty()) _messages.pop();
+					}
+				}
+				_deletes = deletes;
+			}
 			try {
 				if (dst.exists()) dst.remove();
 				f.renameTo(dst.path());
@@ -1581,7 +1604,7 @@ void MainScene::process() {
 			}
 		}
 
-		if (_transition) {
+		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			if (_transition && _transition->process(_frame)) {
 				// トランジション終了
