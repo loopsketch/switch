@@ -63,6 +63,7 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
   古いairSwitchとの互換性が無くなりました
 ・倍精度の精度による時計ずれの修正
 ・airSwitchのメディア編集にて入力チェックを追加
+・60p素材の実験的なサポート
 ・その他、細かいバグフィックス。
 
 0.9f
