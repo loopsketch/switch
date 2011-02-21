@@ -850,7 +850,7 @@ bool MainScene::updateWorkspace() {
 			_log.information("updated workspace. repreparing next contents");
 			_updatedWorkspace = workspace;
 			preparedFont(workspace);
-			drawConsole("updated workspace");
+			removeStatus("workspace");
 			return true;
 		} else {
 			_log.warning("failed update workspace.");
@@ -1436,6 +1436,7 @@ void MainScene::process() {
 				ContainerPtr nextContainer = _contents[next];
 				if (_contents[_currentContent]->finished()) {
 					// _log.information(Poco::format("content[%d] finished: ", _currentContent));
+					if (nextContainer && !nextContainer->opened().empty())
 					_doSwitchNext = true;
 				}
 			}
