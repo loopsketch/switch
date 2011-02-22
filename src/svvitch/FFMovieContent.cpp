@@ -361,7 +361,11 @@ void FFMovieContent::close() {
 void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
 		int fps = _rate;
-		if (_rate <= 30) {
+		if (_rate <= 24) {
+			fps = 24;
+		} else if (_rate <= 25) {
+			fps = 25;
+		} else if (_rate < 31) {
 			fps = 30;
 		} else {
 			fps = 60;
@@ -378,11 +382,26 @@ void FFMovieContent::process(const DWORD& frame) {
 				_starting = false;
 			}
 
+			bool popFrame = false;
 			switch (config().splitType) {
 			case 21:
 				break;
 			default:
-				if (fps == 60 || _frameOddEven == (frame % 2)) {
+				switch (fps) {
+				case 24:
+					{
+						int p = (frame % 5);
+						popFrame = p < 4 && _frameOddEven == (p % 2);
+					}
+					break;
+				case 30:
+					popFrame = _frameOddEven == (frame % 2);
+					break;
+				case 60:
+					popFrame = true;
+					break;
+				}
+				if (popFrame) {
 					VideoFrame* vf = _videoDecoder->popFrame();
 					if (vf) {
 						if (_vf) _videoDecoder->pushUsedFrame(_vf);
