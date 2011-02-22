@@ -56,6 +56,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 							_iw += desc.Width;
 							textures.push_back(t);
 							// _log.information(Poco::format("texture divid: %02d-%02d", y, (y + _ih - 1)));
+							if (_iw > config().stageRect.right) break;
 						}
 						SAFE_RELEASE(dst);
 					}
@@ -66,6 +67,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 					_iw += desc.Width;
 					if (_ih < desc.Height) _ih = desc.Height;
 					textures.push_back(texture);
+					if (_iw > config().stageRect.right) break;
 				}
 				// _log.information(Poco::format("opened texture: %s", mif.file()));
 			} else {
