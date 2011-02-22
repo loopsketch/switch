@@ -161,7 +161,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					// codec‚ªopen‚Å‚«‚½
 					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
 					_intervals = config().mainRate / _rate;
-					if (_rate <= 30) {
+					if (_rate < 31) {
 						_duration = L((stream->duration * F(stream->time_base.num) / stream->time_base.den) * 60);
 					} else {
 						_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
@@ -375,7 +375,6 @@ void FFMovieContent::process(const DWORD& frame) {
 		int vbufs = 0;
 		int abufs = 0;
 		if (_playing) {
-			long t = _current * 1000 / 60;
 			if (_starting) {
 				_frameOddEven = frame % 2;
 				if (_audioDecoder) _audioDecoder->play();
@@ -390,6 +389,7 @@ void FFMovieContent::process(const DWORD& frame) {
 				switch (fps) {
 				case 24:
 					{
+						// 2-3pulldown
 						int p = (frame % 5);
 						popFrame = p < 4 && _frameOddEven == (p % 2);
 					}
