@@ -111,13 +111,14 @@ MainScene::~MainScene() {
 }
 
 void MainScene::delayedReleaseContainer() {
-	while (_transition) {
-		Poco::Thread::sleep(100);
-		//_log.information("delayed release executing, after transition");
-		//return;
+	int max = _delayReleases.size();
+	if (_transition) {
+		if (max < 2) return;
+		max--;
 	}
+
 	int count = 0;
-	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end(); ) {
+	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end() && count < max; ) {
 		SAFE_DELETE(*it);
 		it = _delayReleases.erase(it);
 		count++;
@@ -254,15 +255,15 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 
 bool MainScene::prepareNextContent(const PlayParameters& params) {
 	_preparingNext = true;
-	ContainerPtr c = new Container(_renderer);
+	ContainerPtr tmp = new Container(_renderer);
 	ContainerPtr oldNextContainer = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int next = (_currentContent + 1) % _contents.size();
 		oldNextContainer = _contents[next];
-		_contents[next] = c;
+		_contents[next] = tmp;
 	}
-	SAFE_DELETE(oldNextContainer);
+	if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 
 	string playlistID = params.playlistID;
 	int i = params.i;
@@ -302,7 +303,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		}
 	}
 
-	c = new Container(_renderer);
+	ContainerPtr c = new Container(_renderer);
 	if (preparePlaylist(c, playlistID, i, true)) {
 		string playlistName = "ready";
 		string itemID = "";
@@ -327,21 +328,18 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 
 		LPDIRECT3DTEXTURE9 t1 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, playlistName);
 		LPDIRECT3DTEXTURE9 t2 = _renderer.createTexturedText(L"", 14, 0xffffffff, 0xffeeeeff, 0, 0xff000000, 0, 0xff000000, itemName);
-		ContainerPtr oldNextContainer = NULL;
 		LPDIRECT3DTEXTURE9 oldNextPlaylistName = NULL;
 		LPDIRECT3DTEXTURE9 oldNextName = NULL;
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			int next = (_currentContent + 1) % _contents.size();
-			oldNextContainer = _contents[next];
 			_contents[next] = c;
 			oldNextPlaylistName = _nextPlaylistName;
 			_nextPlaylistName = t1;
 			oldNextName = _nextName;
 			_nextName = t2;
 		}
-		if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
-		//SAFE_DELETE(oldNextContainer);
+		SAFE_DELETE(tmp);
 		SAFE_RELEASE(oldNextPlaylistName);
 		SAFE_RELEASE(oldNextName);
 		_status["next-playlist-id"] = playlistID;
@@ -353,6 +351,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		_log.warning(Poco::format("failed prepare: %s-%d", playlistID, i));
 	}
 	_preparingNext = false;
+	delayedReleaseContainer();
 	return true;
 }
 
@@ -504,7 +503,6 @@ bool MainScene::preparePlaylist(ContainerPtr container, const string& playlistID
 }
 
 bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const string& templatedText) {
-	updateDelayedFiles();
 	//_log.information(Poco::format("file: %d", media->fileCount()));
 	float x = F(config().stageRect.left);
 	float y = F(config().stageRect.top);
@@ -1413,38 +1411,38 @@ void MainScene::process() {
 	} else if (_startup) {
 		_status["action"] = _playCurrent.action;
 		_status["transition"] = _playNext.transition;
-		for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
-			(*it)->process(_frame);
-		}
 
 		ContentPtr currentContent = NULL;
 		if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
+				(*it)->process(_frame);
+			}
 
-		if (currentContent) {
-			if (_playCurrent.action == "stop" || _playCurrent.action == "stop-prepared") {
-				// 停止系
+			if (currentContent) {
+				if (_playCurrent.action == "stop" || _playCurrent.action == "stop-prepared") {
+					// 停止系
 
-			} else if (_playCurrent.action == "wait-prepared") {
-				// 次のコンテンツが準備でき次第切替
-				if (!_status["next-content"].empty()) {
-					// _log.information("wait prepared next content, prepared now.");
-					_doSwitchNext = true;
+				} else if (_playCurrent.action == "wait-prepared") {
+					// 次のコンテンツが準備でき次第切替
+					if (!_status["next-content"].empty()) {
+						// _log.information("wait prepared next content, prepared now.");
+						_doSwitchNext = true;
+					}
+				} else {
+					// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ.準備できていれば切替
+					if (_contents[_currentContent]->finished() && !_status["next-content"].empty()) {
+						// _log.information(Poco::format("content[%d] finished: ", _currentContent));
+						_doSwitchNext = true;
+					}
 				}
 			} else {
-				// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ
-				int next = (_currentContent + 1) % _contents.size();
-				ContainerPtr nextContainer = _contents[next];
-				if (_contents[_currentContent]->finished()) {
-					// _log.information(Poco::format("content[%d] finished: ", _currentContent));
-					if (nextContainer && !nextContainer->opened().empty())
+				if (_autoStart && !_status["next-content"].empty() && _frame > 200) {
+					_log.information("auto start content");
 					_doSwitchNext = true;
+					_autoStart = false;
 				}
-			}
-		} else {
-			if (_autoStart && !_status["next-content"].empty() && _frame > 200) {
-				_log.information("auto start content");
-				_doSwitchNext = true;
-				_autoStart = false;
 			}
 		}
 
@@ -1585,9 +1583,9 @@ void MainScene::process() {
 				}
 				_playCount++;
 
-//				if (_transition) SAFE_DELETE(_transition);
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 				if (currentContent) {
-					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+					SAFE_DELETE(_transition);
 					if (_playCurrent.transition == "slide") {
 						int h = config().stageRect.bottom;
 						float speed = h / F(60); // 1s
