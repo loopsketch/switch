@@ -56,7 +56,7 @@ private:
 
 	VideoFrame* parseAVFrame(AVCodecContext* avctx, AVFrame* frame);
 
-	void pushFrame(VideoFrame* vf);
+	void pushUsedFrame(VideoFrame* vf);
 
 	VideoFrame* popFrame();
 
@@ -65,6 +65,4 @@ private:
 	VideoFrame* viewFrame();
 
 	VideoFrame* popUsedFrame();
-
-	void pushUsedFrame(VideoFrame* vf);
 };
