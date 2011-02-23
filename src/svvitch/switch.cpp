@@ -239,15 +239,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// メッセージ処理および描画ループ
 	//EmptyWorkingSet(GetCurrentProcess());
 	//::SetThreadAffinityMask(::GetCurrentThread(), 1);
-	LARGE_INTEGER freq;
-	LARGE_INTEGER start;
-	LARGE_INTEGER current;
-	::QueryPerformanceFrequency(&freq);
-	::QueryPerformanceCounter(&start);
-	LONGLONG last = 0;
+	mainloop(hWnd);
 
-	try {
+	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
+	server->stop();
+	int t = 10;
+	while (t-- > 0) {
+		_renderer->peekMessage();
+		Poco::Thread::sleep(50);
+	}
+	SAFE_DELETE(server);
+
+	int exitCode = _renderer->getExitCode();
+	log.information(Poco::format("shutdown system (%d)", exitCode));
+	SAFE_DELETE(_renderer);
+	//SAFE_DELETE(_uim);
+	_conf.save();
+	_conf.release();
+	CoUninitialize();
+
+	UnregisterClass(clsName, wcex.hInstance);
+	return exitCode;
+}
+
+void mainloop(HWND hWnd) {
+	EXCEPTION_RECORD ERecord;
+	CONTEXT EContext; 
+	__try {
 		SetErrorMode(SEM_NOGPFAULTERRORBOX);
+
+		LARGE_INTEGER freq;
+		LARGE_INTEGER start;
+		LARGE_INTEGER current;
+		::QueryPerformanceFrequency(&freq);
+		::QueryPerformanceCounter(&start);
+		LONGLONG last = 0;
+
 		//	DWORD lastSwapout = 0;
 		while (_renderer->peekMessage()) {
 			// 処理するメッセージが無いときは描画を行う
@@ -267,30 +294,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			_renderer->renderScene(visibled, time);
 			Poco::Thread::sleep(_conf.frameIntervals);
 		}
-	} catch (const std::exception& ex) {
-		log.warning(Poco::format("failed exception main thread: %s", string(ex.what())));
+	} __except(ERecord = *(GetExceptionInformation())->ExceptionRecord,
+		EContext = *(GetExceptionInformation())->ContextRecord, EXCEPTION_EXECUTE_HANDLER) {
+
+		FILE* fp;
+		time_t gmt;
+		time(&gmt);
+		struct tm* localTime = localtime(&gmt);
+		fp = fopen("exception_rec.txt", "a");
+		if (fp != NULL) {
+			fprintf(fp, "----------------------\n");
+			//fprintf(fp, "例外を検出しました\n");
+			fprintf(fp, "例外発生日時：%.19s\n", asctime(localTime));
+			fprintf(fp, "例外コード：%X\n", ERecord.ExceptionCode);
+			fprintf(fp, "例外フラグ：%d\n", ERecord.ExceptionFlags);
+			fprintf(fp, "例外発生アドレス：%X\n", ERecord.ExceptionAddress);
+			fclose(fp);
+		}
 	}
-
-	log.information(Poco::format("shutdown web api server: %dthreads", server->currentThreads()));
-	server->stop();
-	LONGLONG time = last;
-	while (time - last < 500) {
-		_renderer->peekMessage();
-		::QueryPerformanceCounter(&current);
-		time = (current.QuadPart - start.QuadPart) * 1000 / freq.QuadPart;
-	}
-	SAFE_DELETE(server);
-
-	int exitCode = _renderer->getExitCode();
-	log.information(Poco::format("shutdown system (%d)", exitCode));
-	SAFE_DELETE(_renderer);
-	//SAFE_DELETE(_uim);
-	_conf.save();
-	_conf.release();
-	CoUninitialize();
-
-	UnregisterClass(clsName, wcex.hInstance);
-	return exitCode;
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

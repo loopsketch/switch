@@ -5,6 +5,8 @@
 #include "Configuration.h"
 
 
+void mainloop(HWND hWnd);
+
 //LONG WINAPI ExceptionHandler(struct _EXCEPTION_POINTERS* pExceptionInfo);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
