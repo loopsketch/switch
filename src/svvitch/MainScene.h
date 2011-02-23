@@ -46,6 +46,42 @@ struct RemovableMediaArgs {
 	const string& driveLetter;
 };
 
+
+class DelayedRelease {
+private:
+	Poco::Timestamp t;
+	ContainerPtr c;
+
+	DelayedRelease& copy(const DelayedRelease& dr) {
+		t = dr.t;
+		c = dr.c;
+		return *this;
+	}
+
+public:
+	DelayedRelease(ContainerPtr _c) {
+		Poco::DateTime now;
+		t = now.timestamp();
+		c = _c;
+	}
+
+	virtual ~DelayedRelease() {
+	}
+
+	DelayedRelease& operator=(const DelayedRelease& dr) {
+		return copy(dr);
+    }
+
+	const Poco::Timestamp& timestamp() {
+		return t;
+	}
+
+	const ContainerPtr& container() {
+		return c;
+	}
+};
+
+
 class MainScene: public Scene
 {
 private:
@@ -140,7 +176,7 @@ private:
 	bool _delayedCopy;
 	vector<File> _delayUpdateFiles;
 
-	vector<ContainerPtr> _delayReleases;
+	vector<DelayedRelease> _delayReleases;
 	queue<string> _deletes;
 
 	/** スタンバイメディア */
@@ -152,6 +188,12 @@ private:
 	DWORD _messageFrame;
 	queue<string> _messages;
 
+
+	/** コンテンツの遅延解放を行います */
+	void execDelayedRelease();
+
+	/** コンテンツの遅延解放を行います */
+	void pushDelayedRelease(ContainerPtr c);
 
 	/** スタンバイメディアの準備 */
 	void preparedStanbyMedia();
@@ -194,9 +236,6 @@ public:
 	MainScene(Renderer& renderer);
 
 	virtual ~MainScene();
-
-	/** コンテンツの遅延解放を行います */
-	void delayedReleaseContainer();
 
 	/** 初期化 */
 	bool initialize();

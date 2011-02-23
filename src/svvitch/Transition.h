@@ -15,10 +15,14 @@ protected:
 
 public:
 	Transition(ContentPtr c1, ContentPtr c2);
+
 	virtual ~Transition();
 
 	virtual void initialize(const DWORD& frame);
+
 	virtual bool process(const DWORD& frame);
+
+	bool use(ContentPtr c);
 };
 
 

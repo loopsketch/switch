@@ -17,3 +17,7 @@ bool Transition::process(const DWORD& frame) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	return true;
 }
+
+bool Transition::use(ContentPtr c) {
+	return _c1 == c || _c2 == c;
+}

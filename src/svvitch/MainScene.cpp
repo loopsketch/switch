@@ -78,7 +78,7 @@ MainScene::~MainScene() {
 		_castLog->close();
 		SAFE_DELETE(_castLog);
 	}
-	delayedReleaseContainer();
+	execDelayedRelease();
 	SAFE_DELETE(_prepared);
 	SAFE_DELETE(_transition);
 
@@ -110,17 +110,35 @@ MainScene::~MainScene() {
 	_log.information("*release main-scene");
 }
 
-void MainScene::delayedReleaseContainer() {
-	int max = _delayReleases.size();
-	if (!_contents.empty()) max--;
+void MainScene::execDelayedRelease() {
+	Poco::DateTime now;
+	Poco::Timestamp t = now.timestamp();
 	int count = 0;
-	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end() && count < max; ) {
+	vector<ContainerPtr> deletes;
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		for (vector<DelayedRelease>::iterator it = _delayReleases.begin(); it != _delayReleases.end();) {
+			DelayedRelease dr = *it;
+			if (t - dr.timestamp() > 2000000) {
+				if (!_transition || !_transition->use(dr.container())) {
+					deletes.push_back(dr.container());
+					it = _delayReleases.erase(it);
+					continue;
+				}
+			}
+			++it;
+		}
+	}
+	for (vector<ContainerPtr>::iterator it = deletes.begin(); it != deletes.end(); ++it) {
 		SAFE_DELETE(*it);
-		it = _delayReleases.erase(it);
 		count++;
 		Poco::Thread::sleep(0);
 	}
 	_log.information(Poco::format("delayed release: %d", count));
+}
+
+void MainScene::pushDelayedRelease(ContainerPtr c) {
+	_delayReleases.push_back(DelayedRelease(c));
 }
 
 bool MainScene::initialize() {
@@ -256,7 +274,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int next = (_currentContent + 1) % _contents.size();
 		ContainerPtr  oldNextContainer = _contents[next];
-		if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
+		if (oldNextContainer) pushDelayedRelease(oldNextContainer);
 		_contents[next] = tmp;
 	}
 
@@ -329,7 +347,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			int next = (_currentContent + 1) % _contents.size();
 			ContainerPtr  oldNextContainer = _contents[next];
-			if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
+			if (oldNextContainer) pushDelayedRelease(oldNextContainer);
 			_contents[next] = c;
 			oldNextPlaylistName = _nextPlaylistName;
 			_nextPlaylistName = t1;
@@ -347,7 +365,7 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		_log.warning(Poco::format("failed prepare: %s-%d", playlistID, i));
 	}
 	_preparingNext = false;
-	delayedReleaseContainer();
+	execDelayedRelease();
 	return true;
 }
 
@@ -1413,39 +1431,38 @@ void MainScene::process() {
 				(*it)->process(_frame);
 			}
 
+			bool readyNext = !_status["next-content"].empty();
 			if (currentContent) {
 				if (_playCurrent.action == "stop" || _playCurrent.action == "stop-prepared") {
 					// 停止系
 
 				} else if (_playCurrent.action == "wait-prepared") {
 					// 次のコンテンツが準備でき次第切替
-					if (!_status["next-content"].empty()) {
+					if (readyNext && !_transition) {
 						// _log.information("wait prepared next content, prepared now.");
 						_doSwitchNext = true;
 					}
 				} else {
 					// コマンド指定が無ければ現在再生中のコンテンツの終了を待つ.準備できていれば切替
-					if (_contents[_currentContent]->finished() && !_status["next-content"].empty()) {
+					if (_contents[_currentContent]->finished() && readyNext && !_transition) {
 						// _log.information(Poco::format("content[%d] finished: ", _currentContent));
 						_doSwitchNext = true;
 					}
 				}
-			} else {
-				if (_autoStart && !_status["next-content"].empty() && _frame > 200) {
-					_log.information("auto start content");
-					_doSwitchNext = true;
-					_autoStart = false;
-				}
+			} else if (_autoStart && readyNext && _frame > 200) {
+				_log.information("auto start content");
+				_doSwitchNext = true;
+				_autoStart = false;
 			}
 		}
 
-		if (_doSwitchPrepared) {
+		if (_doSwitchPrepared && !_preparingNext) {
 			if (_prepared) {
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					int next = (_currentContent + 1) % _contents.size();
 					ContainerPtr oldNextContainer = _contents[next];
-					if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
+					if (oldNextContainer) pushDelayedRelease(oldNextContainer);
 					_contents[next] = _prepared;
 					_prepared = NULL;
 					LPDIRECT3DTEXTURE9 tmp = _nextPlaylistName;
