@@ -29,9 +29,7 @@ private:
 	Poco::Runnable* _worker;
 
 	AVFormatContext* _ic;
-	float _rate;
-	float _intervals;
-	double _lastIntervals;
+	int _fps;
 	int _video;
 	int _audio;
 	FFAudioDecoder* _audioDecoder;

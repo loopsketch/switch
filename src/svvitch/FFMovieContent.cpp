@@ -5,7 +5,7 @@
 
 
 FFMovieContent::FFMovieContent(Renderer& renderer, int splitType):
-	Content(renderer, splitType), _ic(NULL), _rate(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL),
+	Content(renderer, splitType), _ic(NULL), _fps(0), _audioDecoder(NULL), _videoDecoder(NULL), _vf(NULL), _prepareVF(NULL),
 	_starting(false), _frameOddEven(0), _finished(true), _seeking(false)
 {
 	initialize();
@@ -159,16 +159,23 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 					_log.warning(Poco::format("failed open codec: %s", mif.file()));
 				} else {
 					// codec‚ªopen‚Å‚«‚½
-					_rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
-					_intervals = config().mainRate / _rate;
-					if (_rate < 31) {
+					float rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
+					if (rate < 24.1f) {
+						_fps = 24;
+					} else if (rate < 25.1f) {
+						_fps = 25;
+					} else if (rate < 30.1f) {
+						_fps = 30;
+					} else {
+						_fps = 60;
+					}
+					if (_fps <= 30) {
 						_duration = L((stream->duration * F(stream->time_base.num) / stream->time_base.den) * 60);
 					} else {
 						_duration = stream->duration * stream->time_base.num * stream->r_frame_rate.num / stream->time_base.den / stream->r_frame_rate.den;
 					}
-					_lastIntervals = -1;
 
-					_log.information(Poco::format("open decoder: %s %.3hf(%d/%d) %.3hf %dkbps", string(avcodec->long_name), _rate, stream->r_frame_rate.num, stream->r_frame_rate.den, _intervals, avctx->bit_rate / 1024));
+					_log.information(Poco::format("open decoder: %s %d(%d/%d) %dkbps", string(avcodec->long_name), _fps, stream->r_frame_rate.num, stream->r_frame_rate.den, avctx->bit_rate / 1024));
 					_video = i;
 					_videoDecoder = new FFVideoDecoder(_renderer, _ic, _video);
 					_videoDecoder->start();
@@ -360,16 +367,6 @@ void FFMovieContent::close() {
 
 void FFMovieContent::process(const DWORD& frame) {
 	if (!_mediaID.empty() && _videoDecoder) {
-		int fps = _rate;
-		if (_rate <= 24) {
-			fps = 24;
-		} else if (_rate <= 25) {
-			fps = 25;
-		} else if (_rate < 31) {
-			fps = 30;
-		} else {
-			fps = 60;
-		}
 
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int vbufs = 0;
@@ -386,12 +383,18 @@ void FFMovieContent::process(const DWORD& frame) {
 			case 21:
 				break;
 			default:
-				switch (fps) {
+				switch (_fps) {
 				case 24:
 					{
 						// 2-3pulldown
 						int p = (frame % 5);
 						popFrame = p < 4 && _frameOddEven == (p % 2);
+					}
+					break;
+				case 25:
+					{
+						int p = (frame % 12);
+						popFrame = p == 0 || p == 2 || p == 5 || p == 7 || p == 9;
 					}
 					break;
 				case 30:
@@ -433,7 +436,7 @@ void FFMovieContent::process(const DWORD& frame) {
 		set("time_remain", t2);
 		//set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 
-		set("status", Poco::format("%03lufps(%03.2hfms) %02d:%02d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
+		set("status", Poco::format("%02lufps(%03.2hfms) %02d:%02d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
 	}
 }
 
