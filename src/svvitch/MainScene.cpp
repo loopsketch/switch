@@ -73,11 +73,11 @@ MainScene::~MainScene() {
 	for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it = _contents.erase(it)) {
 		SAFE_DELETE(*it);
 	}
+	_doSwitchPrepared = false;
 	if (_castLog) {
 		_castLog->close();
 		SAFE_DELETE(_castLog);
 	}
-
 	delayedReleaseContainer();
 	SAFE_DELETE(_prepared);
 	SAFE_DELETE(_transition);
@@ -112,11 +112,7 @@ MainScene::~MainScene() {
 
 void MainScene::delayedReleaseContainer() {
 	int max = _delayReleases.size();
-	if (_transition) {
-		if (max < 2) return;
-		max--;
-	}
-
+	if (!_contents.empty()) max--;
 	int count = 0;
 	for (vector<ContainerPtr>::iterator it = _delayReleases.begin(); it != _delayReleases.end() && count < max; ) {
 		SAFE_DELETE(*it);
@@ -256,14 +252,13 @@ void MainScene::notifyKey(const int keycode, const bool shift, const bool ctrl) 
 bool MainScene::prepareNextContent(const PlayParameters& params) {
 	_preparingNext = true;
 	ContainerPtr tmp = new Container(_renderer);
-	ContainerPtr oldNextContainer = NULL;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		int next = (_currentContent + 1) % _contents.size();
-		oldNextContainer = _contents[next];
+		ContainerPtr  oldNextContainer = _contents[next];
+		if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 		_contents[next] = tmp;
 	}
-	if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 
 	string playlistID = params.playlistID;
 	int i = params.i;
@@ -333,13 +328,14 @@ bool MainScene::prepareNextContent(const PlayParameters& params) {
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			int next = (_currentContent + 1) % _contents.size();
+			ContainerPtr  oldNextContainer = _contents[next];
+			if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 			_contents[next] = c;
 			oldNextPlaylistName = _nextPlaylistName;
 			_nextPlaylistName = t1;
 			oldNextName = _nextName;
 			_nextName = t2;
 		}
-		SAFE_DELETE(tmp);
 		SAFE_RELEASE(oldNextPlaylistName);
 		SAFE_RELEASE(oldNextName);
 		_status["next-playlist-id"] = playlistID;
@@ -684,10 +680,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 
 bool MainScene::switchContent() {
 	_doSwitchPrepared = true;
-	while (_doSwitchPrepared) {
-		Poco::Thread::sleep(30);
-	}
-	delayedReleaseContainer();
+	while (_doSwitchPrepared) Poco::Thread::sleep(20);
 	return true;
 }
 
@@ -1412,10 +1405,10 @@ void MainScene::process() {
 		_status["action"] = _playCurrent.action;
 		_status["transition"] = _playNext.transition;
 
-		ContentPtr currentContent = NULL;
-		if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			ContentPtr currentContent = NULL;
+			if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
 			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
 				(*it)->process(_frame);
 			}
@@ -1448,11 +1441,11 @@ void MainScene::process() {
 
 		if (_doSwitchPrepared) {
 			if (_prepared) {
-				ContainerPtr oldNextContainer = NULL;
 				{
 					Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 					int next = (_currentContent + 1) % _contents.size();
-					oldNextContainer = _contents[next];
+					ContainerPtr oldNextContainer = _contents[next];
+					if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 					_contents[next] = _prepared;
 					_prepared = NULL;
 					LPDIRECT3DTEXTURE9 tmp = _nextPlaylistName;
@@ -1462,7 +1455,6 @@ void MainScene::process() {
 					_nextName = _preparedName;
 					_preparedName = tmp;
 				}
-				if (oldNextContainer) _delayReleases.push_back(oldNextContainer);
 				Poco::ScopedLock<Poco::FastMutex> lock(_workspaceLock);
 				PlayListPtr playlist = _workspace?_workspace->getPlaylist(_playPrepared.playlistID):NULL;
 				if (playlist && playlist->itemCount() > 0 && playlist->itemCount() > _playPrepared.i) {
@@ -1507,13 +1499,7 @@ void MainScene::process() {
 				ContainerPtr tmp = _contents[next];
 				if (tmp && tmp->size() > 0) {
 					_log.information("switch next contents");
-					TransitionPtr oldTransition = NULL;
-					{
-						Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-						oldTransition = _transition;
-						_transition = NULL;
-					}
-					SAFE_DELETE(oldTransition);
+					SAFE_DELETE(_transition);
 					_doSwitchNext = true;
 				}
 			}
@@ -1532,6 +1518,7 @@ void MainScene::process() {
 			ContentPtr nextContent = _contents[next]->get(0);
 			if (nextContent && !nextContent->opened().empty()) {
 				_doSwitchNext = false;
+				int oldCurrent = _currentContent;
 				_currentContent = next;
 				_contents[next]->play();
 				LPDIRECT3DTEXTURE9 oldPlaylistName = NULL;
@@ -1584,6 +1571,8 @@ void MainScene::process() {
 				_playCount++;
 
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				ContentPtr currentContent = NULL;
+				if (oldCurrent >= 0) currentContent = _contents[oldCurrent]->get(0);
 				if (currentContent) {
 					SAFE_DELETE(_transition);
 					if (_playCurrent.transition == "slide") {
