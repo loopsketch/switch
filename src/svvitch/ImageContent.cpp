@@ -79,11 +79,10 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 			if (media->type() == MediaTypeMix) break;
 		}
 	}
-	_log.information(Poco::format("tiled texture size: %dx%d", _iw, _ih));
 	if (!valid) return false;
 	// _tw = 1024;
 	_tw = _iw > config().imageSplitWidth?config().imageSplitWidth:_iw;
-	_th = _ih * (_iw + _tw - 1) / _tw;
+	_th = _tw != _iw?_ih * L(ceil(F(_iw) / _tw)):_ih;
 	_target = _renderer.createRenderTarget(_tw, _th, fomart);
 	if (_target) {
 		_renderer.colorFill(_target, 0xff000000);
@@ -125,6 +124,7 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 	}
 
 	if (valid) {
+		_log.information(Poco::format("tiled texture size: %dx%d (native:%dx%d)", _iw, _ih, _tw, _th));
 		_mediaID = media->id();
 		_duration = media->duration() * 60 / 1000;
 		_current = 0;
@@ -208,56 +208,56 @@ void ImageContent::draw(const DWORD& frame) {
 				int ix = 0, sx = 0, sy = 0, dx = (int)x / (cw * config().splitCycles) * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % (config().splitCycles * ch);
 				int cww = 0;
 				int chh = (ch > _ih)?_ih:ch;
+				RECT rect = {dx, dy, dx + cw, dy + ch};
+				device->SetScissorRect(&rect);
 				while (dx < config().mainRect.right) {
 					int cx = dx * config().splitCycles + dy / ch * cw; // cx=é¿ç€ÇÃâfëúÇÃâ°à íu
 					if (cx + dxx >= config().stageRect.right) break;
-					RECT rect = {dx, dy, dx + cw, dy + ch};
-					device->SetScissorRect(&rect);
-					if ((sx + cw - dxx) >= _tw) {
-						// srcÇÃâEí[Ç≈ê‹ï‘Çµ
-						cww = _tw - sx - dxx;
+					if (cw - dxx >= _tw - sx) {
+						// srcâ°Ç™ë´ÇËÇ»Ç¢èÍçá
+						cww = _tw - sx;
+						//_log.information(Poco::format("src: %d %d %d", cx, dxx, cww));
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target, 0, col, col, col, col);
+						dxx += cww;
 						sx = 0;
-						sy += ch;
-						if (sy < _th) {
-							// srcÇê‹ÇËï‘ÇµÇƒdstÇÃécÇËÇ…ï`âÊ
-							if (_th - sy < ch) chh = _th - sy;
-							_renderer.drawTexture(dx + dxx + cww, y + dy, cw - cww, chh, sx, sy, cw - cww, chh, _target, 0, col, col, col, col);
-							sx += cw - cww;
-							ix += cw;
-							dxx = cww + cw - cww;
-							// if (ix >= _iw) _log.information(Poco::format("image check1: %d,%d %d", dx, dy, dxx));
+						if (sy + ch < _th) {
+							// srcê‹ï‘Çµ
+							sy += ch;
+							if (_th - sy < ch) {
+								chh = _th - sy;
+							}
 						} else {
-							// dstÇÃìríÜÇ≈srcÇ™ëSÇƒèIóπ
-							dxx = _iw - ix;
-							ix = _iw;
-							// if (ix >= _iw) _log.information(Poco::format("image check2: %d,%d %d", dx, dy, dxx));
+							// srcåJï‘Çµ
+							sy = 0;
+							ix = 0;
 						}
+						if (dxx < cw) continue;
 					} else {
+						// srcâ°Ç™écÇÈèÍçá
 						if (_iw - ix < (cw - dxx)) {
 							cww = _iw - ix;
 						} else {
 							cww = cw - dxx;
 						}
+						//_log.information(Poco::format("dst: %d %d %d", cx, dxx, cww));
 						_renderer.drawTexture(dx + dxx, y + dy, cww, chh, sx, sy, cww, chh, _target,0,  col, col, col, col);
 						sx += cww;
 						ix += cww;
-						dxx = cww;
-						// if (ix >= _iw) _log.information(Poco::format("image check3: %d,%d %d", dx, dy, dxx));
 					}
 					if (ix >= _iw) {
+						ix = 0;
 						sx = 0;
 						sy = 0;
 						chh = (ch > _ih)?_ih:ch;
-						ix = 0;
-						if (dxx < cw) continue;
 					}
-					dxx = 0;
 					dy += ch;
 					if (dy >= config().splitCycles * ch) {
 						dx += cw;
 						dy = 0;
 					}
+					dxx = 0;
+					::SetRect(&rect, dx, dy, dx + cw, dy + ch);
+					device->SetScissorRect(&rect);
 				}
 				// _log.information("image check");
 				device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);

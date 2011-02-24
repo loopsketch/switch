@@ -347,7 +347,7 @@ void TextContent::draw(const DWORD& frame) {
 					}
 					dxx = 0;
 					dy += ch;
-					if (dy >= 640) {
+					if (dy >= config().splitCycles * ch) {
 						dx += cw;
 						dy = 0;
 					}
