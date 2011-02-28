@@ -11,10 +11,16 @@
 #include <Poco/format.h>
 #include <Poco/Logger.h>
 #include <Poco/UnicodeConverter.h>
-#include "Poco/Net/HTTPStreamFactory.h"
 #include <Poco/Net/HTTPServer.h>
 #include <Poco/Net/HTTPServerParams.h>
 #include <Poco/Net/ServerSocket.h>
+#include <Poco/Net/HTTPStreamFactory.h>
+#include <Poco/Net/HTTPSStreamFactory.h>
+#include <Poco/Net/KeyConsoleHandler.h>
+#include <Poco/Net/ConsoleCertificateHandler.h>
+#include <Poco/Net/SSLManager.h>
+#include <Poco/SharedPtr.h>
+#include <Poco/Net/SSLManager.h>
 
 #include "switch.h"
 #include "Renderer.h"
@@ -205,6 +211,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 0;	// èâä˙âªé∏îs
 	}
 
+	Poco::Net::HTTPStreamFactory::registerFactory();
+	Poco::Net::HTTPSStreamFactory::registerFactory();
+	Poco::SharedPtr<Poco::Net::PrivateKeyPassphraseHandler> console = new Poco::Net::KeyConsoleHandler(false);
+	Poco::SharedPtr<Poco::Net::InvalidCertificateHandler> cert = new Poco::Net::ConsoleCertificateHandler(false);
+	Poco::Net::Context::Ptr context = new Poco::Net::Context(Poco::Net::Context::CLIENT_USE, "", Poco::Net::Context::VERIFY_NONE);
+	Poco::Net::SSLManager::instance().initializeClient(console, cert, context);
+	// init of server part is not required, but we keep the code here as an example
+	/*
+	ptrConsole = new KeyConsoleHandler(true);    // ask the user via console for the pwd
+	ptrCert = new ConsoleCertificateHandler(true); // ask the user via console
+	ptrContext = new Context("any.pem", "rootcert.pem", true, Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+	SSLManager::instance().initializeServer(ptrConsole, ptrCert, ptrContext);
+	*/
+
 	//_uim = new ui::UserInterfaceManager(*_renderer);
 	//_uim->initialize();
 	// ÉVÅ[ÉìÇÃê∂ê¨
@@ -227,8 +247,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// UserInterfaceScenePtr uiScene = new UserInterfaceScene(*_renderer, _uim);
 	// _renderer->addScene("ui", uiScene);
 
-	Poco::Net::HTTPStreamFactory::registerFactory();
-	Poco::ThreadPool::defaultPool().addCapacity(8);
 	Poco::Net::HTTPServerParams* params = new Poco::Net::HTTPServerParams;
 	params->setMaxQueued(_conf.maxQueued);
 	params->setMaxThreads(_conf.maxThreads);
@@ -249,6 +267,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Poco::Thread::sleep(50);
 	}
 	SAFE_DELETE(server);
+	Poco::Net::SSLManager::instance().shutdown();
 
 	int exitCode = _renderer->getExitCode();
 	log.information(Poco::format("shutdown system (%d)", exitCode));
