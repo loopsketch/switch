@@ -245,27 +245,25 @@ void FlashContent::run() {
 		if (hasInvalidateRect()) {
 			Rect rect = popInvalidateRect();
 			timer.start();
-			{
-				HRESULT hr = _surface->GetDC(&hdc);
-				if SUCCEEDED(hr) {
-					// SetMapMode(hdc, MM_TEXT);
-					RECTL rectl = {rect.x, rect.y, rect.w, rect.h};
-					hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, &rectl, NULL, 0);
-					if FAILED(hr) {
-						_log.warning("failed drawing flash");
-						break;
-					}
-					_surface->ReleaseDC(hdc);
-					_readTime = timer.getTime();
-					_readCount++;
-					if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
-				} else {
-					_log.warning("failed getDC");
+			HRESULT hr = _surface->GetDC(&hdc);
+			if SUCCEEDED(hr) {
+				// SetMapMode(hdc, MM_TEXT);
+				RECTL rectl = {rect.x, rect.y, rect.w, rect.h};
+				hr = _view->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdc, NULL, &rectl, NULL, 0);
+				if FAILED(hr) {
+					_log.warning("failed drawing flash");
+					break;
 				}
+				_surface->ReleaseDC(hdc);
+				_readTime = timer.getTime();
+				_readCount++;
+				if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+			} else {
+				_log.warning("failed getDC");
 			}
 			Poco::Thread::sleep(0);
 		} else {
-			Poco::Thread::sleep(3);
+			Poco::Thread::sleep(10);
 		}
 	}
 	_log.information("finished flash drawing thread");

@@ -102,7 +102,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 		return false;
 	}
 
-	_log.information(Poco::format("find stream information: %s streams: %u", string(_ic->title), _ic->nb_streams));
+	//_log.information(Poco::format("find stream information: %s streams: %u", string(_ic->title), _ic->nb_streams));
 	for (int i = 0; i < _ic->nb_streams; i++) {
 		AVStream* stream = _ic->streams[i];
 		AVCodecContext* avctx = stream->codec;

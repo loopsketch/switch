@@ -12,7 +12,7 @@ FFBaseDecoder::~FFBaseDecoder() {
 }
 
 void FFBaseDecoder::clearAllPackets() {
-	_log.information("clear packets");
+	//_log.information("clear packets");
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	int count = 0;
 	while (_packets.size() > 0) {
@@ -21,7 +21,7 @@ void FFBaseDecoder::clearAllPackets() {
 		av_free_packet(&packetList->pkt);
 		av_freep(&packetList);
 	}
-	_log.information(Poco::format("clear packets: %d", count));
+	//_log.information(Poco::format("clear packets: %d", count));
 }
 
 const UINT FFBaseDecoder::bufferedPackets() {

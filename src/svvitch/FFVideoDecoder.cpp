@@ -19,7 +19,7 @@ FFVideoDecoder::~FFVideoDecoder() {
 
 	clearAllFrames();
 	if (_fx) {
-		_log.information("release effect");
+		//_log.information("release effect");
 		SAFE_RELEASE(_fx);
 	}
 }
@@ -41,7 +41,7 @@ void FFVideoDecoder::clearAllFrames() {
 		_frames.pop();
 		count++;
 	}
-	_log.information(Poco::format("release video frames: %d", count));
+	//_log.information(Poco::format("release video frames: %d", count));
 }
 
 void FFVideoDecoder::start() {

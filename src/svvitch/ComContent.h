@@ -54,7 +54,6 @@ protected:
 
 	LPDIRECT3DTEXTURE9 _texture;
 	LPDIRECT3DSURFACE9 _surface;
-	HDC _hdc;
 
 	int _phase;
 	DWORD _background;
