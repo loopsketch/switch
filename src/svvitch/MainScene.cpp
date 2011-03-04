@@ -1799,16 +1799,24 @@ void MainScene::draw2() {
 	string status1;
 	string status2;
 	if (_currentContent >= 0) {
-		int i = _contents[_currentContent]->size() - 1;
-		ContentPtr c = _contents[_currentContent]->get(i);
-		if (c && !c->opened().empty()) {
-			int current = c->current();
-			int duration = c->duration();
-			string time = c->get("time");
-			_status["time_current"] = c->get("time_current");
-			_status["time_remain"] = c->get("time_remain");
-			status1 = c->get("status");
-			status2 = Poco::format("%05d/%05d %s", current, duration, time);
+		int current = -1;
+		int duration = -1;
+		for (int i = 0; i < _contents[_currentContent]->size(); ++i) {
+			ContentPtr c = _contents[_currentContent]->get(i);
+			if (c && !c->opened().empty()) {
+				string s = c->get("status");
+				if (!s.empty()) status1 = s;
+				if (c->duration() > duration) {
+					current = c->current();
+					duration = c->duration();
+					string time = c->get("time");
+					status2 = Poco::format("%05d/%05d %s", current, duration, time);
+					string tc = c->get("time_current");
+					string tr = c->get("time_remain");
+					if (!tc.empty()) _status["time_current"] = tc;
+					if (!tr.empty()) _status["time_remain"] = tr;
+				}
+			}
 		}
 	}
 
