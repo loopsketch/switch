@@ -132,10 +132,9 @@
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="2"
-				FloatingPointModel="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
-				DebugInformationFormat="1"
+				DebugInformationFormat="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -152,10 +151,7 @@
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libs"
 				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="true"
 				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>
 			<Tool

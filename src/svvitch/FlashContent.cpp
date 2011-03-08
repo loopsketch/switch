@@ -25,10 +25,10 @@ void FlashContent::initialize() {
 	dir.append("\\macromed\\Flash\\");
 
 	vector<string> files;
+	files.push_back("flash10n.ocx"); // 10.2
 	files.push_back("flash10l.ocx");
 	files.push_back("flash10k.ocx");
 	files.push_back("flash10j.ocx");
-	files.push_back("flash10i.ocx");
 	files.push_back("flash10i.ocx");
 	files.push_back("flash9.ocx");
 	for (int i = 0; i < files.size(); i++) {
