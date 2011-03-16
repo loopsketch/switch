@@ -55,6 +55,7 @@ bool CaptureScene::initialize() {
 			_deviceH = xml->getInt("device[@h]", 480);
 		}
 		_deviceFPS = xml->getInt("device[@fps]", 30);
+		_useDeinterlace = xml->getBool("device[@deinterlace]", true);
 		_flipMode = xml->getInt("device[@flipMode]", 3);
 		string type = Poco::toLower(xml->getString("device[@type]", "yuv2"));
 		if (type == "rgb24") {
@@ -182,9 +183,8 @@ bool CaptureScene::createFilter() {
 		return false;
 	}
 
-	string deviceName;
-	IBaseFilter* src;
-	if (fetchDevice(CLSID_VideoInputDeviceCategory, _deviceNo, &src, deviceName)) {
+	IBaseFilter* src = NULL;
+	if (fetchDevice(CLSID_VideoInputDeviceCategory, _deviceNo, &src)) {
 		hr = _gb->AddFilter(src, L"Video Capture Source");
 		if (FAILED(hr)) {
 			_log.warning("failed add capture source");
@@ -346,6 +346,38 @@ bool CaptureScene::createFilter() {
 		}
 
 		// hr = _capture->RenderStream(&PIN_CATEGORY_PREVIEW, &MEDIATYPE_Video, src, NULL, NULL);
+
+		// add deinterlacer
+		if (_deviceH > 240 && _useDeinterlace) {
+			IBaseFilter* deinterlacer = NULL;
+			if (fetchDevice(CLSID_LegacyAmFilterCategory, 0, &deinterlacer, string("honestech Deinterlacer"))) {
+				hr = _gb->AddFilter(deinterlacer, L"Deinterlacer");
+				if (SUCCEEDED(hr)) {
+					IPin* inPin = NULL;
+					if (getInPin(deinterlacer, &inPin)) {
+						hr = _gb->Connect(renderPin, inPin);
+						inPin->Release();
+						if (SUCCEEDED(hr)) {
+							SAFE_RELEASE(renderPin);
+							if (!getOutPin(deinterlacer, &renderPin)) {
+								_log.warning(Poco::format("failed not get deinterlacer output-pin: %s", errorText(hr)));
+							} else {
+								_log.information("add&connect deinterlacer");
+							}
+						} else {
+							_log.warning(Poco::format("failed not connect deinterlacer input-pin: %s", errorText(hr)));
+						}
+					} else {
+						_log.warning(Poco::format("failed not connect deinterlacer input-pin: %s", errorText(hr)));
+					}
+				} else {
+					_log.warning("failed not add deinterlacer");
+				}
+			} else {
+				_log.warning("not found deinterlacer");
+			}
+		}
+
 		hr = _gb->Render(renderPin);
 		SAFE_RELEASE(renderPin);
 		// SAFE_RELEASE(src);
@@ -621,40 +653,86 @@ bool CaptureScene::fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter
 
 	IMoniker* moniker = NULL;
 	int count = 0;
-	bool lookup = false;
-	while (SUCCEEDED(pEnumCat->Next(1, &moniker, NULL)) && count <= index) {
-		if (count == index) {
-			IPropertyBag* propBag;
-	        hr = moniker->BindToStorage(0, 0, IID_IPropertyBag, (void**)&propBag);
+	bool result = false;
+	while (!result && SUCCEEDED(pEnumCat->Next(1, &moniker, NULL))) {
+		string name;
+		IPropertyBag* propBag = NULL;
+		hr = moniker->BindToStorage(0, 0, IID_IPropertyBag, (void**)&propBag);
+		if (SUCCEEDED(hr)) {
+			// フィルタのフレンドリ名を取得するには、次の処理を行う。
+			VARIANT varName;
+			VariantInit(&varName);
+			hr = propBag->Read(L"FriendlyName", &varName, 0);
 			if (SUCCEEDED(hr)) {
-		        // フィルタのフレンドリ名を取得するには、次の処理を行う。
-				VARIANT varName;
-				VariantInit(&varName);
-				hr = propBag->Read(L"FriendlyName", &varName, 0);
-				if (SUCCEEDED(hr)) {
-					UINT nLength = SysStringLen(V_BSTR(&varName) != NULL?V_BSTR(&varName):OLESTR(""));
-					if (nLength > 0) {
-						vector<WCHAR> wname(nLength);
-						wcsncpy(&wname[0], V_BSTR(&varName), nLength);
-						wname.push_back('\0');
-						Poco::UnicodeConverter::toUTF8(wstring(&wname[0]), deviceName);
-						_log.information(Poco::format("fetch device: %s", deviceName));
-					}
+				UINT nLength = SysStringLen(V_BSTR(&varName) != NULL?V_BSTR(&varName):OLESTR(""));
+				if (nLength > 0) {
+					vector<WCHAR> wname(nLength);
+					wcsncpy(&wname[0], V_BSTR(&varName), nLength);
+					wname.push_back('\0');
+					Poco::UnicodeConverter::toUTF8(wstring(&wname[0]), name);
+					_log.information(Poco::format("device: %s", name));
 				}
-				VariantClear(&varName);	
-				propBag->Release();
-	        }
+			}
+			VariantClear(&varName);
+			propBag->Release();
+		}
+		bool lookup = false;
+		if (deviceName.empty()) {
+			if (count == index) {
+				lookup = true;
+				deviceName = name;
+			}
+		} else if (deviceName == name) {
+			lookup = true;
+		}
+		if (lookup) {
 			hr = moniker->BindToObject(0, 0, IID_IBaseFilter, (void**)pBf);
 			if (SUCCEEDED(hr)) {
-				lookup = true;
+				result = true;
+				_log.information(Poco::format("lookup device: %s", name));
 			}
 		}
 		moniker->Release();
 		count++;
 	}
 	pEnumCat->Release();
-	_log.information(Poco::format("device result: %s", string(lookup?"LOOKUP":"NOT FOUND")));
-	return lookup;
+	_log.information(Poco::format("device result: %s", string(result?"LOOKUP":"NOT FOUND")));
+	return result;
+}
+
+bool CaptureScene::getPin(IBaseFilter* filter, IPin** pin, PIN_DIRECTION dir) {
+    bool bFound = false;
+    IEnumPins* pEnum = NULL;
+    HRESULT hr = filter->EnumPins(&pEnum);
+    if (SUCCEEDED(hr)) {
+	    while (!bFound && pEnum->Next(1, pin, 0) == S_OK) {
+	        PIN_DIRECTION PinDirThis;
+	        (*pin)->QueryDirection(&PinDirThis);
+	        if (dir == PinDirThis) {
+				IPin* pToPin = NULL;
+				hr = (*pin)->ConnectedTo(&pToPin);
+				if (SUCCEEDED(hr)) {
+					SAFE_RELEASE(pToPin);
+					SAFE_RELEASE(*pin);
+				} else if (hr == VFW_E_NOT_CONNECTED) {
+					bFound = true;
+				}
+			}
+	    }
+		// ピンの参照は残したまま戻す
+		SAFE_RELEASE(pEnum);
+    }
+    return bFound;
+}
+
+/* 指定したフィルタの入力ピンを返します */
+bool CaptureScene::getInPin(IBaseFilter* filter, IPin** pin) {
+    return getPin(filter, pin, PINDIR_INPUT);
+}
+
+/* 指定したフィルタの出力ピンを返します */
+bool CaptureScene::getOutPin(IBaseFilter* filter, IPin** pin) {
+    return getPin(filter, pin, PINDIR_OUTPUT);
 }
 
 void CaptureScene::setWhiteBalance(IBaseFilter* src, bool autoFlag, long v) {

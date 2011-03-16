@@ -25,6 +25,7 @@ private:
 	int _deviceW;
 	int _deviceH;
 	int _deviceFPS;
+	bool _useDeinterlace;
 	bool _autoWhiteBalance;
 	int _whiteBalance;
 	bool _autoExposure;
@@ -82,7 +83,15 @@ private:
 	/** フィルタを解放します */
 	void releaseFilter();
 
-	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName);
+	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName = string());
+
+	bool getPin(IBaseFilter* filter, IPin** pin, PIN_DIRECTION dir);
+
+	/* 指定したフィルタの入力ピンを返します */
+	bool getInPin(IBaseFilter* filter, IPin** pin);
+
+	/* 指定したフィルタの出力ピンを返します */
+	bool getOutPin(IBaseFilter* filter, IPin** pin);
 
 	/** ホワイトバランスの設定 */
 	void setWhiteBalance(IBaseFilter* src, bool autoFlag, long v = -100);
