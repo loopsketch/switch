@@ -216,6 +216,7 @@ void TextContent::process(const DWORD& frame) {
 			if (!_async) {
 				if (_move.find("roll-left-") == 0) {
 					if (_dx != 0) {
+						_duration = abs((_sx + _iw) / _dx);
 						int current = abs((_sx - _x) / _dx);
 						int dt = abs((_x - (_cx - _iw)) / _dx);
 						const int fps = 60;
@@ -235,6 +236,7 @@ void TextContent::process(const DWORD& frame) {
 					}
 				} else if (_move.find("roll-up-") == 0) {
 					if (_dy != 0) {
+						_duration = abs((_sy + _ih) / _dy);
 						int current = abs((_sy - _y) / _dy);
 						int dt = abs((_y - (_cy - _ih)) / _dy);
 						const int fps = 60;
@@ -250,13 +252,18 @@ void TextContent::process(const DWORD& frame) {
 						_dy = 0;
 						_move.clear();
 					}
+				} else {
+					_duration = 0;
 				}
 			} else {
 				if (_x < (_cx - _iw)) _x = _cx + _cw;
+				_duration = 0;
 			}
 		}
 		//_x+=_dx;
 		//_y+=_dy;
+		_current++;
+		if (_duration < _current) _current = _duration;
 	}
 }
 
@@ -500,7 +507,7 @@ void TextContent::drawTexture(string text) {
 //			th = sh;
 		} else {
 			// 指定サイズのテクスチャが作れない
-			tw = 1024;
+			tw = config().imageSplitWidth;
 			th = h;
 		}
 		if (w > tw || !texture) {
