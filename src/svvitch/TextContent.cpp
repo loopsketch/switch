@@ -278,14 +278,13 @@ void TextContent::draw(const DWORD& frame) {
 				device->GetScissorRect(&scissorRect);
 				float x = _x + _ax;
 				float y = _y;
-				int dh = (640 / ch * cw);
-				int ix = 0, sx = 0, sy = 0, dx = (int)x / dh * cw, dxx = fmod(x, cw), dy = ch * ((int)x / cw) % 640;
+				int ix = 0, sx = 0, sy = 0, dx = (int)x / (cw * config().splitCycles) * cw, dxx = (int)fmod(x, cw), dy = ch * ((int)x / cw) % (config().splitCycles * ch);
 				int cww = 0;
 				int chh = (ch > _ih)?_ih:ch;
 				int clipX = _cx;
 				while (dx < config().mainRect.right) {
 					RECT rect = {dx, dy, dx + cw, dy + chh};
-					int cx = dx / cw * dh + dy / ch * cw;
+					int cx = dx * config().splitCycles + dy / ch * cw; // cx=ŽÀÛ‚Ì‰f‘œ‚Ì‰¡ˆÊ’u
 					if (cx > config().stageRect.right) break;
 					int cxx = _cx - cx;
 					if (cxx > cw) {
