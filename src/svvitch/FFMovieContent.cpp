@@ -436,7 +436,7 @@ void FFMovieContent::process(const DWORD& frame) {
 		set("time_remain", t2);
 		//set("time_fps", Poco::format("%d(%0.2hf)", fps, _rate));
 
-		set("status", Poco::format("%02lufps(%03.2hfms) %02d:%02d", _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
+		set("status", Poco::format("%dp(%02lufps-%03.2hfms) %02d:%02d", _fps, _fpsCounter.getFPS(), _avgTime, vbufs, abufs));
 	}
 }
 
