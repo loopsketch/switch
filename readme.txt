@@ -55,6 +55,11 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+1.01
+・TextContentの不具合の修正
+・24p/25p/60pの実験的なサポート
+・その他、細かいバグフィックス。
+
 1.0
 ・スケジュール 'playlist' 'next'コマンドの追加
 ・Dissolve時などに斜めに掛かってしまっていたのを修正
