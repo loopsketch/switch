@@ -160,12 +160,14 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				} else {
 					// codec‚ªopen‚Å‚«‚½
 					float rate = F(stream->r_frame_rate.num) / stream->r_frame_rate.den;
-					if (rate < 24.1f) {
+					if (rate < 24.5f) {
 						_fps = 24;
-					} else if (rate < 25.1f) {
+					} else if (rate < 26.0f) {
 						_fps = 25;
-					} else if (rate < 30.1f) {
+					} else if (rate < 31.0f) {
 						_fps = 30;
+					} else if (rate < 51.0f) {
+						_fps = (int)rate;
 					} else {
 						_fps = 60;
 					}
@@ -402,6 +404,9 @@ void FFMovieContent::process(const DWORD& frame) {
 					break;
 				case 60:
 					popFrame = true;
+					break;
+				default:
+					popFrame = (frame % (60 / (60 - _fps))) != 0;
 					break;
 				}
 				if (popFrame) {
