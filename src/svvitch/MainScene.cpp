@@ -1552,6 +1552,7 @@ void MainScene::process() {
 				SAFE_RELEASE(oldPlaylistName);
 				SAFE_RELEASE(oldCurrentName);
 				_status["current-playlist-id"] = _status["next-playlist-id"];
+				_status["current-index"] = _playCurrent.i;
 				_status["current-playlist"] = _status["next-playlist"];
 				_status["current-content-id"] = _status["next-content-id"];
 				_status["current-content"] = _status["next-content"];
