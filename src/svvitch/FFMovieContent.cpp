@@ -110,7 +110,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 			_log.warning(Poco::format("failed stream codec[%d]: %s", i, mif.file()));
 			continue;
 		}
-		if (avctx->codec_type == CODEC_TYPE_VIDEO) {
+		if (avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
 			//IDirectXVideoDecoderService* service = NULL;
 			//DXVA2CreateVideoService(_renderer.get3DDevice(), IID_PPV_ARGS(&service));
 			//UINT resetToken = 0;
@@ -144,7 +144,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 
 		float rate = 0;
 		switch (avctx->codec_type) {
-			case CODEC_TYPE_VIDEO:
+			case AVMEDIA_TYPE_VIDEO:
 				{
 					//string name(avcodec->long_name);
 					//if (name.find("H.264") != string::npos) {
@@ -186,7 +186,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				}
 				break;
 
-			case CODEC_TYPE_AUDIO:
+			case AVMEDIA_TYPE_AUDIO:
 				if (_renderer.getSoundDevice() && config().splitType != 21) {
 					if (_audio < 0 && avcodec_open(avctx, avcodec) < 0) {
 						_log.warning(Poco::format("failed open codec: %s", mif.file()));

@@ -39,8 +39,8 @@
 #define AV_VERSION_DOT(a, b, c) a ##.## b ##.## c
 #define AV_VERSION(a, b, c) AV_VERSION_DOT(a, b, c)
 
-#define LIBAVUTIL_VERSION_MAJOR 50
-#define LIBAVUTIL_VERSION_MINOR 39
+#define LIBAVUTIL_VERSION_MAJOR 51
+#define LIBAVUTIL_VERSION_MINOR 22
 #define LIBAVUTIL_VERSION_MICRO  0
 
 #define LIBAVUTIL_VERSION_INT   AV_VERSION_INT(LIBAVUTIL_VERSION_MAJOR, \
@@ -58,7 +58,19 @@
  * They may change, break or disappear at any time.
  */
 #ifndef FF_API_OLD_EVAL_NAMES
-#define FF_API_OLD_EVAL_NAMES (LIBAVUTIL_VERSION_MAJOR < 51)
+#define FF_API_OLD_EVAL_NAMES (LIBAVUTIL_VERSION_MAJOR < 52)
+#endif
+#ifndef FF_API_GET_BITS_PER_SAMPLE_FMT
+#define FF_API_GET_BITS_PER_SAMPLE_FMT (LIBAVUTIL_VERSION_MAJOR < 52)
+#endif
+#ifndef FF_API_FIND_OPT
+#define FF_API_FIND_OPT                 (LIBAVUTIL_VERSION_MAJOR < 52)
+#endif
+#ifndef FF_API_AV_FIFO_PEEK
+#define FF_API_AV_FIFO_PEEK             (LIBAVUTIL_VERSION_MAJOR < 52)
+#endif
+#ifndef FF_API_OLD_AVOPTIONS
+#define FF_API_OLD_AVOPTIONS            (LIBAVUTIL_VERSION_MAJOR < 52)
 #endif
 
 /**
@@ -86,6 +98,12 @@ enum AVMediaType {
     AVMEDIA_TYPE_NB
 };
 
+/**
+ * Return a string describing the media_type enum, NULL if media_type
+ * is unknown.
+ */
+const char *av_get_media_type_string(enum AVMediaType media_type);
+
 #define FF_LAMBDA_SHIFT 7
 #define FF_LAMBDA_SCALE (1<<FF_LAMBDA_SHIFT)
 #define FF_QP2LAMBDA 118 ///< factor to convert from H.263 QP to lambda
@@ -97,13 +115,33 @@ enum AVMediaType {
 #define AV_TIME_BASE            1000000
 #define AV_TIME_BASE_Q          (AVRational){1, AV_TIME_BASE}
 
+enum AVPictureType {
+    AV_PICTURE_TYPE_NONE = 0, ///< Undefined
+    AV_PICTURE_TYPE_I,     ///< Intra
+    AV_PICTURE_TYPE_P,     ///< Predicted
+    AV_PICTURE_TYPE_B,     ///< Bi-dir predicted
+    AV_PICTURE_TYPE_S,     ///< S(GMC)-VOP MPEG4
+    AV_PICTURE_TYPE_SI,    ///< Switching Intra
+    AV_PICTURE_TYPE_SP,    ///< Switching Predicted
+    AV_PICTURE_TYPE_BI,    ///< BI type
+};
+
 /**
- * Those FF_API_* defines are not part of public API.
- * They may change, break or disappear at any time.
+ * Return a single letter to describe the given picture type
+ * pict_type.
+ *
+ * @param[in] pict_type the picture type @return a single character
+ * representing the picture type, '?' if pict_type is unknown
  */
-#ifndef FF_API_OLD_IMAGE_NAMES
-#define FF_API_OLD_IMAGE_NAMES (LIBAVUTIL_VERSION_MAJOR < 51)
-#endif
+char av_get_picture_type_char(enum AVPictureType pict_type);
+
+/**
+ * Return x default pointer in case p is NULL.
+ */
+static inline const void *av_x_if_null(const void *p, const void *x)
+{
+    return p ? p : x;
+}
 
 #include "common.h"
 #include "error.h"

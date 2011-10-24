@@ -21,6 +21,7 @@ extern "C" {
 #pragma comment(lib, "libz.a")
 #pragma comment(lib, "libavcore.a")
 #pragma comment(lib, "libavcodec.a")
+#pragma comment(lib, "libavfilter.a")
 #pragma comment(lib, "libavutil.a")
 #pragma comment(lib, "libavformat.a")
 #pragma comment(lib, "libavdevice.a")
