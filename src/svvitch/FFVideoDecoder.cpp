@@ -103,6 +103,7 @@ void FFVideoDecoder::start() {
 			break;
 		default:
 			type = Poco::format("unknown format(%d)", (int)avctx->pix_fmt);
+			if (avctx->pix_fmt == -1) return;
 	}
 
 	string size;
