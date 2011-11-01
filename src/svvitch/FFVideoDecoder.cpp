@@ -8,7 +8,7 @@
 
 
 FFVideoDecoder::FFVideoDecoder(Renderer& renderer, AVFormatContext* ic, const int streamNo): FFBaseDecoder(renderer, ic, streamNo),
-	_outFrame(NULL), _buffer(NULL), _diFrame(NULL), _diBuffer(NULL), _fx(NULL), _swsCtx(NULL)
+	_outFrame(NULL), _buffer(NULL), _diFrame(NULL), _diBuffer(NULL), _fx(NULL), _worker(NULL), _swsCtx(NULL)
 {
 }
 
@@ -24,6 +24,9 @@ FFVideoDecoder::~FFVideoDecoder() {
 	}
 }
 
+bool FFVideoDecoder::isReady() {
+	return _worker != NULL;
+}
 
 /**
  * フレームを全てクリアします
@@ -56,6 +59,10 @@ void FFVideoDecoder::start() {
 	string type;
 	bool changeFormat = false;
 	switch (avctx->pix_fmt) {
+		case PIX_FMT_NONE:
+			_log.warning("failed pix format NONE");
+			type = "NONE";
+			break;
 		case PIX_FMT_YUV420P:
 			type = "YUV420P";
 			_fx = _renderer.createEffect("fx/conversion_yuv2rgb.fx");
@@ -84,6 +91,17 @@ void FFVideoDecoder::start() {
 			type = "RGB32";
 			changeFormat = true;
 			break;
+		case PIX_FMT_YUVJ420P:
+			type = "YUVJ420P";
+			_fx = _renderer.createEffect("fx/conversion_yuv2rgb.fx");
+			if (_fx) {
+				changeFormat = false;
+			} else {
+				// エフェクトが生成できない場合
+				changeFormat = true;
+				flags = SWS_FAST_BILINEAR;
+			}
+			break;
 		case PIX_FMT_YUVJ422P:
 			type = "YUVJ422P";
 			// changeFormat = true;
@@ -103,7 +121,6 @@ void FFVideoDecoder::start() {
 			break;
 		default:
 			type = Poco::format("unknown format(%d)", (int)avctx->pix_fmt);
-			if (avctx->pix_fmt == -1) return;
 	}
 
 	string size;
@@ -144,8 +161,10 @@ void FFVideoDecoder::start() {
 		_swsCtx = NULL;
 	}
 
-	_worker = this;
-	_thread.start(*_worker);
+	if (_swsCtx) {
+		_worker = this;
+		_thread.start(*_worker);
+	}
 }
 
 const float FFVideoDecoder::getDisplayAspectRatio() const {

@@ -33,6 +33,8 @@ public:
 
 	virtual ~FFBaseDecoder();
 
+	virtual bool isReady() = 0;
+
 	/**
 	 * パケットをクリアします
 	 */

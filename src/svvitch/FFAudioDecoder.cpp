@@ -21,6 +21,10 @@ FFAudioDecoder::~FFAudioDecoder() {
 }
 
 
+bool FFAudioDecoder::isReady() {
+	return true;
+}
+
 void FFAudioDecoder::start() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	AVCodecContext* avctx = _ic->streams[_streamNo]->codec;

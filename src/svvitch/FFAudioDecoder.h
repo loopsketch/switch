@@ -28,6 +28,8 @@ private:
 	virtual ~FFAudioDecoder();
 
 
+	virtual bool isReady();
+
 	void start();
 
 	const UINT bufferedFrames();

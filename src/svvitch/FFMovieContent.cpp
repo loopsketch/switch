@@ -201,6 +201,8 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 				break;
 		}
 	}
+	if (_audioDecoder && !_audioDecoder->isReady()) return false;
+	if (_videoDecoder && !_videoDecoder->isReady()) return false;
 
 	_worker = this;
 	_thread.start(*_worker);

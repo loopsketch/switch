@@ -41,6 +41,8 @@ private:
 	virtual ~FFVideoDecoder();
 
 
+	virtual bool isReady();
+
 	/**
 	 * フレームを全てクリアします
 	 */
