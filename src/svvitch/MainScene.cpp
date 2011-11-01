@@ -692,6 +692,7 @@ bool MainScene::prepareMedia(ContainerPtr container, MediaItemPtr media, const s
 		return true;
 	} else {
 		_log.warning("failed prepare next media");
+		drawConsole(Poco::format("failed prepare next media: %s", media->id()));
 	}
 	return false;
 }
