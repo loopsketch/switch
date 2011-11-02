@@ -16,6 +16,7 @@ FFAudioDecoder::FFAudioDecoder(Renderer& renderer, AVFormatContext* ic, const in
 
 FFAudioDecoder::~FFAudioDecoder() {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	stop();
 	SAFE_DELETE(_data);
 	SAFE_RELEASE(_buffer);
 }

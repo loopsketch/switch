@@ -1528,7 +1528,8 @@ void MainScene::process() {
 		// bool prepareNext = false;
 		if (_doSwitchNext && !_transition) {
 			//_doSwitchNext = false;
-			if (_currentContent >= 0 && _contents[_currentContent]->useFastStop()) {
+			//if (_currentContent >= 0 && _contents[_currentContent]->useFastStop()) {
+			if (_currentContent >= 0) {
 				_contents[_currentContent]->stop();
 			}
 			_playCurrent = _playNext;
