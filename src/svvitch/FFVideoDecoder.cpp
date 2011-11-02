@@ -161,7 +161,7 @@ void FFVideoDecoder::start() {
 		_swsCtx = NULL;
 	}
 
-	if (_swsCtx) {
+	if ((!changeFormat && avctx->pix_fmt != PIX_FMT_NONE) || (changeFormat && _swsCtx)) {
 		_worker = this;
 		_thread.start(*_worker);
 	}
