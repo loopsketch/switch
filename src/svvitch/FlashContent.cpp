@@ -25,7 +25,8 @@ void FlashContent::initialize() {
 	dir.append("\\macromed\\Flash\\");
 
 	vector<string> files;
-	files.push_back("flash11c.ocx"); // 11.0.1
+	files.push_back("flash11e.ocx"); // 11.1
+	files.push_back("flash11c.ocx"); // 11.0
 	files.push_back("flash10n.ocx"); // 10.2
 	files.push_back("flash10l.ocx");
 	files.push_back("flash10k.ocx");
