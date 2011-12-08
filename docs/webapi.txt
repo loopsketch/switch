@@ -1,0 +1,82 @@
+/0/switch
+	switched:true/false
+
+/0/update
+	update:true/false
+
+/0/set/playlist?pl=xxx&i=n
+	playlist:true/false
+
+/0/set/text?pl=xxx&t=xxx
+	text:true/false
+
+/0/set/brightness?v=n
+	brightness:n
+
+/0/set/action?v=xxx
+	action:xxx
+
+/0/set/transition?v=xxx
+	transition:xxx
+
+/0/set/status?s=xxx&n=yyy&v=zzz
+	status:true/false
+
+/0/set/brightness?v=n
+	brightness:n
+
+
+/0/get/snapshot
+	image/png
+
+/0/get/camera
+	image/png
+
+/0/get/fonts
+	{"fonts":[xxx,...]}
+
+/0/get/text?pl=xxx
+	{"text":"xxx"}
+
+/0/get/display-status
+	{"remote-copy":xxx}
+
+/0/get/status?s=xxx&n=yyy
+	n is not nul > zzz
+	n is nul     > {"yyy":"zzz",...}
+
+
+/0/files?path=xxx
+	xxx is dir  > {"path":"xxx","count":n,"files":["yyy/","zzz"]}
+	xxx is file > {"path":"xxx","count":0,"files":{"name":"xxx","modified":"yyyy-mm-dd hh:MM:ss","size":n}}
+
+/0/download?path=xxx
+	png: image/png
+	jpg|jpeg: image/jpeg
+	bmp: image/bmp
+	gif: image/gif
+	mpg|mpeg: video/mpeg
+	mp4: video/mp4
+	wmv: video/x-ms-wmv
+	mov: video/quicktime
+	flv: video/x-flv
+	swf: application/x-shockwave-flash
+	pdf: application/pdf
+	txt: text/plain
+	htm|html: text/html
+	xml: text/xml
+	*: application/octet-stream
+
+
+/0/upload?path=xxx&modified=yyyy-mm-dd hh:MM:ss&file=multipart
+	upload:true/false
+
+/0/clear-stock
+	clear:true
+
+/0/copy?remote=xxx
+	copy:true
+
+/0/version
+	version:xxx
+

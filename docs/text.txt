@@ -1,0 +1,10 @@
+font		フォントフェース名
+fh		フォントサイズ
+style		スタイル(normal[デフォルト] | bold | italic | bolditalic)
+c1/c2		文字色
+b1/bs1		外側ボーダー色(00cccccc)/外側ボーダーサイズ(4)
+b2/bs2		内側ボーダー色(ff000000)/内側ボーダーサイズ(4)
+x/y/w/h		描画位置
+cx/cy/cw/ch	描画クリップ領域
+move		移動用コマンド(roll-left-移動量)
+align		描画位置内の配置(left[デフォルト] | center | right)
