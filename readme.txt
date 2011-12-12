@@ -37,7 +37,7 @@ IDE: Microsoft Visual C++ 2008 Professional Edition
 [fx]                   エフェクトファイル(conversion_yuv2rgb.fx)
 [images]               外部参照イメージファイル
 [fonts]                フォントファイル(defactica.ttf copyright(c)2004 RS125)
-airSvvitchSetup.exe    AdobeAIR2.0用運営アプリケーションインストーラ
+airSvvitchSetup.air    AdobeAIR2.7用運営アプリケーションインストーラ
 switch.exe             実行ファイル
 switch-config.xml      基本設定ファイル
 workspace.xml          コンテンツ定義ファイル
@@ -55,6 +55,11 @@ http://sourceforge.jp/projects/switch/wiki/FrontPage
 
 
 ■ 更新履歴
+1.10
+・avcodecをFFmpeg-b616600516a0b46c365ee4fbd65167d6d276a9ad(11/10/24あたり)にアップデート
+・音声付動画を再生時に途中で切替えると音声が残ってしまうのを修正
+・コーデックが選択できたにも関わらずpix_formatが設定できない場合に落ちてしまうのを修正
+
 1.01
 ・TextContentの不具合の修正
 ・24p/25p/60pの実験的なサポート
