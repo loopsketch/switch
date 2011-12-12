@@ -66,6 +66,11 @@ void Container::play() {
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->play();
 }
 
+void Container::pause() {
+//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->pause();
+}
+
 void Container::stop() {
 //	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 	for (vector<ContentPtr>::iterator it = _list.begin(); it != _list.end(); it++) (*it)->stop();

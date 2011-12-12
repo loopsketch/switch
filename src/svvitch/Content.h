@@ -54,6 +54,8 @@ public:
 
 	virtual void play();
 
+	virtual void pause();
+
 	virtual void stop();
 
 	virtual bool useFastStop();

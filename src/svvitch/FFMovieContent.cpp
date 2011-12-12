@@ -278,6 +278,10 @@ void FFMovieContent::play() {
 	_playTimer.start();
 }
 
+void FFMovieContent::pause() {
+	if (_audioDecoder) _audioDecoder->stop();
+}
+
 /**
  * í‚é~
  */

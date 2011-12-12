@@ -1592,7 +1592,10 @@ void MainScene::process() {
 
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 				ContentPtr currentContent = NULL;
-				if (oldCurrent >= 0) currentContent = _contents[oldCurrent]->get(0);
+				if (oldCurrent >= 0) {
+					_contents[oldCurrent]->pause();
+					currentContent = _contents[oldCurrent]->get(0);
+				}
 				if (currentContent) {
 					SAFE_DELETE(_transition);
 					if (_playCurrent.transition == "slide") {

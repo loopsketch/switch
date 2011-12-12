@@ -31,6 +31,9 @@ void Content::play() {
 	_playing = true;
 }
 
+void Content::pause() {
+}
+
 void Content::stop() {
 	_playing = false;
 }

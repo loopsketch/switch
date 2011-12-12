@@ -63,6 +63,8 @@ public:
 	 */
 	void play();
 
+	void pause();
+
 	/**
 	 * í‚é~
 	 */
