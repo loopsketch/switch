@@ -7,6 +7,10 @@ using std::string;
 using Poco::LocalDateTime;
 
 
+/**
+ * スケジュールクラス.
+ * スケジュールを表します
+ */
 class Schedule {
 private:
 	Poco::Logger& _log;

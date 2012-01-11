@@ -13,6 +13,10 @@ using std::vector;
 using Poco::Path;
 
 
+/**
+ * İ’èŠÇ—ƒNƒ‰ƒX.
+ * XML‚©‚ç“Ç‚ñ‚¾’l‚ğ•Û‚µ‚Ü‚·
+ */
 class Configuration
 {
 private:

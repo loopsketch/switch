@@ -9,6 +9,9 @@
 #include <streams.h>
 
 
+/**
+ * DirectShow“®‰æÄ¶ƒRƒ“ƒeƒ“ƒg.
+ */
 class DSContent: public Content {
 private:
 	Poco::FastMutex _lock;

@@ -21,6 +21,8 @@
 #include <vfw.h>
 #include <dsound.h>
 #pragma comment(lib, "dsound.lib")
+#include <dxva2api.h>
+#pragma comment(lib, "dxva2.lib")
 
 
 using std::string;
@@ -34,9 +36,9 @@ using std::queue;
 //=============================================================
 class Scene;
 
-//=============================================================
-// 構造体など
-//=============================================================
+/**
+ * 頂点構造体
+ */
 struct VERTEX {
 	float x, y, z;
 	float rhw;
@@ -57,10 +59,10 @@ struct KeyData {
 typedef KeyData* KeyDataPtr;
 
 
-//=============================================================
-// Renderer
-// レンダラークラス
-//=============================================================
+/**
+ * レンダラクラス.
+ * レンダリングに関する機能を提供するユーティリティクラスです。シーンの管理も行います
+ */
 class Renderer
 {
 private:
@@ -86,6 +88,9 @@ private:
 	D3DPRESENT_PARAMETERS* _presentParams;
 
 	LPDIRECTSOUND _sound;
+
+	UINT _deviceResetToken;
+	IDirect3DDeviceManager9* _devManager;
 
 	int _mem;
 	UINT _textureMem;

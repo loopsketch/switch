@@ -3,7 +3,8 @@
 #include "Common.h"
 
 /**
- * 
+ * パフォーマンスタイマクラス.
+ * パフォーマンスタイマを用いた高精度な時間計測機能を提供します
  */
 class PerformanceTimer
 {

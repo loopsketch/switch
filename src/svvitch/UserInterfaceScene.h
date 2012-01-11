@@ -3,6 +3,10 @@
 #include "Scene.h"
 #include "ui/UserInterfaceManager.h"
 
+
+/**
+ * ユーザインターフェース管理シーンクラス.
+ */
 class UserInterfaceScene: public Scene
 {
 private:

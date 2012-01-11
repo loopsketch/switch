@@ -10,7 +10,6 @@
 
 using Poco::Util::XMLConfiguration;
 
-
 CaptureContent::CaptureContent(Renderer& renderer, int splitType): Content(renderer, splitType), 
 	_scene(NULL), _fx(NULL), _small1(NULL), _small2(NULL), _diff(NULL), _diff2(NULL), _image(NULL),
 	_detected(false), _doShutter(0), _viewPhoto(0), _finished(true), _playing(false), _statusFrame(0)

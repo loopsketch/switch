@@ -12,6 +12,10 @@
 using Poco::ActiveMethod;
 
 
+/**
+ * キャプチャーシーンクラス.
+ * DirectShowキャプチャーソースから映像を取得するシーン
+ */
 class CaptureScene: public Scene
 {
 private:

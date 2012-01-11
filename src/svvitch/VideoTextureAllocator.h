@@ -8,6 +8,10 @@
 #include <Poco/Mutex.h>
 
 
+/**
+ * ビデオテクスチャアロケータクラス.
+ * VMR-9で使用するカスタムアロケータです
+ */
 class VideoTextureAllocator: public IVMRSurfaceAllocator9, IVMRImagePresenter9, public IVMRImageCompositor9
 {
 private:

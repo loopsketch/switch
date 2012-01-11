@@ -16,6 +16,10 @@
 using std::queue;
 
 
+/**
+ * ビデオフレームクラス.
+ * FFVideoDecoderで使用される動画の描画フレーム1枚を表します
+ */
 class VideoFrame
 {
 friend class FFVideoDecoder;

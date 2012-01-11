@@ -273,6 +273,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\MFContent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\MixContent.cpp"
 				>
 			</File>
@@ -436,6 +440,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\MediaItem.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\MFContent.h"
 				>
 			</File>
 			<File

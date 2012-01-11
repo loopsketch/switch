@@ -12,6 +12,10 @@
 using std::queue;
 
 
+/**
+ * FFmpegビデオデコーダクラス.
+ * FFmpegのビデオ系のストリームデコーダです
+ */
 class FFVideoDecoder: public FFBaseDecoder, Poco::Runnable
 {
 friend class FFMovieContent;

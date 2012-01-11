@@ -6,6 +6,9 @@
 #include <Poco/Mutex.h>
 
 
+/**
+ * トランジションの基底クラス.
+ */
 class Transition {
 protected:
 	Poco::Logger& _log;

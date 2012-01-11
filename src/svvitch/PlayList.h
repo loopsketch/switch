@@ -8,6 +8,10 @@ using std::string;
 using std::vector;
 
 
+/**
+ * プレイリストクラス.
+ * 再生順序を定義したプレイリストを表します
+ */
 class PlayList
 {
 friend class Workspace;

@@ -5,6 +5,10 @@
 #include "ControlSite.h"
 
 
+/**
+ * IEコンテントクラス.
+ * 
+ */
 class IEContent: public ComContent {
 private:
 	HMODULE _module;

@@ -9,6 +9,10 @@ using std::string;
 using std::map;
 
 
+/**
+ * シーンクラス.
+ * 描画や機能のまとまりの単位.
+ */
 class Scene
 {
 protected:

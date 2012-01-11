@@ -8,6 +8,10 @@
 using std::vector;
 
 
+/**
+ * コンテナクラス.
+ * 複数のContentを含むContentです
+ */
 class Container: public Content
 {
 private:

@@ -34,6 +34,9 @@ using Poco::ActiveMethod;
 using Poco::ActiveResult;
 
 
+/**
+ * 再生パラメータ.
+ */
 struct PlayParameters
 {
 	string playlistID;
@@ -42,11 +45,17 @@ struct PlayParameters
 	string transition;
 };
 
+/**
+ * リムーバブルメディア関連引数.
+ */
 struct RemovableMediaArgs {
 	const string& driveLetter;
 };
 
 
+/**
+ * 遅延開放のためのコンテナホルダ.
+ */
 class DelayedRelease {
 private:
 	Poco::Timestamp t;
@@ -82,6 +91,10 @@ public:
 };
 
 
+/**
+ * メインシーンクラス.
+ * デジタルサイネージプレイヤの基本的な機能を提供します
+ */
 class MainScene: public Scene
 {
 private:

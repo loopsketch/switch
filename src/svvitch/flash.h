@@ -1,5 +1,8 @@
 #pragma once
 
+/**
+ * Flashのコンポーネントを利用するためのヘッダ集
+ */
 #ifdef UNICODE
 #define FormatMessage FormatMessageW
 #define FindResource FindResourceW

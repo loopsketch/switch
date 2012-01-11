@@ -14,6 +14,10 @@ using std::queue;
 struct __declspec(uuid("{71771540-2017-11cf-ae26-0020afd79767}")) CLSID_DSVideoRenderer;
 
 
+/**
+ * DirectShow動画レンダラクラス.
+ * テクスチャにレンダリングする機能を備えたDirectShowのVideoRendererの実装です.
+ */
 class DSVideoRenderer: public CBaseVideoRenderer {
 private:
 	Poco::Logger& _log;

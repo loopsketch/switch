@@ -11,6 +11,10 @@
 using std::queue;
 
 
+/**
+ * FFmpeg基本デコーダクラス.
+ * FFmpegのストリームデコーダの基本実装です
+ */
 class FFBaseDecoder
 {
 private:

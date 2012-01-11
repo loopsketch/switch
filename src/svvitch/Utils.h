@@ -12,6 +12,9 @@ using std::wstring;
 using std::vector;
 using Poco::Path;
 
+/**
+ * ユーティリティ関数
+ */
 
 namespace svvitch {
 

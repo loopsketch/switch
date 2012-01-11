@@ -18,6 +18,10 @@ using std::string;
 using std::wstring;
 
 
+/**
+ * FFmpeg動画再生コンテントクラス.
+ * FFmpegの動画を再生し描画するためのコンテントです
+ */
 class FFMovieContent: public Content, Poco::Runnable
 {
 private:

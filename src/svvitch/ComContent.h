@@ -10,6 +10,10 @@
 
 using std::queue;
 
+/**
+ * 領域クラス.
+ * 領域値のホルダ
+ */
 class Rect
 {
 private:
@@ -41,6 +45,10 @@ public:
 };
 
 
+/**
+ * COM(ActiveX)のコンテントクラス.
+ * キャプチャーシーンからキャプチャー映像を取得し描画するクラス
+ */
 class ComContent: public Content, Poco::Runnable {
 private:
 protected:

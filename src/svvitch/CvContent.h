@@ -21,6 +21,10 @@ using std::string;
 using std::wstring;
 
 
+/**
+ * OpenCV利用コンテントクラス.
+ * OpenCVの実験コンテントです
+ */
 class CvContent: public Content
 {
 private:

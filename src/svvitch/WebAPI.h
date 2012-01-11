@@ -5,7 +5,8 @@
 
 
 /**
- * HTTPリクエストハンドラ
+ * HTTPリクエスト処理クラス.
+ * API処理を行います
  */
 class SwitchRequestHandler: public BaseRequestHandler {
 private:
@@ -61,7 +62,8 @@ public:
 
 
 /**
- * HTTPリクエストハンドラ用ファクトリ
+ * HTTPリクエストハンドラ用ファクトリクラス
+ * SwitchRequestHandlerを生成するためのファクトリ
  */
 class SwitchRequestHandlerFactory: public HTTPRequestHandlerFactory {	
 private:

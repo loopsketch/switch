@@ -3,6 +3,10 @@
 #include "PerformanceTimer.h"
 
 
+/**
+ * フレームレートカウンタクラス.
+ * PerformanceTimerを用いて、フレームレートを計測するためのユーティリティクラスです
+ */
 class FPSCounter: public PerformanceTimer
 {
 private:

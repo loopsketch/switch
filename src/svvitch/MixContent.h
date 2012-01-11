@@ -18,6 +18,10 @@ using std::string;
 using std::wstring;
 
 
+/**
+ * 複合再生コンテントクラス.
+ * 複数のコンテントを領域分割して同時に描画します
+ */
 class MixContent: public Content
 {
 private:

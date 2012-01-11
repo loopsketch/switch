@@ -3,6 +3,10 @@
 #include "FFBaseDecoder.h"
 
 
+/**
+ * FFmpegオーディオデコーダクラス.
+ * FFmpegのオーディオ系のストリームデコーダです
+ */
 class FFAudioDecoder: public FFBaseDecoder
 {
 friend class FFMovieContent;

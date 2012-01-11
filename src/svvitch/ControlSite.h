@@ -20,6 +20,10 @@
 
 class ComContent;
 
+/**
+ * COMコントロールサイトクラス.
+ * COMコンポーネントの埋め込まれる位置などを管理します
+ */
 class ControlSite: public IOleInPlaceSiteWindowless, public IOleClientSite
 {
 private:

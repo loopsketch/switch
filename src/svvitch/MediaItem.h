@@ -16,6 +16,9 @@ using std::string;
 using std::vector;
 
 
+/**
+ * メディア種別.
+ */
 enum MediaType {
 	MediaTypeMix,
 	MediaTypeMovie,
@@ -31,6 +34,10 @@ enum MediaType {
 };
 
 
+/**
+ * メディアアイテムファイルクラス.
+ * 表示素材に関連するファイルを表します
+ */
 class MediaItemFile
 {
 private:
@@ -130,6 +137,10 @@ public:
 };
 
 
+/**
+ * メディアアイテムクラス.
+ * 1つの表示素材を表します
+ */
 class MediaItem
 {
 private:

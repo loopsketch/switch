@@ -31,7 +31,8 @@ using Poco::Net::MessageHeader;
 
 
 /**
- * Partハンドラ
+ * マルチパート処理クラス.
+ * フォームのマルチパートを処理します
  */
 class BasePartHandler: public Poco::Net::PartHandler {
 private:
@@ -47,7 +48,8 @@ public:
 
 
 /**
- * HTTPリクエストハンドラ
+ * HTTPリクエストハンドラの基本クラス.
+ * 
  */
 class BaseRequestHandler: public HTTPRequestHandler {
 private:

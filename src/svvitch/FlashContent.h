@@ -7,6 +7,10 @@
 using std::string;
 
 
+/**
+ * Flashコンテントクラス.
+ * Flashを描画するためのコンテント
+ */
 class FlashContent: public ComContent {
 private:
 	HMODULE _module;

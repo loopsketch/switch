@@ -9,6 +9,10 @@ using std::string;
 using std::wstring;
 
 
+/**
+ * 静止画コンテントクラス.
+ * 静止画ファイルを描画するコンテントです
+ */
 class ImageContent: public Content
 {
 private: 

@@ -16,6 +16,10 @@ using std::string;
 using std::vector;
 
 
+/**
+ * ワークススペースクラス
+ * サイネージの運営に必要なデータ郡を表します
+ */
 class Workspace
 {
 private:

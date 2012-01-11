@@ -17,6 +17,10 @@ using Poco::HashMap;
 using Poco::ActiveMethod;
 
 
+/**
+ * コンテントクラス.
+ * Scene の中で描画される際の最小単位です.
+ */
 class Content
 {
 private:

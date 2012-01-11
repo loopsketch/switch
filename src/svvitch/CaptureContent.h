@@ -17,6 +17,10 @@ using std::string;
 using std::wstring;
 
 
+/**
+ * キャプチャーコンテントクラス.
+ * キャプチャーシーンからキャプチャー映像を取得し描画するクラス
+ */
 class CaptureContent: public Content
 {
 private:

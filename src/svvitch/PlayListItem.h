@@ -5,6 +5,10 @@
 #include "MediaItem.h"
 
 
+/**
+ * プレイリストアイテムクラス.
+ * プレイリストに定義されている1アイテムを表します
+ */
 class PlayListItem
 {
 private:

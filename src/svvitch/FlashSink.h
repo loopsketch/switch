@@ -8,6 +8,10 @@
 //------------------------------------------------------------------------
 // FlashSink - Receives flash events   
 //------------------------------------------------------------------------
+/**
+ * Flashイベント受信クラス.
+ * Flashからのイベントを受信します
+ */
 class FlashSink: public ShockwaveFlashObjects::_IShockwaveFlashEvents {
 
 private:

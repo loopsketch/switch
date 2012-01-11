@@ -5,6 +5,9 @@
 #define UINT64_C(c) (c ## ULL)
 #endif
 
+/**
+ * FFmpeg関連ヘッダファイル.
+ */
 extern "C" {
 #define inline _inline
 #include <libavutil/avstring.h>

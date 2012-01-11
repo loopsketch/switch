@@ -7,6 +7,10 @@
 #include "FPSCounter.h"
 
 
+/**
+ * 差分検出シーンクラス.
+ * 差分検出の機能を提供します
+ */
 class DiffDetectScene: public Scene
 {
 private:

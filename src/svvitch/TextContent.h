@@ -5,6 +5,10 @@
 #include <gdiplus.h>
 
 
+/**
+ * テキストコンテントクラス.
+ * 文字列をTrueTypeフォントでレンダリングし描画します
+ */
 class TextContent: public Content {
 private:
 	Poco::FastMutex _lock;
