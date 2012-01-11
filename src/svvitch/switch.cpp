@@ -52,17 +52,6 @@ static RendererPtr _renderer;
 
 //static string _interruptFile;
 
-
-//-------------------------------------------------------------
-// アプリケーションのエントリポイント
-// 引数
-//		hInstance     : 現在のインスタンスのハンドル
-//		hPrevInstance : 以前のインスタンスのハンドル
-//		lpCmdLine	  : コマンドラインパラメータ
-//		nCmdShow	  : ウィンドウの表示状態
-// 戻り値
-//		成功したら0以外の値
-//-------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 #if defined(DEBUG) | defined(_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

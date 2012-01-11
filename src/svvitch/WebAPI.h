@@ -62,7 +62,7 @@ public:
 
 
 /**
- * HTTPリクエストハンドラ用ファクトリクラス
+ * HTTPリクエストハンドラ用ファクトリクラス.
  * SwitchRequestHandlerを生成するためのファクトリ
  */
 class SwitchRequestHandlerFactory: public HTTPRequestHandlerFactory {	

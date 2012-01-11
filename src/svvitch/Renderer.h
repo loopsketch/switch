@@ -50,6 +50,9 @@ struct VERTEX {
 #define VERTEX_SIZE		(sizeof(VERTEX))
 #define VERTEX_COUNT	(256)
 
+/**
+ * キースキャン構造体
+ */
 struct KeyData {
 	int keycode;
 	bool shift;
