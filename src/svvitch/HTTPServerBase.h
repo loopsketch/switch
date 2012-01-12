@@ -39,9 +39,12 @@ private:
 	Poco::Logger& _log;
 
 public:
+	/** コンストラクタ */
 	BasePartHandler();
+	/** デストラクタ */
 	virtual ~BasePartHandler();
 
+	/** パートの処理 */
 	void handlePart(const MessageHeader& header, std::istream& stream);
 };
 

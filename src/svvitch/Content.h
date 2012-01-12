@@ -19,7 +19,8 @@ using Poco::ActiveMethod;
 
 /**
  * コンテントクラス.
- * Scene の中で描画される際の最小単位です.
+ * <Scene>の中で描画される際の最小単位です。
+ * 汎用的なコンポーネントとして利用したいものは<Content>にすべきです
  */
 class Content
 {
@@ -46,10 +47,13 @@ protected:
 	float _x, _y, _w, _h;
 
 public:
+	/** コンストラクタ */
 	Content(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
+	/** デストラクタ */
 	virtual ~Content();
 
+	/** 初期化 */
 	virtual void initialize();
 
 	virtual bool open(const MediaItemPtr media, const int offset = 0);

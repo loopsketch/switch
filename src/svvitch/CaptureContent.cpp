@@ -23,6 +23,7 @@ CaptureContent::~CaptureContent() {
 }
 
 void CaptureContent::saveConfiguration() {
+	/** cvcap-config.xmlをXMLConfigurationで読込み、現在値を反映して保存します */
 	try {
 		Poco::Util::XMLConfiguration* xml = new Poco::Util::XMLConfiguration("cvcap-config.xml");
 		if (xml) {
@@ -46,10 +47,10 @@ void CaptureContent::initialize() {
 	close();
 }
 
-/** ファイルをオープンします */
 bool CaptureContent::open(const MediaItemPtr media, const int offset) {
 	initialize();
 
+	/** cvcap-config.xmlをXMLConfigurationで読込み、設定値を設定します */
 	int deviceW = 0;
 	int deviceH = 0;
 	try {
@@ -76,6 +77,7 @@ bool CaptureContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(ex.displayText());
 	}
 
+	/** subbg.fxを読込み背景差分のシェーダを生成します */
 	std::wstring wfile;
 	Poco::UnicodeConverter::toUTF16(string("subbg.fx"), wfile);
 	LPD3DXBUFFER errors = NULL;
@@ -90,6 +92,7 @@ bool CaptureContent::open(const MediaItemPtr media, const int offset) {
 		_log.warning(Poco::format("failed shader: %s", string("")));
 	}
 
+	/** 必要なレンダーターゲットの生成を行います */
 	_small1 = _renderer.createRenderTarget(32, 32, D3DFMT_A8R8G8B8);
 	_renderer.colorFill(_small1, 0);
 	_small2 = _renderer.createRenderTarget(32, 32, D3DFMT_A8R8G8B8);
@@ -105,17 +108,11 @@ bool CaptureContent::open(const MediaItemPtr media, const int offset) {
 }
 
 
-/**
- * 再生
- */
 void CaptureContent::play() {
 	_playing = true;
 	_playTimer.start();
 }
 
-/**
- * 停止
- */
 void CaptureContent::stop() {
 	_playing = false;
 }
@@ -124,9 +121,6 @@ bool CaptureContent::useFastStop() {
 	return true;
 }
 
-/**
- * 再生中かどうか
- */
 const bool CaptureContent::playing() const {
 	return _playing;
 }
@@ -135,7 +129,6 @@ const bool CaptureContent::finished() {
 	return _current >= _duration;
 }
 
-/** ファイルをクローズします */
 void CaptureContent::close() {
 	stop();
 	_mediaID.clear();

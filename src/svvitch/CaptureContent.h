@@ -53,43 +53,45 @@ private:
 	string _status;
 
 public:
+	/** コンストラクタ */
 	CaptureContent(Renderer& renderer, int splitType);
 
+	/** デストラクタ */
 	~CaptureContent();
 
 
+	/** 設定を保存します */
 	void saveConfiguration();
 
+	/** 初期化 */
 	void initialize();
 
 	/** ファイルをオープンします */
 	bool open(const MediaItemPtr media, const int offset = 0);
 
 
-	/**
-	 * 再生
-	 */
+	/** 再生 */
 	void play();
 
-	/**
-	 * 停止
-	 */
+	/** 停止 */
 	void stop();
 
+	/** 再生終了時にすぐさま停止するかどうか */
 	bool useFastStop();
 
-	/**
-	 * 再生中かどうか
-	 */
+	/** 再生中かどうか */
 	const bool playing() const;
 
+	/** 終了したかどうか */
 	const bool finished();
 
-	/** ファイルをクローズします */
+	/** クローズします */
 	void close();
 
+	/** 描画以外の処理 */
 	void process(const DWORD& frame);
 
+	/** 描画処理 */
 	void draw(const DWORD& frame);
 };
 
