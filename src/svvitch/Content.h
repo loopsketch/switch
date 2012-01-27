@@ -56,24 +56,34 @@ public:
 	/** 初期化 */
 	virtual void initialize();
 
+	/** ファイルをオープンします */
 	virtual bool open(const MediaItemPtr media, const int offset = 0);
 
+	/** ファイルの準備が完了しているかどうか */
 	virtual const string opened() const;
 
+	/** 再生 */
 	virtual void play();
 
+	/** ポーズ */
 	virtual void pause();
 
+	/** 停止 */
 	virtual void stop();
 
+	/** 再生終了時にすぐさま停止するかどうか */
 	virtual bool useFastStop();
 
+	/** 頭だしする */
 	virtual void rewind();
 
+	/** 再生中かどうか */
 	virtual const bool playing() const;
 
+	/** 終了したかどうか */
 	virtual const bool finished();
 
+	/** クローズします */
 	virtual void close();
 
 	ActiveMethod<void, void, Content> activeClose;
@@ -95,27 +105,37 @@ public:
 	/** 長さ(フレーム数) */
 	virtual const int duration() const;
 
-	/** パラメータ */
+	/** 位置設定 */
 	virtual void setPosition(float x, float y);
 
+	/** 位置取得 */
 	virtual void getPosition(float& x, float& y);
 
+	/** 領域設定 */
 	virtual void setBounds(float w, float h);
 
+	/** 指定位置が領域範囲内かどうか */
 	virtual const bool contains(float x, float y) const;
 
+	/** パラメータを設定します */
 	void set(const string& key, const string& value);
 
+	/** パラメータを設定します */
 	void set(const string& key, const float& value);
 
+	/** パラメータを設定します */
 	void set(const string& key, const unsigned int& value);
 
+	/** パラメータを取得します */
 	const string& get(const string& key, const string& defaultValue = "") const;
 
+	/** パラメータを取得します */
 	const DWORD getDW(const string& key, const DWORD& defaultValue = 0) const;
 
+	/** パラメータを取得します */
 	const int getI(const string& key, const int& defaultValue = 0) const;
 
+	/** パラメータを取得します */
 	const float getF(const string& key, const float& defaultValue = 0) const;
 };
 
