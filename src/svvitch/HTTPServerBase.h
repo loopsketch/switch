@@ -44,7 +44,10 @@ public:
 	/** デストラクタ */
 	virtual ~BasePartHandler();
 
-	/** パートの処理 */
+	/**
+	 * パートの処理を行います.
+	 * コンテンツのパートであれば、uploadsディレクトリに出力します。
+	 */
 	void handlePart(const MessageHeader& header, std::istream& stream);
 };
 
@@ -52,7 +55,6 @@ public:
 
 /**
  * HTTPリクエストハンドラの基本クラス.
- * 
  */
 class BaseRequestHandler: public HTTPRequestHandler {
 private:
@@ -62,10 +64,17 @@ private:
 
 protected:
 	Poco::Logger& _log;
+	/** リクエスト */
 	HTTPServerRequest& request();
+	/** レスポンス */
 	HTTPServerResponse& response();
+	/** フォーム */
 	HTMLForm& form();
 
+	/**
+	 * リクエスト処理.
+	 * handleRequest()から呼ばれますのでサブクラスで実装します。
+	 */
 	virtual void doRequest();
 
 	/** クライアントにファイルを送信します */
@@ -74,14 +83,19 @@ protected:
 	/** mapをJSONP形式で送信します */
 	void sendJSONP(const string& functionName, const map<string, string>& json);
 
+	/** 結果を出力します */
 	void writeResult(const int code, const string& description);
 
+	/** レスポンスを送信します */
 	void sendResponse(HTTPResponse::HTTPStatus status, const string& message);
 
 public:
+	/** コンストラクタ */
 	BaseRequestHandler();
 
+	/** デストラクタ */
 	virtual ~BaseRequestHandler();
 
+	/** リクエスト処理 */
 	void handleRequest(HTTPServerRequest& requesr, HTTPServerResponse& response);
 };

@@ -14,7 +14,7 @@ using Poco::ActiveMethod;
 
 /**
  * キャプチャーシーンクラス.
- * DirectShowキャプチャーソースから映像を取得するシーン
+ * DirectShowキャプチャーソースから映像を取得する Scene クラスです。
  */
 class CaptureScene: public Scene
 {
@@ -82,19 +82,33 @@ private:
 	MainScenePtr _main;
 
 
-	/** フィルタを生成します */
+	/** 設定されたデバイスからキャプチャ処理を行うフィルタグラフを生成します */
 	bool createFilter();
-	/** フィルタを解放します */
+
+	/** フィルタグラフを解放します */
 	void releaseFilter();
 
+	/**
+	 * キャプチャデバイスのフェッチを行い、デバイスのフィルタを返します。
+	 * @param clsidDeviceClass	クラスID
+	 * @param index				デバイスのインデックス番号
+	 * @param pBf				生成されたデバイスのフィルタ
+	 * @param deviceName		デバイス名でフェッチする場合に指定
+	 */
 	bool fetchDevice(REFCLSID clsidDeviceClass, int index, IBaseFilter** pBf, string& deviceName = string());
 
+	/**
+	 * フィルタのピンを取得します
+	 * @param	filter	対象のフィルタ
+	 * @param	pin		取得できたピン
+	 * @param	dir		ピン方向(IN/OUT)
+	 */
 	bool getPin(IBaseFilter* filter, IPin** pin, PIN_DIRECTION dir);
 
-	/* 指定したフィルタの入力ピンを返します */
+	/** 指定したフィルタの入力ピンを返します */
 	bool getInPin(IBaseFilter* filter, IPin** pin);
 
-	/* 指定したフィルタの出力ピンを返します */
+	/** 指定したフィルタの出力ピンを返します */
 	bool getOutPin(IBaseFilter* filter, IPin** pin);
 
 	/** ホワイトバランスの設定 */
@@ -103,18 +117,20 @@ private:
 	/** 露出の設定 */
 	void setExposure(IBaseFilter* src, bool autoFlag, long v = -100);
 
-	/* クロスバーをルーティングします */
+	/** クロスバーをルーティングします */
 	bool routeCrossbar(IBaseFilter *pSrc, int no);
 
+	/** フィルタのダンプ */
 	int dumpFilter(IGraphBuilder* gb);
 
+	/** ピン名を返します */
 	const string getPinName(long lType);
 
+	/** エラー文字列を返します */
 	const string errorText(HRESULT hr);
 
-	ActiveMethod<bool, void, CaptureScene> activeChangePlaylist;
-
 	/** プレイリストを変更します */
+	ActiveMethod<bool, void, CaptureScene> activeChangePlaylist;
 	bool changePlaylist();
 
 public:

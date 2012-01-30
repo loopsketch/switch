@@ -19,7 +19,7 @@ using std::wstring;
 
 /**
  * キャプチャーコンテントクラス.
- * キャプチャーシーンからキャプチャー映像を取得し描画するクラス
+ * CaptureScene からキャプチャー映像を取得し描画する Content クラスです。
  */
 class CaptureContent: public Content
 {
