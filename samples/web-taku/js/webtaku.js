@@ -1,6 +1,6 @@
 var display = new Array();
-display.push("192.168.1.141");
-var root = "http://" + display[0] + ":9090/";
+display.push("192.168.1.106");
+var root = "http://" + display[0] + ":9090/0/";
 
 $(document).ready(function() {
 	$("#error").hide();
