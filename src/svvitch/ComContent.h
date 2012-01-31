@@ -17,6 +17,7 @@ using std::queue;
 class Rect
 {
 private:
+	/** 領域のコピー処理 */
 	Rect& copy(const Rect& rect) {
 		if (this == &rect) return *this;
 		x = rect.x;
@@ -47,7 +48,7 @@ public:
 
 /**
  * COM(ActiveX)のコンテントクラス.
- * キャプチャーシーンからキャプチャー映像を取得し描画するクラス
+ * COMを描画するクラスです
  */
 class ComContent: public Content, Poco::Runnable {
 private:
@@ -70,21 +71,27 @@ protected:
 	int _readCount;
 	float _avgTime;
 
-
+	/** コンストラクタ */
 	ComContent(Renderer& renderer, int splitType, float x = 0, float y = 0, float w = 0, float h = 0);
 
+	/** デストラクタ */
 	virtual ~ComContent();
 
+	/** COM生成 */
 	virtual void createComComponents() = 0;
 
+	/** COM開放 */
 	virtual void releaseComComponents() = 0;
 
+	/** invalidate領域があるか */
 	bool hasInvalidateRect();
 
+	/** invalidate領域を取出します */
 	Rect popInvalidateRect();
 
 
 public:
+	/** invalidate領域を通知します */
 	void invalidateRect(int x, int y, int w, int h);
 
 	/** ファイルをオープンします */
@@ -106,10 +113,13 @@ public:
 	/** ファイルをクローズします */
 	void close();
 
+	/** 描画以外の処理 */
 	void process(const DWORD& frame);
 
+	/** スレッド */
 	virtual void run() = 0;
 
+	/** 描画処理 */
 	void draw(const DWORD& frame);
 };
 

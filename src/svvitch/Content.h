@@ -88,6 +88,12 @@ public:
 
 	ActiveMethod<void, void, Content> activeClose;
 
+	/**
+	 * キー通知
+	 * @param	keycide	押下キーコード
+	 * @param	shift	SHIFTキーの押下フラグ
+	 * @param	ctrl	CTRLキーの押下フラグ
+	 */
 	void notifyKey(const int keycode, const bool shift, const bool ctrl);
 
 	/** 1フレームに1度だけ処理される */

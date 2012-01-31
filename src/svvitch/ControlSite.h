@@ -33,10 +33,13 @@ private:
 	ComContent* _com;
 
 public:
+	/** コンストラクタ */
 	ControlSite(ComContent* com);
 
+	/** デストラクタ */
 	virtual ~ControlSite();
 
+	/** 領域を取得します */
 	void GetRect(LPRECT rect);
 
 	// IUnknown

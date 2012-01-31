@@ -129,23 +129,31 @@ private:
 	/** エラー文字列を返します */
 	const string errorText(HRESULT hr);
 
-	/** プレイリストを変更します */
 	ActiveMethod<bool, void, CaptureScene> activeChangePlaylist;
+
+	/** プレイリストを変更します */
 	bool changePlaylist();
 
 public:
+	/** コンストラクタ */
 	CaptureScene(Renderer& renderer);
 
+	/** デストラクタ */
 	virtual ~CaptureScene();
 
+	/** 初期化 */
 	virtual bool initialize();
 
+	/** カメラ画像を取得します */
 	LPDIRECT3DTEXTURE9 getCameraImage();
 
+	/** 描画以外の処理 */
 	virtual void process();
 
+	/** ステージへの描画処理 */
 	virtual void draw1();
 
+	/** ステージ以外の描画処理 */
 	virtual void draw2();
 };
 

@@ -70,13 +70,16 @@ private:
 	string _status;
 
 public:
+	/** コンストラクタ */
 	CvContent(Renderer& renderer, int splitType);
 
+	/** デストラクタ */
 	virtual ~CvContent();
 
-
+	/** 設定の保存 */
 	void saveConfiguration();
 
+	/** 初期化 */
 	void initialize();
 
 	/** ファイルをオープンします */
@@ -85,21 +88,16 @@ public:
 	Poco::ActiveMethod<void, void, CvContent> activeOpenDetectMovie;
 	void openDetectMovie();
 
-	/**
-	 * 再生
-	 */
+	/** 再生 */
 	void play();
 
-	/**
-	 * 停止
-	 */
+	/** 停止 */
 	void stop();
 
+	/** 再生終了時にすぐさま停止するかどうか */
 	bool useFastStop();
 
-	/**
-	 * 再生中かどうか
-	 */
+	/** 再生中かどうか  */
 	const bool playing() const;
 
 	const bool finished();
@@ -107,8 +105,10 @@ public:
 	/** ファイルをクローズします */
 	void close();
 
+	/** 描画以外の処理 */
 	void process(const DWORD& frame);
 
+	/** 描画処理 */
 	void draw(const DWORD& frame);
 };
 

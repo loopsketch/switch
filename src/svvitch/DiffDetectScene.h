@@ -34,11 +34,25 @@ private:
 	LPDIRECT3DTEXTURE9 _result2;
 	LPD3DXEFFECT _fx;
 
-
+	/**
+	 * 平均の描画
+	 * @param	dst	領域を頂点x4で指定
+	 * @param	col	頂点色
+	 */
 	void drawAverage(VERTEX* dst, DWORD& col);
 
+	/**
+	 * エッジの描画
+	 * @param	dst	領域を頂点x4で指定
+	 * @param	col	頂点色
+	 */
 	void drawEdge(VERTEX* dst, DWORD& col);
 
+	/**
+	 * 差分の描画
+	 * @param	dst	領域を頂点x4で指定
+	 * @param	col	頂点色
+	 */
 	void drawDiff(VERTEX* dst, DWORD& col);
 
 public:
