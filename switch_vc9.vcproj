@@ -127,7 +127,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="src;includes\ffmpeg_"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_FFMPEG"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_FFMPEG;USE_OPENNI"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -278,6 +278,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\MixContent.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\OpenNIScene.cpp"
 				>
 			</File>
 			<File
@@ -448,6 +452,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\MixContent.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\OpenNIScene.h"
 				>
 			</File>
 			<File

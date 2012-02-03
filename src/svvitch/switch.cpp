@@ -27,6 +27,9 @@
 #include "CaptureScene.h"
 #include "MainScene.h"
 #include "DiffDetectScene.h"
+#ifdef USE_OPENNI
+#include "OpenNIScene.h"
+#endif
 //#include "UserInterfaceScene.h"
 #include "Utils.h"
 #include "WebAPI.h"
@@ -223,6 +226,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
+#ifdef USE_OPENNI
+	OpenNIScenePtr openNIScene = NULL;
+	if (_conf.hasScene("openni")) {
+		openNIScene = new OpenNIScene(*_renderer);
+		openNIScene->initialize();
+		_renderer->addScene("openni", openNIScene);
+	}
+#endif
 	MainScenePtr mainScene = NULL;
 	if (true) {
 		mainScene = new MainScene(*_renderer);
