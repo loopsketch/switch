@@ -23,7 +23,7 @@
 #include <atlbase.h>
 
 #pragma warning(disable: 4192)
-#import <C:\\Windows\\SysWOW64\\Macromed\\Flash\\Flash11e.ocx> named_guids
+#import <C:\\Windows\\SysWOW64\\Macromed\\Flash\\Flash10u.ocx> named_guids
 //#import <C:\\WINDOWS\\system32\\Macromed\\Flash\\Flash64_11_1_102.ocx> named_guids
 #pragma warning(default: 4192)
 
