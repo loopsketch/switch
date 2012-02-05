@@ -36,6 +36,11 @@ private:
 	LPDIRECT3DSURFACE9 _imageSurface;
 	LPDIRECT3DTEXTURE9 _texture;
 
+	FPSCounter _fpsCounter;
+	DWORD _readTime;
+	int _readCount;
+	float _avgTime;
+
 public:
 	OpenNIScene(Renderer& renderer);
 

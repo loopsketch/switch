@@ -49,15 +49,26 @@ bool OpenNIScene::initialize() {
 }
 
 void OpenNIScene::run() {
+	PerformanceTimer timer;
+	_readCount = 0;
+	_avgTime = 0;
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_renderer.colorFill(_imageTexture, 0xff000000);
 	}
 
+	xn::AlternativeViewPointCapability viewPoint = _depth.GetAlternativeViewPointCap();
+	viewPoint.SetViewPoint(_image);
+	//viewPoint.ResetViewPoint();
+
 	while (_worker) {
+		timer.start();
 		_context.WaitAndUpdateAll();
 		_image.GetMetaData(_imageMD);
 		_depth.GetMetaData(_depthMD);
+		_readTime = timer.getTime();
+		_readCount++;
+		if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
 
 		D3DLOCKED_RECT lockedRect = {0};
 		if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
@@ -69,7 +80,7 @@ void OpenNIScene::run() {
 			byte d, b,g,r;
 			for (int y = 0; y < SENSOR_HEIGHT; y++) {
 				for (int x = 0; x < SENSOR_WIDTH; x++) {
-					d = 255;// - (256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) / DEPTH_RANGE_MAX);
+					d = 255 - (256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) / DEPTH_RANGE_MAX);
 					b = src[i++];
 					g = src[i++];
 					r = src[i++];
@@ -85,13 +96,12 @@ void OpenNIScene::run() {
 				_log.warning("updateRenderTargetData");
 			}
 		}
-		xn::AlternativeViewPointCapability viewPoint = _depth.GetAlternativeViewPointCap();
-		//viewPoint.SetViewPoint(_image);
-		viewPoint.ResetViewPoint();
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			_renderer.copyTexture(_imageTexture, _texture);
 		}
+		_fpsCounter.count();
+		Poco::Thread::sleep(1);
 	}
 }
 
@@ -99,6 +109,9 @@ void OpenNIScene::process() {
 }
 
 void OpenNIScene::draw1() {
+}
+
+void OpenNIScene::draw2() {
 	if (_texture) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		DWORD col = 0xff0000ff;
@@ -108,9 +121,8 @@ void OpenNIScene::draw1() {
 		//col = 0xccffffff;
 		//_renderer.drawTexture(400, 0, 640, 480, _depthTexture, 0, col, col, col, col);
 	}
-}
-
-void OpenNIScene::draw2() {
+	string s = Poco::format("%02lufps-%03.2hfms", _fpsCounter.getFPS(), _avgTime);
+	_renderer.drawFontTextureText(400, 0, 10, 10, 0xccff3333, s);
 }
 
 #endif
