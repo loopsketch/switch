@@ -1,8 +1,32 @@
 #ifdef USE_OPENNI
 #include "OpenNIScene.h"
 
+OpenNIScenePtr _openNIScene;
+
+void XN_CALLBACK_TYPE callback_newUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
+	_openNIScene->newUser(generator, id, cookie);
+}
+
+void XN_CALLBACK_TYPE callback_lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
+	_openNIScene->lostUser(generator, id, cookie);
+}
+
+void XN_CALLBACK_TYPE callback_detectedPose(xn::PoseDetectionCapability& capability, const XnChar* pose, XnUserID id, void* cookie) {
+	_openNIScene->detectedPose(capability, pose, id, cookie);
+}
+
+void XN_CALLBACK_TYPE callback_startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie) {
+	_openNIScene->startCalibration(capability, id, cookie);
+}
+
+void XN_CALLBACK_TYPE callback_endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie) {
+	_openNIScene->endCalibration(capability, id, success, cookie);
+}
+
+
 OpenNIScene::OpenNIScene(Renderer& renderer): Scene(renderer)
 {
+	_openNIScene = this;
 	_log.information("OpenNI-scene");
 }
 
@@ -58,12 +82,13 @@ bool OpenNIScene::initialize() {
 		_log.warning("failed not found UserGenerator");
 		return false;
 	}
+
 	XnCallbackHandle userCallbacks;
-	_user.RegisterUserCallbacks(newUser, lostUser, NULL, userCallbacks);
+	_user.RegisterUserCallbacks(callback_newUser, callback_lostUser, NULL, userCallbacks);
 	XnCallbackHandle poseCallbacks;
-	_user.GetPoseDetectionCap().RegisterToPoseCallbacks(detectedPose, NULL, NULL, poseCallbacks);
+	_user.GetPoseDetectionCap().RegisterToPoseCallbacks(callback_detectedPose, NULL, NULL, poseCallbacks);
 	XnCallbackHandle calibrationCallbacks;
-	_user.GetSkeletonCap().RegisterCalibrationCallbacks(startCalibration, endCalibration, NULL, calibrationCallbacks);
+	_user.GetSkeletonCap().RegisterCalibrationCallbacks(callback_startCalibration, callback_endCalibration, NULL, calibrationCallbacks);
 	_user.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
 	_user.GetSkeletonCap().GetCalibrationPose(_pose);
 
@@ -84,6 +109,35 @@ bool OpenNIScene::initialize() {
 	return true;
 }
 
+void OpenNIScene::newUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
+	_log.information("new user");
+	generator.GetPoseDetectionCap().StartPoseDetection(_pose, id);
+}
+
+void OpenNIScene::lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
+	_log.information("lost user");
+}
+
+void OpenNIScene::detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie) {
+	_log.information("detected pose");
+	_user.GetPoseDetectionCap().StopPoseDetection(id);
+	_user.GetSkeletonCap().RequestCalibration(id, true);
+}
+
+void OpenNIScene::startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie) {
+	_log.information("start calibration");
+}
+
+void OpenNIScene:: endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie) {
+	if (success) {
+		_user.GetSkeletonCap().StartTracking(id);
+		_log.information("start tracking");
+	} else {
+		_user.GetPoseDetectionCap().StartPoseDetection(_pose, id);
+		_log.information("retry pose detection");
+	}
+}
+
 void OpenNIScene::run() {
 	PerformanceTimer timer;
 	_readCount = 0;
@@ -93,6 +147,8 @@ void OpenNIScene::run() {
 		_renderer.colorFill(_imageTexture, 0xff000000);
 	}
 
+	_image.GetMirrorCap().SetMirror(true);
+	_depth.GetMirrorCap().SetMirror(true);
 	xn::AlternativeViewPointCapability viewPoint = _depth.GetAlternativeViewPointCap();
 	viewPoint.SetViewPoint(_image);
 	//viewPoint.ResetViewPoint();
@@ -179,6 +235,9 @@ void OpenNIScene::run() {
 }
 
 void OpenNIScene::process() {
+	if (_keycode != 0) {
+		_log.information(Poco::format("inkey: %d", _keycode));
+	}
 }
 
 void OpenNIScene::draw1() {
@@ -198,29 +257,5 @@ void OpenNIScene::draw2() {
 	_renderer.drawFontTextureText(400, 0, 10, 10, 0xccff3333, s);
 }
 
-void XN_CALLBACK_TYPE newUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("new user");
-}
-
-void XN_CALLBACK_TYPE lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("lost user");
-}
-
-void XN_CALLBACK_TYPE detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie) {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("detected pose");
-}
-
-void XN_CALLBACK_TYPE startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie) {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("start calibration");
-}
-
-void XN_CALLBACK_TYPE endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie) {
-	Poco::Logger& log = Poco::Logger::get("");
-	log.information("end calibration");
-}
 
 #endif

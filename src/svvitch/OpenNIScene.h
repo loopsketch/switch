@@ -17,6 +17,13 @@ using std::vector;
 #define DEPTH_RANGE_MAX	5500
 
 
+void XN_CALLBACK_TYPE callback_newUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE callback_lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE callback_detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE callback_startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE callback_endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie);
+
+
 /**
  * 差分検出シーンクラス.
  * 差分検出の機能を提供します
@@ -54,6 +61,12 @@ public:
 
 	virtual bool initialize();
 
+	void newUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+	void lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+	void detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie);
+	void startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie);
+	void endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie);
+
 	void run();
 
 	virtual void process();
@@ -62,11 +75,5 @@ public:
 
 	virtual void draw2();
 };
-
-void XN_CALLBACK_TYPE newUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
-void XN_CALLBACK_TYPE lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
-void XN_CALLBACK_TYPE detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie);
-void XN_CALLBACK_TYPE startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie);
-void XN_CALLBACK_TYPE endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie);
 
 typedef OpenNIScene* OpenNIScenePtr;
