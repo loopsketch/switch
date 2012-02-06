@@ -7,6 +7,8 @@
 #include <XnCppWrapper.h>
 #include "FPSCounter.h"
 
+using std::vector;
+
 #pragma comment(lib, "openNI.lib")
 
 #define SENSOR_WIDTH	640
@@ -31,6 +33,10 @@ private:
 	xn::ImageMetaData _imageMD;
 	xn::DepthGenerator _depth;
 	xn::DepthMetaData _depthMD;
+	xn::UserGenerator _user;
+	xn::SceneMetaData _sceneMD;
+	XnChar _pose[20];
+	vector<XnUserID> _userID;
 
 	LPDIRECT3DTEXTURE9 _imageTexture;
 	LPDIRECT3DSURFACE9 _imageSurface;
@@ -56,5 +62,11 @@ public:
 
 	virtual void draw2();
 };
+
+void XN_CALLBACK_TYPE newUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE detectedPose(xn::PoseDetectionCapability& capability, const XnChar* strPose, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE startCalibration(xn::SkeletonCapability& capability, XnUserID id, void* cookie);
+void XN_CALLBACK_TYPE endCalibration(xn::SkeletonCapability& capability, XnUserID id, XnBool success, void* cookie);
 
 typedef OpenNIScene* OpenNIScenePtr;
