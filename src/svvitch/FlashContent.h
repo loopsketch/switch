@@ -2,9 +2,11 @@
 
 #include "ComContent.h"
 #include "flash.h"
-
+#include <string>
+#include <list>
 
 using std::string;
+using std::list;
 
 
 /**

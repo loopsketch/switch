@@ -1,5 +1,6 @@
 #include "FlashContent.h"
 #include <Poco/UnicodeConverter.h>
+#include <Poco/File.h>
 #include "Utils.h"
 
 
@@ -23,31 +24,35 @@ void FlashContent::initialize() {
 	GetSystemDirectoryA(buf, MAX_PATH  + 1);
 	string dir(buf);
 	dir.append("\\macromed\\Flash\\");
+	File f(dir);
+	vector<File> files;
+	f.list(files);
 
-	vector<string> files;
-	files.push_back("flash11e.ocx"); // 11.1
-	files.push_back("flash11c.ocx"); // 11.0
-	files.push_back("flash10n.ocx"); // 10.2
-	files.push_back("flash10l.ocx");
-	files.push_back("flash10k.ocx");
-	files.push_back("flash10j.ocx");
-	files.push_back("flash10i.ocx");
-	files.push_back("flash9.ocx");
-	for (int i = 0; i < files.size(); i++) {
-		string lib(dir + files[i]);
-		Poco::File f(lib);
-		if (f.exists()) {
-			_module = LoadLibraryA(lib.c_str());
-			if (_module) {
-				DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
-				aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
-				if (!_classFactory) {
-					FreeLibrary(_module);
-					_module = NULL;
-				} else {
-					_log.information(Poco::format("load library: %s", lib));
-					break;
-				}
+	// ˆê”ÔV‚µ‚¢ocx‚ðlist‚Ìæ“ª‚Ö
+	list<File> libs;
+	for (vector<File>::iterator it = files.begin(); it != files.end(); ++it) {
+		f = (*it);
+		if (f.path().find(".ocx") != string::npos) {
+			if (libs.empty() || libs.front().getLastModified() < f.getLastModified()) {
+				libs.push_back(f);
+			} else {
+				libs.push_front(f);
+			}
+		}
+	}
+
+	for (list<File>::iterator it = libs.begin(); it != libs.end(); ++it) {
+		f = (*it);
+		_module = LoadLibraryA(f.path().c_str());
+		if (_module) {
+			DllGetClassObjectFunc aDllGetClassObjectFunc = (DllGetClassObjectFunc) GetProcAddress(_module, "DllGetClassObject");
+			aDllGetClassObjectFunc(CLSID_ShockwaveFlash, IID_IClassFactory, (void**)&_classFactory);
+			if (!_classFactory) {
+				FreeLibrary(_module);
+				_module = NULL;
+			} else {
+				_log.information(Poco::format("load library: %s", f.path()));
+				break;
 			}
 		}
 	}
