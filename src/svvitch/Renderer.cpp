@@ -520,12 +520,20 @@ void Renderer::removeScene(const string& name) {
 }
 
 bool Renderer::tryDrawLock() {
-	return _drawLock.tryLock();
+	return  peekMessage() && _drawLock;
+	//return _drawLock.tryLock();
+}
+
+void Renderer::drawLock() {
+	_drawLock = true;
+	//_drawLock.lock();
 }
 
 void Renderer::drawUnlock() {
-	_drawLock.unlock();
+	_drawLock = false;
+	//_drawLock.unlock();
 }
+
 
 /**
  *  Sceneをレンダリングします
@@ -594,7 +602,7 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	_device->SetRenderState(D3DRS_ZENABLE, false);
 	_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-	_drawLock.lock();
+	drawLock();
 	LPDIRECT3DSWAPCHAIN9 swapChain1 = NULL;
 	LPDIRECT3DSWAPCHAIN9 swapChain2 = NULL;
 	HRESULT hr = _device->GetSwapChain(0, &swapChain1);
@@ -610,14 +618,15 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 	}
 
 	// 描画1
-	if (SUCCEEDED(_device->BeginScene())) {
+	while (SUCCEEDED(_device->BeginScene())) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			(*it)->draw1();
 		}
 		_device->EndScene();
+		break;
 	}
-	_drawLock.unlock();
+	//drawUnlock();
 
 	D3DTEXTUREFILTERTYPE filter = D3DTEXF_NONE;
 	if (config().captureFilter == "point") {
@@ -681,14 +690,14 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 		_log.warning("failed get back buffer 2");
 	}
 
-	_drawLock.lock();
+	//drawLock();
 	if (!config().fullsceen || _displayAdpters == 1) {
 		LPDIRECT3DSURFACE9 backBuffer = NULL; //バックバッファ
 		hr = swapChain1->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
 		hr = _device->SetRenderTarget(0, backBuffer);
 		SAFE_RELEASE(backBuffer);
 	}
-	if SUCCEEDED(_device->BeginScene()) {
+	while SUCCEEDED(_device->BeginScene()) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_sceneLock);
 		for (vector<Scene*>::iterator it = _scenes.begin(); it != _scenes.end(); it++) {
 			(*it)->draw2();
@@ -720,8 +729,9 @@ void Renderer::renderScene(const bool visibled, const LONGLONG current) {
 			}
 		}
 		_device->EndScene();
+		break;
 	}
-	_drawLock.unlock();
+	drawUnlock();
 
 	if (config().fullsceen && _displayAdpters > 1) {
 		if (swapChain2) swapChain2->Present(NULL, NULL, NULL, NULL, 0);

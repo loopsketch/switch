@@ -72,7 +72,8 @@ private:
 	Poco::Logger& _log;
 	Poco::FastMutex _lock; //mutable èCè¸éqäOÇµÇΩ
 	Poco::FastMutex _sceneLock;
-	Poco::FastMutex _drawLock;
+	//Poco::FastMutex _drawLock;
+	bool _drawLock;
 	Poco::FastMutex _deviceLock;
 
 	HWND _hwnd;
@@ -235,6 +236,7 @@ public:
 
 	void removeScene(const string& name);
 
+	void drawLock();
 	bool tryDrawLock();
 	void drawUnlock();
 
