@@ -3,7 +3,7 @@
 #include <Poco/UUID.h>
 
 VideoTextureAllocator::VideoTextureAllocator(Renderer& renderer):
-	_log(Poco::Logger::get("")), _refCount(0), _renderer(renderer), _texture(NULL), _presenting(false)
+	_log(Poco::Logger::get("")), _refCount(0), _renderer(renderer), _texture(NULL), _presenting(false), _backBuffer(NULL)
 {
 }
 
@@ -24,17 +24,24 @@ float VideoTextureAllocator::getDisplayAspectRatio() {
 HRESULT VideoTextureAllocator::InitializeDevice(DWORD_PTR userID, VMR9AllocationInfo* info, DWORD* buffers) {
 	if (buffers == NULL || info == NULL) return E_POINTER;
 
-	_log.information(Poco::format("** initialize device %lu %lu", userID, ((DWORD)info->Format)));
 	string s = Poco::format("aspect:%ld/%ld native:%ldx%ld", info->szAspectRatio.cx, info->szAspectRatio.cy, info->szNativeSize.cx, info->szNativeSize.cy);
 	_log.information(Poco::format("** initialize device(%lu) format:%lu %lux%lu(%s) x %lu", userID, ((DWORD)info->Format), info->dwWidth, info->dwHeight, s, *buffers));
-	D3DFORMAT format = D3DFMT_A8R8G8B8;
+	D3DFORMAT format = D3DFMT_UNKNOWN;
+	if (info->Format == D3DFMT_UNKNOWN) {
+		format = D3DFMT_X8R8G8B8;
+	}
 	LPDIRECT3DTEXTURE9 texture = NULL;
-	switch (info->dwFlags) {
-		case VMR9AllocFlag_3DRenderTarget:
-			texture = _renderer.createRenderTarget(info->dwWidth, info->dwHeight, format);
-			break;
-		default:
-			_log.warning(Poco::format("failed not initialize flag: %lu", info->dwFlags));
+	if (info->dwFlags & VMR9AllocFlag_3DRenderTarget != 0) {
+		texture = _renderer.createRenderTarget(info->dwWidth, info->dwHeight, format);
+	}
+	if (info->dwFlags & VMR9AllocFlag_DXVATarget != 0) {
+		_log.information("allocationInfo->dwFlags: DXVATarget");
+	}
+	if (info->dwFlags & VMR9AllocFlag_TextureSurface != 0) {
+		_log.information("allocationInfo->dwFlags: TextureSurface");
+	}
+	if (info->dwFlags & VMR9AllocFlag_OffscreenSurface != 0) {
+		_log.information("allocationInfo->dwFlags: OffscreenSurface");
 	}
 	if (texture) {
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -55,14 +62,14 @@ HRESULT VideoTextureAllocator::TerminateDevice(DWORD_PTR userID) {
 
 HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD surfaceFlags, LPDIRECT3DSURFACE9* surface) {
 	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-	if (!_texture) return E_FAIL;
+	if (!_texture) return S_OK;
 	if (surface == NULL) {
 		_log.warning(Poco::format("no surface: %lu", userID));
 		return E_POINTER;
 	}
 
 	if (index >= 1) {
-		_log.warning(Poco::format("outOfIndex:%lu flags:%lu", userID, surfaceFlags));
+		_log.warning(Poco::format("out of index:%lu flags:%lu", userID, surfaceFlags));
 		Sleep(5000);
 		return E_FAIL;
 	}
@@ -74,11 +81,13 @@ HRESULT VideoTextureAllocator::GetSurface(DWORD_PTR userID, DWORD index, DWORD s
 		return hr;
 	}
 
-	//while (surface && _presenting && _renderer.peekMessage() && !_renderer.tryDrawLock()) {
+	while (_presenting && _renderer.tryDrawLock()) {
 	//	// block
-	//	Sleep(0);
-	//}
-	return hr;
+		Sleep(1);
+	}
+	//LPDIRECT3DSURFACE9 backBuffer = NULL;
+	//_renderer.get3DDevice()->GetRenderTarget(0, &_backBuffer);
+	return S_OK;
 }
 
 HRESULT VideoTextureAllocator::AdviseNotify(IVMRSurfaceAllocatorNotify9* surfAllocNotify) {
@@ -112,6 +121,7 @@ HRESULT VideoTextureAllocator::StopPresenting(DWORD_PTR userID) {
 HRESULT VideoTextureAllocator::PresentImage(DWORD_PTR userID, VMR9PresentationInfo *info) {
 	// ƒŒƒ“ƒ_ƒŠƒ“ƒO‰Â”\ó‘Ô
 	//_renderer.drawUnlock();
+	//_renderer.get3DDevice()->SetRenderTarget(0, _backBuffer);
 	//D3DLOCKED_RECT locked_rect;
 	//HRESULT hr =info->lpSurf->LockRect(&locked_rect, NULL, D3DLOCK_READONLY);
 	//if SUCCEEDED(hr) {
@@ -173,7 +183,7 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 		subType = "YUY2/YUYV";
 		//_timePerFrames = tpf;
 		format = D3DFMT_YUY2;
-		hr = S_OK;
+		// hr = S_OK;
 	} else if (pmt->subtype == MEDIASUBTYPE_IYUV) {
 		subType = "IYUV";
 		//_timePerFrames = tpf;
@@ -188,12 +198,12 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 		subType = "UYVY";
 		//_timePerFrames = tpf;
 		format = D3DFMT_UYVY;
-		hr = S_OK;
+		// hr = S_OK;
 	} else if (pmt->subtype == MEDIASUBTYPE_YVYU) {
 		subType = "YVYU";
 		//_timePerFrames = tpf;
 		format = D3DFMT_UYVY;
-		hr = S_OK;
+		// hr = S_OK;
 	} else if (pmt->subtype == MEDIASUBTYPE_RGB565) {
 		subType = "RGB565";
 		//_timePerFrames = tpf;
@@ -238,7 +248,7 @@ HRESULT VideoTextureAllocator::SetStreamMediaType(DWORD streamID, AM_MEDIA_TYPE*
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			SAFE_RELEASE(_texture);
 			_texture = texture;
-			_log.information(Poco::format("size/format changed, create texture %dx%d %x", w, h, format));
+			_log.information(Poco::format("size/format changed, create texture %ldx%ld %lu", w, h, ((DWORD)format)));
 		}
 	}
 	_w = w;

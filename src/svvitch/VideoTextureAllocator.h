@@ -24,6 +24,7 @@ private:
 	int _h;
 	D3DFORMAT _format;
 	bool _presenting;
+	LPDIRECT3DSURFACE9 _backBuffer;
 
 public:
 	VideoTextureAllocator(Renderer& renderer);
