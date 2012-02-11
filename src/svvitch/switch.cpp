@@ -282,6 +282,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 }
 
 void mainloop(HWND hWnd) {
+	SetThreadAffinityMask(::GetCurrentThread(), 1 | 2 | 4 | 8);
 	EXCEPTION_RECORD ERecord;
 	CONTEXT EContext; 
 	__try {

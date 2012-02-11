@@ -102,7 +102,7 @@ MainScene::~MainScene() {
 					_log.warning(Poco::format("failed delete: ", ex.displayText()));
 				}
 			}
-		} catch (...) {
+		} catch (const std::exception& ex) {
 		}
 	}
 	SAFE_DELETE(_workspace);

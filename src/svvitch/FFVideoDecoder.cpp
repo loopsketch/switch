@@ -179,6 +179,7 @@ const UINT FFVideoDecoder::bufferedFrames() {
 
 void FFVideoDecoder::run() {
 	_log.information("video decoder thread start");
+	SetThreadAffinityMask(::GetCurrentThread(), 1 | 2 | 4 | 8);
 	PerformanceTimer timer;
 
 	AVFrame* frame = avcodec_alloc_frame();

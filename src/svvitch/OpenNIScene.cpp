@@ -1,6 +1,8 @@
 #ifdef USE_OPENNI
 #include "OpenNIScene.h"
 
+#include <exception>
+
 OpenNIScenePtr _openNIScene;
 
 void XN_CALLBACK_TYPE callback_newUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
@@ -89,7 +91,9 @@ bool OpenNIScene::initialize() {
 	_user.GetPoseDetectionCap().RegisterToPoseCallbacks(callback_detectedPose, NULL, NULL, poseCallbacks);
 	XnCallbackHandle calibrationCallbacks;
 	_user.GetSkeletonCap().RegisterCalibrationCallbacks(callback_startCalibration, callback_endCalibration, NULL, calibrationCallbacks);
-	_user.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
+	//_user.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
+	_user.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_HEAD_HANDS);
+	
 	_user.GetSkeletonCap().GetCalibrationPose(_pose);
 
 	ret = _context.StartGeneratingAll();
@@ -111,7 +115,11 @@ bool OpenNIScene::initialize() {
 
 void OpenNIScene::newUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
 	_log.information("new user");
-	generator.GetPoseDetectionCap().StartPoseDetection(_pose, id);
+	if (_user.GetSkeletonCap().NeedPoseForCalibration()) {
+		generator.GetPoseDetectionCap().StartPoseDetection(_pose, id);
+	} else {
+		_user.GetSkeletonCap().RequestCalibration(id, true);
+	}
 }
 
 void OpenNIScene::lostUser(xn::UserGenerator& generator, XnUserID id, void* cookie) {
@@ -133,12 +141,18 @@ void OpenNIScene:: endCalibration(xn::SkeletonCapability& capability, XnUserID i
 		_user.GetSkeletonCap().StartTracking(id);
 		_log.information("start tracking");
 	} else {
-		_user.GetPoseDetectionCap().StartPoseDetection(_pose, id);
-		_log.information("retry pose detection");
+		if (_user.GetSkeletonCap().NeedPoseForCalibration()) {
+			_user.GetPoseDetectionCap().StartPoseDetection(_pose, id);
+			_log.information("retry pose detection");
+		} else {
+			_user.GetSkeletonCap().RequestCalibration(id, true);
+			_log.information("retry calibration");
+		}
 	}
 }
 
 void OpenNIScene::run() {
+	SetThreadAffinityMask(::GetCurrentThread(), 1 | 2 | 4 | 8);
 	PerformanceTimer timer;
 	_readCount = 0;
 	_avgTime = 0;
@@ -154,82 +168,67 @@ void OpenNIScene::run() {
 	//viewPoint.ResetViewPoint();
 
 	while (_worker) {
-		timer.start();
-		_context.WaitAndUpdateAll();
-		_image.GetMetaData(_imageMD);
-		_depth.GetMetaData(_depthMD);
-		_user.GetUserPixels(0, _sceneMD);
-		XnUserID userID[15];
-		XnUInt16 users = 15;
-		_user.GetUsers(userID, users);
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			_userID.clear();
-			for (int i = 0; i < users; ++i) {
-				_userID.push_back(userID[i]);
-				if (_user.GetSkeletonCap().IsTracking(userID[i])) {
-				}
-			}
-		}
-		_readTime = timer.getTime();
-		_readCount++;
-		if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
-
-		D3DLOCKED_RECT lockedRect = {0};
-		if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
-			LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
-			LPBYTE dst = (LPBYTE)lockedRect.pBits;
-			int pitchAdd = lockedRect.Pitch - SENSOR_WIDTH * 4;
-			int i = 0;
-			int j = 0;
-			byte d, b,g,r;
-			XnLabel l;
-			for (int y = 0; y < SENSOR_HEIGHT; y++) {
-				for (int x = 0; x < SENSOR_WIDTH; x++) {
-					l = _sceneMD(x, y);
-					d = 255 - (256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) / DEPTH_RANGE_MAX);
-					r = src[i++];
-					g = src[i++];
-					b = src[i++];
-					switch (l) {
-					case 0:
-						dst[j++] = b;
-						dst[j++] = g;
-						dst[j++] = r;
-						dst[j++] = d;
-						break;
-					case 1:
-						dst[j++] = 0xff;
-						dst[j++] = 0;
-						dst[j++] = 0;
-						dst[j++] = d;
-						break;
-					case 2:
-						dst[j++] = 0;
-						dst[j++] = 0;
-						dst[j++] = 0xff;
-						dst[j++] = d;
-						break;
-					case 3:
-						dst[j++] = 0xff;
-						dst[j++] = 0;
-						dst[j++] = 0xff;
-						dst[j++] = d;
-						break;
+		try {
+			timer.start();
+			_context.WaitAndUpdateAll();
+			_image.GetMetaData(_imageMD);
+			_depth.GetMetaData(_depthMD);
+			//_user.GetUserPixels(0, _sceneMD);
+			XnUserID userID[15];
+			XnUInt16 users = 15;
+			_user.GetUsers(userID, users);
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				_userID.clear();
+				for (int i = 0; i < users; ++i) {
+					_userID.push_back(userID[i]);
+					if (_user.GetSkeletonCap().IsTracking(userID[i])) {
 					}
 				}
-				j+=pitchAdd;
 			}
-			_imageSurface->UnlockRect();
-			if (!_renderer.updateRenderTargetData(_imageTexture, _imageSurface)) {
-				_log.warning("updateRenderTargetData");
+			_readTime = timer.getTime();
+			_readCount++;
+			if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
+
+			D3DLOCKED_RECT lockedRect = {0};
+			if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
+				LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
+				LPBYTE dst = (LPBYTE)lockedRect.pBits;
+				int pitchAdd = lockedRect.Pitch - SENSOR_WIDTH * 4;
+				int i = 0;
+				int j = 0;
+				byte d;
+				byte b,g,r;
+				XnLabel l;
+				for (int y = 0; y < SENSOR_HEIGHT; y++) {
+					for (int x = 0; x < SENSOR_WIDTH; x++) {
+						//l = _sceneMD(x, y);
+						d = 256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) / DEPTH_RANGE_MAX;
+						if (d < 0) d = 0; else if (d > 255) d = 255;
+						d = 255 - d;
+						r = src[i++];
+						g = src[i++];
+						b = src[i++];
+						dst[j++] = d;
+						dst[j++] = d;
+						dst[j++] = d;
+						dst[j++] = 0xff;
+					}
+					j+=pitchAdd;
+				}
+				_imageSurface->UnlockRect();
+				if (!_renderer.updateRenderTargetData(_imageTexture, _imageSurface)) {
+					_log.warning("updateRenderTargetData");
+				}
 			}
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				_renderer.copyTexture(_imageTexture, _texture);
+			}
+			_fpsCounter.count();
+		} catch (const std::exception& ex) {
+			_log.warning(Poco::format("exception: %s", ex.what()));
 		}
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			_renderer.copyTexture(_imageTexture, _texture);
-		}
-		_fpsCounter.count();
 		Poco::Thread::sleep(1);
 	}
 }
@@ -252,6 +251,26 @@ void OpenNIScene::draw2() {
 		_renderer.drawTexture(400, 0, 640, 480, _texture, 0, col, col, col, col);
 		//col = 0xccffffff;
 		//_renderer.drawTexture(400, 0, 640, 480, _depthTexture, 0, col, col, col, col);
+		{
+			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			for (vector<XnUserID>::iterator it = _userID.begin(); it != _userID.end(); ++it) {
+				XnUserID id = *it;
+				if (_user.GetSkeletonCap().IsTracking(id)) {
+					XnSkeletonJointPosition headPos, leftHandPos, rightHandPos;
+					_user.GetSkeletonCap().GetSkeletonJointPosition(id, XN_SKEL_HEAD, headPos);
+					_user.GetSkeletonCap().GetSkeletonJointPosition(id, XN_SKEL_LEFT_HAND, leftHandPos);
+					_user.GetSkeletonCap().GetSkeletonJointPosition(id, XN_SKEL_RIGHT_HAND, rightHandPos);
+					float headDepth = headPos.position.Z;
+					float leftHandDepth = leftHandPos.position.Z;
+					float rightHanddDepth = rightHandPos.position.Z;
+					XnPoint3D pt[3] = {headPos.position, leftHandPos.position, rightHandPos.position};
+					_depth.ConvertRealWorldToProjective(3, pt, pt);
+					_renderer.drawFontTextureText(400 + pt[0].X, pt[0].Y, 10, 10, 0xccff3333, Poco::format("head %dmm", (int)headDepth));
+					_renderer.drawFontTextureText(400 + pt[1].X, pt[1].Y, 10, 10, 0xccff3333, Poco::format("left %dmm", (int)leftHandDepth));
+					_renderer.drawFontTextureText(400 + pt[2].X, pt[2].Y, 10, 10, 0xccff3333, Poco::format("right %dmm", (int)rightHanddDepth));
+				}
+			}
+		}
 	}
 	string s = Poco::format("%02lufps-%03.2hfms user-%?u", _fpsCounter.getFPS(), _avgTime, _userID.size());
 	_renderer.drawFontTextureText(400, 0, 10, 10, 0xccff3333, s);
