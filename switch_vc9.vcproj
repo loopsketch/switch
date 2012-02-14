@@ -317,6 +317,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\UserViewer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\Utils.cpp"
 				>
 			</File>
@@ -504,6 +508,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\UserInterfaceScene.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\UserViewer.h"
 				>
 			</File>
 			<File

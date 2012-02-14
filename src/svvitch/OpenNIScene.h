@@ -6,8 +6,11 @@
 #include <Poco/Runnable.h>
 #include <XnCppWrapper.h>
 #include "FPSCounter.h"
+#include "UserViewer.h"
+#include <map>
 
 using std::vector;
+using std::map;
 
 #pragma comment(lib, "openNI.lib")
 
@@ -36,14 +39,15 @@ private:
 	Poco::Runnable* _worker;
 
 	xn::Context _context;
-	xn::ImageGenerator _image;
+	xn::ImageGenerator _imageGenerator;
 	xn::ImageMetaData _imageMD;
-	xn::DepthGenerator _depth;
+	xn::DepthGenerator _depthGenerator;
 	xn::DepthMetaData _depthMD;
-	xn::UserGenerator _user;
+	xn::UserGenerator _userGenerator;
 	xn::SceneMetaData _sceneMD;
 	XnChar _pose[20];
-	vector<XnUserID> _userID;
+	//vector<XnUserID> _userID;
+	map<XnUserID, UserViewerPtr> _users;
 
 	LPDIRECT3DTEXTURE9 _imageTexture;
 	LPDIRECT3DSURFACE9 _imageSurface;
