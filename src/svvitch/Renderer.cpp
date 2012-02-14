@@ -461,6 +461,10 @@ const LPDIRECTSOUND Renderer::getSoundDevice() const {
  * キーボードデバイスを取得します
  */
 void Renderer::notifyKeyDown(const int keycode, const bool shift, const bool ctrl) {
+#ifdef _DEBUG
+	string s = Poco::format("keyup: %?x\n", keycode);
+	::OutputDebugStringA(s.c_str());
+#endif
 	_keycode = keycode;
 	_shift = shift;
 	_ctrl = ctrl;

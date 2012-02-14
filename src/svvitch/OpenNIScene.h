@@ -17,7 +17,7 @@ using std::map;
 #define SENSOR_WIDTH	640
 #define SENSOR_HEIGHT	480
 #define DEPTH_RANGE_MIN	500
-#define DEPTH_RANGE_MAX	5500
+#define DEPTH_RANGE_MAX	10000
 
 
 void XN_CALLBACK_TYPE callback_newUser(xn::UserGenerator& generator, XnUserID id, void* cookie);

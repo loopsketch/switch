@@ -37,14 +37,6 @@ OpenNIScene::~OpenNIScene() {
 		_worker = NULL;
 		_thread.join();
 	}
-	{
-		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-		for (map<XnUserID, UserViewerPtr>::iterator it = _users.begin(); it != _users.end(); it++) {
-			SAFE_DELETE(it->second);
-		}
-	}
-	_context.StopGeneratingAll();
-	_context.Release();
 	SAFE_RELEASE(_imageTexture);
 	SAFE_RELEASE(_imageSurface);
 	SAFE_RELEASE(_texture);
@@ -200,7 +192,7 @@ void OpenNIScene::run() {
 			_context.WaitAndUpdateAll();
 			_imageGenerator.GetMetaData(_imageMD);
 			_depthGenerator.GetMetaData(_depthMD);
-			//_user.GetUserPixels(0, _sceneMD);
+			_userGenerator.GetUserPixels(0, _sceneMD);
 			_readTime = timer.getTime();
 			_readCount++;
 			if (_readCount > 0) _avgTime = F(_avgTime * (_readCount - 1) + _readTime) / _readCount;
@@ -211,47 +203,68 @@ void OpenNIScene::run() {
 					it->second->process();
 				}
 			}
-			//D3DLOCKED_RECT lockedRect = {0};
-			//if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
-			//	LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
-			//	LPBYTE dst = (LPBYTE)lockedRect.pBits;
-			//	int pitchAdd = lockedRect.Pitch - SENSOR_WIDTH * 4;
-			//	int i = 0;
-			//	int j = 0;
-			//	byte d;
-			//	byte b,g,r;
-			//	XnLabel l;
-			//	for (int y = 0; y < SENSOR_HEIGHT; y++) {
-			//		for (int x = 0; x < SENSOR_WIDTH; x++) {
-			//			//l = _sceneMD(x, y);
-			//			d = 256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) / DEPTH_RANGE_MAX;
-			//			if (d < 0) d = 0; else if (d > 255) d = 255;
-			//			d = 255 - d;
-			//			r = src[i++];
-			//			g = src[i++];
-			//			b = src[i++];
-			//			dst[j++] = d;
-			//			dst[j++] = d;
-			//			dst[j++] = d;
-			//			dst[j++] = 0xff;
-			//		}
-			//		j+=pitchAdd;
-			//	}
-			//	_imageSurface->UnlockRect();
-			//	if (!_renderer.updateRenderTargetData(_imageTexture, _imageSurface)) {
-			//		_log.warning("updateRenderTargetData");
-			//	}
-			//}
-			//{
-			//	Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			//	_renderer.copyTexture(_imageTexture, _texture);
-			//}
+			D3DLOCKED_RECT lockedRect = {0};
+			if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
+				//LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
+				LPUINT dst = (LPUINT)lockedRect.pBits;
+				int pitchAdd = lockedRect.Pitch / 4 - SENSOR_WIDTH;
+				//int i = 0;
+				int j = 0;
+				UINT d, b, g, r;
+				XnLabel label;
+				for (int y = 0; y < SENSOR_HEIGHT; y++) {
+					for (int x = 0; x < SENSOR_WIDTH; x++) {
+						label = _sceneMD(x, y);
+						d = 255 - ((256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) >> 13)) & 0xff; // ëÂëÃd / DEPTH_RANGE_MAXÇçsÇ§ÇΩÇﬂÅA / 8192
+						//r = src[i++] << 16;
+						//g = src[i++] << 8;
+						//b = src[i++];
+						switch (label) {
+						case 1:
+							dst[j++] = d << 24 | 0x0099ff;
+							break;
+						case 2:
+							dst[j++] = d << 24 | 0xffcc00;
+							break;
+						case 3:
+							dst[j++] = d << 24 | 0xff0099;
+							break;
+						case 4:
+							dst[j++] = d << 24 | 0x009900;
+							break;
+						case 5:
+							dst[j++] = d << 24 | 0x00ff99;
+							break;
+						default:
+							//dst[j++] = 0xff000000 | r | g | b;
+							dst[j++] = 0xff000000 | d;
+						}
+					}
+					j+=pitchAdd;
+				}
+				_imageSurface->UnlockRect();
+				if (!_renderer.updateRenderTargetData(_imageTexture, _imageSurface)) {
+					_log.warning("updateRenderTargetData");
+				}
+			}
+			{
+				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+				_renderer.copyTexture(_imageTexture, _texture);
+			}
 			_fpsCounter.count();
 		} catch (const std::exception& ex) {
 			_log.warning(Poco::format("exception: %s", ex.what()));
 		}
-		Poco::Thread::sleep(1);
+		//Poco::Thread::sleep(1);
 	}
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		for (map<XnUserID, UserViewerPtr>::iterator it = _users.begin(); it != _users.end(); it++) {
+			SAFE_DELETE(it->second);
+		}
+	}
+	_context.StopGeneratingAll();
+	_context.Release();
 }
 
 void OpenNIScene::process() {
@@ -270,7 +283,7 @@ void OpenNIScene::draw2() {
 			DWORD col = 0xff0000ff;
 			//_renderer.drawTexture(400, 0, 640, 480, NULL, 0, col, col, col, col);
 			col = 0xffffffff;
-			//_renderer.drawTexture(400, 0, 640, 480, _texture, 0, col, col, col, col);
+			_renderer.drawTexture(0, 0, 640, 480, _texture, 0, col, col, col, col);
 			//col = 0xccffffff;
 			//_renderer.drawTexture(400, 0, 640, 480, _depthTexture, 0, col, col, col, col);
 		}
@@ -280,7 +293,7 @@ void OpenNIScene::draw2() {
 				it->second->draw();
 			}
 			string s = Poco::format("%02lufps-%03.2hfms user-%?u", _fpsCounter.getFPS(), _avgTime, _users.size());
-			_renderer.drawFontTextureText(400, 0, 10, 10, 0xccff3333, s);
+			_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, s);
 		}
 	}
 }
