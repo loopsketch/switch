@@ -305,6 +305,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\svvitch\TelopScene.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\svvitch\TextContent.cpp"
 				>
 			</File>
@@ -496,6 +500,10 @@
 			</File>
 			<File
 				RelativePath=".\src\svvitch\switch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\svvitch\TelopScene.h"
 				>
 			</File>
 			<File

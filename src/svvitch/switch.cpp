@@ -27,13 +27,13 @@
 #include "CaptureScene.h"
 #include "MainScene.h"
 #include "DiffDetectScene.h"
+#include "Utils.h"
+#include "WebAPI.h"
+#include "TelopScene.h"
+
 #ifdef USE_OPENNI
 #include "OpenNIScene.h"
 #endif
-//#include "UserInterfaceScene.h"
-#include "Utils.h"
-#include "WebAPI.h"
-//#include "ui/UserInterfaceManager.h"
 
 //#ifndef _DEBUG
 //#include <omp.h>
@@ -238,6 +238,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	if (true) {
 		mainScene = new MainScene(*_renderer);
 		_renderer->addScene("main", mainScene);
+	}
+	if (_conf.hasScene("telop")) {
+		TelopScenePtr telop = new TelopScene(*_renderer);
+		telop->initialize();
+		_renderer->addScene("telop", telop);
 	}
 	//if (_conf.hasScene("diff")) {
 	//	DiffDetectScenePtr diffScene = new DiffDetectScene(*_renderer);
