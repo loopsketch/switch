@@ -12,6 +12,7 @@
 #include <Poco/PatternFormatter.h>
 #include <Poco/string.h>
 #include <Poco/UnicodeConverter.h>
+#include "DebugConsoleChannel.h"
 #include "Utils.h"
 
 
@@ -41,6 +42,10 @@ bool Configuration::initialize() {
 		Poco::PatternFormatter* pat = new Poco::PatternFormatter(xml->getString("log.pattern", "%Y-%m-%d %H:%M:%S.%c %N[%T]:%t"));
 		pat->setProperty(Poco::PatternFormatter::PROP_TIMES, "local");
 		Poco::FormattingChannel* fc = new Poco::FormattingChannel(pat);
+#ifdef _DEBUG
+		logFile = new DebugConsoleChannel();
+		fc->setChannel(logFile);
+#else
 		string path = xml->getString("log.file", "switch.log");
 		if (path.empty()) {
 			logFile = new Poco::NullChannel();
@@ -48,7 +53,6 @@ bool Configuration::initialize() {
 			logFile = new Poco::FileChannel(path);
 		}
 		fc->setChannel(logFile);
-		_log.setChannel(fc);
 		// ローカル時刻指定
 		fc->setProperty(Poco::FileChannel::PROP_TIMES, "local");
 		// アーカイブファイル名への付加文字列[number/timestamp] (日付)
@@ -59,6 +63,8 @@ bool Configuration::initialize() {
 		fc->setProperty(Poco::FileChannel::PROP_ROTATION, xml->getString("log.rotation", "daily"));
 		// 保持期間[<n>seconds/<n>minutes/<n>hours/<n>days/<n>weeks/<n>months] (5日間)
 		fc->setProperty(Poco::FileChannel::PROP_PURGEAGE, xml->getString("log.purgeage", "5days"));
+#endif
+		_log.setChannel(fc);
 		fc->release();
 		pat->release();
 		_log.information("*** configuration");
