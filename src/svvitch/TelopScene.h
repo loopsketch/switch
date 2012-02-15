@@ -46,6 +46,8 @@ private:
 	Poco::Runnable* _worker;
 
 	string _remoteURL;
+	string _title;
+	Poco::DateTime _date;
 	int _validMinutes;
 	int _speed;
 	int _space;
