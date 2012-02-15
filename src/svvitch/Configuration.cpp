@@ -45,6 +45,7 @@ bool Configuration::initialize() {
 #ifdef _DEBUG
 		logFile = new DebugConsoleChannel();
 		fc->setChannel(logFile);
+		_log.setLevel(Poco::Message::PRIO_TRACE);
 #else
 		string path = xml->getString("log.file", "switch.log");
 		if (path.empty()) {
