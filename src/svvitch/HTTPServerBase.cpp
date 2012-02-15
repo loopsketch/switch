@@ -156,8 +156,8 @@ bool BaseRequestHandler::sendFile(Path& path) {
 				response().setContentType("application/octet-stream");
 			}
 			response().setChunkedTransferEncoding(false);
-			response().add("Access-Control-Allow-Origin", "*"); // chrome
-			response().add("Access-Control-Allow-Headers", "X-Requested-With"); // chrome
+			response().add("Access-Control-Allow-Origin", "*"); // for chrome xhr
+			response().add("Access-Control-Allow-Headers", "X-Requested-With"); // chrome xhr
 
 			Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
 			is.close();
