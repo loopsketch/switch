@@ -1,5 +1,5 @@
 var display = new Array();
-display.push("192.168.1.106");
+display.push("127.0.0.1");
 var root = "http://" + display[0] + ":9090/0/";
 
 $(document).ready(function() {
@@ -30,9 +30,39 @@ $(document).ready(function() {
 	$("#doSwitch").click(function() {
 		switchContent();
 	});
-	$("#error").hide();
-	$("#message").text('操作開始できます.').fadeIn(1000);
+
+	getWorkspace();
 });
+
+function message(text) {
+	$("#error").hide();
+	$("#message").text(text).fadeIn(1000);
+}
+
+function getWorkspace() {
+	$.ajax({
+		type: "GET",
+		url: root + "download?path=workspace.xml",
+		dataType: "text",
+		cache: false,
+		async: true,
+		success: function(data) {
+			alert(data);
+			message('操作開始できます.\n' + data);
+
+			$("#preview").load(function() {
+				setTimeout(function() {
+					updatePreview();
+				}, 2000);
+			});
+			updatePreview();
+		}
+	});
+}
+
+function updatePreview() {
+	$('#preview').attr('src', root + 'get/snapshot');
+}
 
 function switchContent() {
 	$.ajax({
