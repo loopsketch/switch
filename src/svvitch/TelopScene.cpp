@@ -16,6 +16,7 @@
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
+#include <Poco/Util/XMLConfiguration.h>
 #include "Utils.h"
 
 
@@ -34,12 +35,21 @@ bool TelopScene::initialize() {
 	_validMinutes = 120;
 	_speed = -1;
 	_space = 200;
-	string s;
-	//Poco::UnicodeConverter::toUTF8(L"YD,T0,T1,T2,T3,T4,T5,T6,JW01", s);
-	//Poco::UnicodeConverter::toUTF8(L"社会,スポーツ,デジタル", s);
-	//svvitch::split(s, ',', _categories); // ent,int,pol,soc,eco,spo
-	_creating = false;
+	try {
+		Poco::Util::XMLConfiguration* config = new Poco::Util::XMLConfiguration("telop-config.xml");
+		if (config) {
+			_remoteURL = config->getString("remoteURL", "http://rss.rssad.jp/rss/mainichi/flash.rss");
+			_validMinutes = config->getInt("validMinutes", 120);
+			_speed = config->getInt("speed", -1);
+			_space = config->getInt("space", 200);
 
+			config->release();
+		}
+	} catch (Poco::Exception& ex) {
+		_log.warning(ex.displayText());
+	}
+
+	_creating = false;
 	_worker = this;
 	_thread.start(*_worker);
 	return true;
@@ -50,7 +60,7 @@ void TelopScene::run() {
 	int i = -1;
 	while (_worker) {
 		Poco::LocalDateTime now;
-		map<string, vector<string>> sources = readXML(now);
+		map<string, vector<string>> sources = readRSS(now);
 
 		for (int t = 0; _worker && t < 300; ++t) {
 			if (texts.empty()) {
@@ -119,16 +129,17 @@ void TelopScene::run() {
 	}
 }
 
-map<string, vector<string>> TelopScene::readXML(const Poco::LocalDateTime& now) {
-	// rss1.0
+map<string, vector<string>> TelopScene::readRSS(const Poco::LocalDateTime& now) {
 	_log.information(Poco::format("check remote[%s]: %s", Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT), _remoteURL));
 	map<string, vector<string>> sources;
 	Poco::XML::DOMParser parser;
 	try {
 		Poco::XML::Document* doc = parser.parse(_remoteURL);
-		if (doc) { // 
+		if (doc) {
 			Poco::XML::Element* root = doc->documentElement();
 			if (root->nodeName() == "rdf:RDF") {
+				// rss1.0
+				_log.information("parse rss1.0");
 				Poco::XML::NodeList* list = root->getElementsByTagName("channel");
 				if (list) {
 					Poco::XML::Element* e = (Poco::XML::Element*)list->item(0);
@@ -189,6 +200,65 @@ map<string, vector<string>> TelopScene::readXML(const Poco::LocalDateTime& now) 
 					count += m->second.size();
 				}
 				_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
+			} else if (root->nodeName() == "rss") {
+				// rss2.0 or atom
+				_log.information("parse rss2.0/ATOM");
+				Poco::XML::NodeList* channels = root->getElementsByTagName("channel");
+				if (channels->length() > 0) {
+					Poco::XML::Element* channel = (Poco::XML::Element*)channels->item(0);
+					Poco::XML::Element* title = channel->getChildElement("title");
+					_title = title->innerText();
+					Poco::XML::Element* date = channel->getChildElement("pubDate");
+					if (date) {
+						int tzd = 0;
+						_date = Poco::DateTimeParser::parse(Poco::DateTimeFormat::HTTP_FORMAT, date->innerText(), tzd);
+					} else {
+						date = channel->getChildElement("lastBuildDate");
+						if (date) {
+							int tzd = 0;
+							_date = Poco::DateTimeParser::parse(Poco::DateTimeFormat::HTTP_FORMAT, date->innerText(), tzd);
+						}
+					}
+
+					Poco::XML::NodeList* items = channel->getElementsByTagName("item");
+					if (items->length() > 0) {
+						for (int i = 0; i < items->length(); i++) {
+							Poco::XML::Element* e = (Poco::XML::Element*)items->item(i);
+							Poco::XML::Element* date = e->getChildElement("pubDate");
+							int tzd = 0;
+							Poco::DateTime dt;
+							if (date) {
+								dt = Poco::DateTimeParser::parse(Poco::DateTimeFormat::HTTP_FORMAT, date->innerText(), tzd);
+								if (now.day() != dt.day()) continue;
+								int d = (now.timestamp() - dt.timestamp()) / (60 * Poco::Timestamp::resolution());
+								if (d > _validMinutes) continue;
+								//_log.information(Poco::format("date: %s %d", date->innerText(), d));
+							}
+							Poco::XML::Element* title = e->getChildElement("title");
+							if (title) {
+								const string& key = "item";
+								map<string, vector<string>>::iterator m = sources.find(key);
+								if (m == sources.end()) {
+									vector<string> vec;
+									sources[key] = vec;
+								}
+								sources[key].push_back(title->innerText());
+							}
+						}
+						items->release();
+					}
+					channels->release();
+				}
+
+				int count = 0;
+				for (map<string, vector<string>>::iterator m = sources.begin(); m != sources.end(); ++m) {
+					//_log.information(Poco::format("category: %s",m->first));
+					//for (vector<string>::iterator it = m->second.begin(); it != m->second.end(); ++it) {
+					//	_log.information(Poco::format("text[%s]",*it));
+					//}
+					count += m->second.size();
+				}
+				_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
 			}
 			doc->release();
 		} else {
@@ -196,8 +266,10 @@ map<string, vector<string>> TelopScene::readXML(const Poco::LocalDateTime& now) 
 		}
 	} catch (Poco::IOException& ex) {
 		_log.warning(Poco::format("failed not read XML: %s", ex.displayText()));
-	} catch (...) {
-		_log.warning(Poco::format("failed exception in readMXL(): %s", _remoteURL));
+	} catch (Poco::PathSyntaxException& ex) {
+		_log.warning(Poco::format("failed not read XML: %s", ex.displayText()));
+	//} catch (...) {
+	//	_log.warning(Poco::format("failed exception in readMXL(): %s", _remoteURL));
 	}
 	return sources;
 }

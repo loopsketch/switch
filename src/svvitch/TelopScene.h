@@ -60,8 +60,9 @@ private:
 
 	void run();
 
+	map<string, vector<string>> readRSS(const Poco::LocalDateTime& now);
+
 	map<string, vector<string>> _readXML(const Poco::LocalDateTime& now);
-	map<string, vector<string>> readXML(const Poco::LocalDateTime& now);
 
 
 public:
