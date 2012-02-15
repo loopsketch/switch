@@ -115,13 +115,7 @@ bool OpenNIScene::initialize() {
 
 void OpenNIScene::newUser(xn::UserGenerator& user, XnUserID id, void* cookie) {
 	XnStatus ret = XN_STATUS_OK;
-	XnBoundingBox3D box;
-	ret = _depthGenerator.GetUserPositionCap().GetUserPosition(id, box);
-	if (ret == XN_STATUS_OK) {
-		_log.information(Poco::format("new user %0.1hfmm-%0.1hfmm", box.RightTopFar.Z, box.LeftBottomNear.Z));
-	} else {
-		_log.information("new user");
-	}
+	_log.information(Poco::format("new user %u", id));
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		_users[id] = new UserViewer(_renderer, _userGenerator, _depthGenerator, id);
@@ -135,7 +129,7 @@ void OpenNIScene::newUser(xn::UserGenerator& user, XnUserID id, void* cookie) {
 }
 
 void OpenNIScene::lostUser(xn::UserGenerator& user, XnUserID id, void* cookie) {
-	_log.information("lost user");
+	_log.information(Poco::format("lost user %u", id));
 	{
 		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 		map<XnUserID, UserViewerPtr>::iterator i = _users.find(id);
@@ -212,9 +206,13 @@ void OpenNIScene::run() {
 				int j = 0;
 				UINT d, b, g, r;
 				XnLabel label;
-				for (int y = 0; y < SENSOR_HEIGHT; y++) {
-					for (int x = 0; x < SENSOR_WIDTH; x++) {
+				for (int y = 0; y < SENSOR_HEIGHT; ++y) {
+					for (int x = 0; x < SENSOR_WIDTH; ++x) {
 						label = _sceneMD(x, y);
+						//if (label > 0) {
+						//	map<XnUserID, UserViewerPtr>::iterator it = _users.find((XnUserID)label);
+						//	if (it != _users.end()) it->second->setHeight(y);
+						//}
 						d = 255 - ((256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) >> 13)) & 0xff; // ëÂëÃd / DEPTH_RANGE_MAXÇçsÇ§ÇΩÇﬂÅA / 8192
 						//r = src[i++] << 16;
 						//g = src[i++] << 8;

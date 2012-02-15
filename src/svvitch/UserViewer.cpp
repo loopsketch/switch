@@ -1,10 +1,11 @@
 #ifdef USE_OPENNI
 
 #include "UserViewer.h"
+#include <Poco/format.h>
 
 
 UserViewer::UserViewer(Renderer& renderer, xn::UserGenerator& userGenerator, xn::DepthGenerator& depthGenerator, XnUserID id):
-	_renderer(renderer), _userGenerator(userGenerator), _depthGenerator(depthGenerator), _id(id)
+	_log(Poco::Logger::get("")), _renderer(renderer), _userGenerator(userGenerator), _depthGenerator(depthGenerator), _id(id), _height(-1)
 {
 }
 
@@ -24,31 +25,93 @@ float UserViewer::distance3D(const XnPoint3D& p1, const XnPoint3D& p2) {
 	return sqrtf(x * x + y * y + z * z);
 }
 
+void UserViewer::setHeight(int h) {
+	if (_height < 0 || _height > h) {
+		_height = h;
+		_log.debug(Poco::format("high: %d", h));
+	}
+}
 void UserViewer::process() {
 	_posR.clear();
 	_posP.clear();
 	XnStatus ret = XN_STATUS_OK;
-	XnBoundingBox3D box;
-	ret = _depthGenerator.GetUserPositionCap().GetUserPosition(_id, box);
-	if (ret == XN_STATUS_OK) {
-		XnPoint3D top = box.RightTopFar;
-		top.X = box.LeftBottomNear.X;
-		top.Z = box.LeftBottomNear.Z;
-		_height = distance3D(box.LeftBottomNear, top);
-		_posP.push_back(box.RightTopFar);
-		_posP.push_back(box.LeftBottomNear);
-	}
-
 	xn::SkeletonCapability& skeleton = _userGenerator.GetSkeletonCap();
 	if (skeleton.IsTracking(_id)) {
 		XnSkeletonJointPosition jp;
 		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_HEAD, jp);
 		_posR.push_back(jp);
 		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_NECK, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_TORSO, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_WAIST, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_COLLAR, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_SHOULDER, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_ELBOW, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_WRIST, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
 		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_HAND, jp);
 		_posR.push_back(jp);
 		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_FINGERTIP, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_COLLAR, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_SHOULDER, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_ELBOW, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_WRIST, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
 		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_HAND, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_FINGERTIP, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_HIP, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_KNEE, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_ANKLE, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_FOOT, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_HIP, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_KNEE, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_ANKLE, jp);
+		_posR.push_back(jp);
+		_posP.push_back(jp.position);
+		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_FOOT, jp);
 		_posR.push_back(jp);
 		_posP.push_back(jp.position);
 
@@ -88,21 +151,32 @@ void UserViewer::process() {
 }
 
 void UserViewer::draw() {
-	if (!_posP.empty()) {
-		DWORD col = 0xccccffcc;
-		_renderer.drawLine(_posP[0].X, _posP[0].Y, col, _posP[0].X, _posP[1].Y, col);
-		_renderer.drawLine(_posP[0].X, _posP[1].Y, col, _posP[1].X, _posP[1].Y, col);
-		_renderer.drawLine(_posP[1].X, _posP[1].Y, col, _posP[1].X, _posP[0].Y, col);
-		_renderer.drawLine(_posP[1].X, _posP[0].Y, col, _posP[0].X, _posP[0].Y, col);
-		_renderer.drawFontTextureText(_posP[0].X, _posP[0].Y, 10, 10, 0xccff3333, Poco::format("HEIGHT %0.1hfcm", _height / 10));
-	}
-
 	xn::SkeletonCapability& skeleton = _userGenerator.GetSkeletonCap();
 	if (skeleton.IsTracking(_id)) {
 		if (!_posP.empty()) {
-			_renderer.drawFontTextureText(_posP[2].X - 30, _posP[2].Y - 5, 10, 10, 0xccff3333, "[HEAD]");
-			_renderer.drawFontTextureText(_posP[3].X - 40, _posP[3].Y - 5, 10, 10, 0xccff3333, "[L-HAND]");
-			_renderer.drawFontTextureText(_posP[4].X - 40, _posP[4].Y - 5, 10, 10, 0xccff3333, "[R-HAND]");
+			DWORD col1 = 0xffff0000;
+			DWORD col2 = 0xff00ff00;
+			for (int i = 0; i < 3; ++i) {
+				_renderer.drawLine(_posP[i].X, _posP[i].Y, col2, _posP[i + 1].X, _posP[i + 1].Y, col2);
+				_renderer.drawTexture(_posP[i].X - 2, _posP[i].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+				_renderer.drawTexture(_posP[i + 1].X - 2, _posP[i + 1].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			}
+			col1 = 0xffffff00;
+			col2 = 0xffffff00;
+			for (int i = 4; i < 9; ++i) {
+				_renderer.drawLine(_posP[i].X, _posP[i].Y, col2, _posP[i + 1].X, _posP[i + 1].Y, col2);
+				_renderer.drawTexture(_posP[i].X - 2, _posP[i].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+				_renderer.drawTexture(_posP[i + 1].X - 2, _posP[i + 1].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			}
+			//for (int i = 10; i < 15; ++i) {
+			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
+			//}
+			//for (int i = 16; i < 19; ++i) {
+			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
+			//}
+			//for (int i = 20; i < 23; ++i) {
+			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
+			//}
 		}
 	}
 }
