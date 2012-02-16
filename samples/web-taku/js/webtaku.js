@@ -1,8 +1,11 @@
 var display = new Array();
 display.push("192.168.1.50");
-var root = "http://" + display[0] + ":9090/0/";
+var root = '/0/';
 
 var _workspace;
+var _workspaceSignature;
+var _selectPlaylist;
+
 
 $(document).ready(function() {
 	$('#error').hide();
@@ -11,7 +14,15 @@ $(document).ready(function() {
 		autoRefresh: true,
 		tolerance: 'fit',
 		stop: function() {
-			setPlaylist($('.ui-selected').attr('playlist-id'));
+			_selectPlaylist = $('#playlist-selector .ui-selected').attr('playlist-id');
+			setPlaylist(_selectPlaylist);
+		}
+	});
+	$('#playlist-item-selector').selectable({
+		autoRefresh: true,
+		tolerance: 'fit',
+		stop: function() {
+			setPlaylistItem($('#playlist-item-selector div').index($('#playlist-item-selector .ui-selected')));
 		}
 	});
 
@@ -32,11 +43,12 @@ function getWorkspace() {
 		cache: false,
 		async: true,
 		success: function(data) {
+			message('操作開始できます.');
 			_workspace = data;
+			_workspaceSignature = null;
 			setupPlaylist();
 			setupPreview();
 			getStatus();
-			message('操作開始できます.');
 		},
 		error: function(request, status, ex) {
 			message('failed not update workspace: ' + status);
@@ -46,18 +58,12 @@ function getWorkspace() {
 
 /** プレイリストのセットアップ */
 function setupPlaylist() {
+	$('#playlist-selector').text('');
 	$(_workspace).find('playlist').each(function() {
 		var item = $('<div>').addClass('ui-widget-content');
-
 		item.attr('playlist-id', $(this).attr('id'));
 		item.text($(this).attr('name'));
-		//item.click(function() {
-		//	var id = $(this).attr('playlist-id');
-		//	setPlaylist(id);
-		//});
-		//$(item).bind('selectstart', function() {return false;});
 		$('#playlist-selector').append(item);
-		//console.log($(this).attr('name'));
 	});
 }
 
@@ -85,6 +91,14 @@ function getStatus() {
 		cache: false,
 		async: true,
 		success: function(data) {
+			var workspace = data['workspace'];
+			if (_workspaceSignature == null) {
+				_workspaceSignature = workspace;
+				message('workspace更新しました.');
+			} else if (_workspaceSignature != workspace) {
+				getWorkspace();
+			}
+			$('#stage-name').text('■' + data['stage-name']);
 			$('#current-playlist').text(data['current-playlist']);
 			$('#current-content').text(data['current-content']);
 			$('#next-playlist').text(data['next-playlist']);
@@ -113,6 +127,7 @@ function getStatus() {
 
 /** プレイリスト準備 */
 function setPlaylist(id) {
+	//console.log(id);
 	$.ajax({
 		type: "GET",
 		url: root + "set/playlist",
@@ -122,7 +137,8 @@ function setPlaylist(id) {
 		async: true,
 		success: function(data) {
 			if (data['playlist']) {
-				message('プレイリストを準備.');
+				//message('プレイリストを準備.');
+				setupPlaylistItems(id);
 			} else {
 				error('プレイリストを準備できません.');
 			}
@@ -133,7 +149,43 @@ function setPlaylist(id) {
 	});
 }
 
-/** 切替 */
+/** プレイリストアイテム準備 */
+function setPlaylistItem(i) {
+	//console.log(_selectPlaylist + '-' + i);
+	$.ajax({
+		type: "GET",
+		url: root + "set/playlist",
+		data: {pl: _selectPlaylist, i: i},
+		dataType: "jsonp",
+		cache: false,
+		async: true,
+		success: function(data) {
+			if (data['playlist']) {
+				//message('プレイリストを準備.');
+			} else {
+				error('プレイリストを準備できません.');
+			}
+		},
+		error: function(request, status, ex) {
+			error('エラー発生: ' + status);
+		}
+	});
+}
+
+/** プレイリストのセットアップ */
+function setupPlaylistItems(id) {
+	$('#playlist-item-selector').text('');
+	$(_workspace).find('playlist[id=' + id + ']>item').each(function() {
+		var mediaID = $(this).text();
+		$(_workspace).find('medialist>item[id=' + mediaID + ']').each(function() {
+			var item = $('<div>').addClass('ui-widget-content');
+			item.text($(this).attr('name'));
+			$('#playlist-item-selector').append(item);
+		});
+	});
+}
+
+	/** 切替 */
 function switchContent() {
 	$.ajax({
 		type: "GET",

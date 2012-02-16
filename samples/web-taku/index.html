@@ -9,11 +9,14 @@
 </head>
 <body>
 	<h1>||| webTAKU |||</h1>
-	<div id="control">
+	<div id="control_view">
 		<div id="message" class="message"></div>
 		<div id="error" class="error"></div>
 
 		<div id="status_panel">
+			<div>
+				<span id="stage-name"></span>
+			</div>
 			<div id="preview_area">
 				<img id="preview">
 			</div>
@@ -21,29 +24,33 @@
 				<dl>
 					<dt>再生中</dt>
 					<dd>
-						<span id="current-playlist"></span>
-						<span id="current-content"></span>
+						<div id="current-playlist"></div>
+						<div id="current-content"></div>
 					</dd>
 				</dl>
 				<dl>
 					<dt>次</dt>
 					<dd>
-						<span id="next-playlist"></span>
-						<span id="next-content"></span>
+						<div id="next-playlist"></div>
+						<div id="next-content"></div>
 					</dd>
 				</dl>
 				<dl>
 					<dt>準備済</dt>
 					<dd>
-						<span id="prepared-playlist"></span>
-						<span id="prepared-content"></span>
+						<div id="prepared-playlist"></div>
+						<div id="prepared-content"></div>
 					</dd>
 				</dl>
 			</div>
 		</div>
-		<div id="playlist-selector" />
-		<div>
+		<div id="panel2">
+			プレイリスト
+			<div id="playlist-selector"></div>
+		</div>
+		<div id="panel3">
 			<input id="doSwitch" type="button" value="切替" />
+			<div id="playlist-item-selector"></div>
 		</div>
 	</div>
 
