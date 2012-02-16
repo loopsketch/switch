@@ -49,6 +49,7 @@ private:
 	//vector<XnUserID> _userID;
 	map<XnUserID, UserViewerPtr> _users;
 
+	DWORD _frame;
 	LPDIRECT3DTEXTURE9 _imageTexture;
 	LPDIRECT3DSURFACE9 _imageSurface;
 	LPDIRECT3DTEXTURE9 _texture;

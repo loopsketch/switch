@@ -37,83 +37,35 @@ void UserViewer::process() {
 	XnStatus ret = XN_STATUS_OK;
 	xn::SkeletonCapability& skeleton = _userGenerator.GetSkeletonCap();
 	if (skeleton.IsTracking(_id)) {
-		XnSkeletonJointPosition jp;
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_HEAD, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_NECK, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_TORSO, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_WAIST, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
+		#define GET_JOINT(joint) {XnSkeletonJointPosition jp = {0}; skeleton.GetSkeletonJointPosition(_id, joint, jp); _posR.push_back(jp); _posP.push_back(jp.position);}
+		GET_JOINT(XN_SKEL_HEAD) // 0
+		GET_JOINT(XN_SKEL_NECK)
+		GET_JOINT(XN_SKEL_TORSO)
+		GET_JOINT(XN_SKEL_WAIST) // x
 
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_COLLAR, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_SHOULDER, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_ELBOW, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_WRIST, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_HAND, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_FINGERTIP, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
+		GET_JOINT(XN_SKEL_LEFT_COLLAR) // x
+		GET_JOINT(XN_SKEL_LEFT_SHOULDER) // 5
+		GET_JOINT(XN_SKEL_LEFT_ELBOW)
+		GET_JOINT(XN_SKEL_LEFT_WRIST) // x
+		GET_JOINT(XN_SKEL_LEFT_HAND)
+		GET_JOINT(XN_SKEL_LEFT_FINGERTIP) // x
 
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_COLLAR, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_SHOULDER, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_ELBOW, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_WRIST, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_HAND, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_FINGERTIP, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
+		GET_JOINT(XN_SKEL_RIGHT_COLLAR) // x
+		GET_JOINT(XN_SKEL_RIGHT_SHOULDER) // 11
+		GET_JOINT(XN_SKEL_RIGHT_ELBOW)
+		GET_JOINT(XN_SKEL_RIGHT_WRIST) // x
+		GET_JOINT(XN_SKEL_RIGHT_HAND)
+		GET_JOINT(XN_SKEL_RIGHT_FINGERTIP) // x
 
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_HIP, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_KNEE, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_ANKLE, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_LEFT_FOOT, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
+		GET_JOINT(XN_SKEL_LEFT_HIP) // 16
+		GET_JOINT(XN_SKEL_LEFT_KNEE)
+		GET_JOINT(XN_SKEL_LEFT_ANKLE)
+		GET_JOINT(XN_SKEL_LEFT_FOOT)
 
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_HIP, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_KNEE, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_ANKLE, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
-		skeleton.GetSkeletonJointPosition(_id, XN_SKEL_RIGHT_FOOT, jp);
-		_posR.push_back(jp);
-		_posP.push_back(jp.position);
+		GET_JOINT(XN_SKEL_RIGHT_HIP) // 20
+		GET_JOINT(XN_SKEL_RIGHT_KNEE)
+		GET_JOINT(XN_SKEL_RIGHT_ANKLE)
+		GET_JOINT(XN_SKEL_RIGHT_FOOT)
 
 		//XN_SKEL_HEAD			= 1,
 		//XN_SKEL_NECK			= 2,
@@ -146,7 +98,7 @@ void UserViewer::process() {
 	}
 
 	if (!_posP.empty()) {
-		_depthGenerator.ConvertRealWorldToProjective(_posP.size(), &(_posP.front()), &(_posP.front()));
+		_depthGenerator.ConvertRealWorldToProjective(_posP.size(), &_posP[0], &_posP[0]);
 	}
 }
 
@@ -156,27 +108,41 @@ void UserViewer::draw() {
 		if (!_posP.empty()) {
 			DWORD col1 = 0xffff0000;
 			DWORD col2 = 0xff00ff00;
-			for (int i = 0; i < 3; ++i) {
+			for (int i = 0; i < 2; ++i) {
 				_renderer.drawLine(_posP[i].X, _posP[i].Y, col2, _posP[i + 1].X, _posP[i + 1].Y, col2);
 				_renderer.drawTexture(_posP[i].X - 2, _posP[i].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
 				_renderer.drawTexture(_posP[i + 1].X - 2, _posP[i + 1].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
 			}
 			col1 = 0xffffff00;
 			col2 = 0xffffff00;
-			for (int i = 4; i < 9; ++i) {
-				_renderer.drawLine(_posP[i].X, _posP[i].Y, col2, _posP[i + 1].X, _posP[i + 1].Y, col2);
-				_renderer.drawTexture(_posP[i].X - 2, _posP[i].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
-				_renderer.drawTexture(_posP[i + 1].X - 2, _posP[i + 1].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
-			}
-			//for (int i = 10; i < 15; ++i) {
-			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
-			//}
-			//for (int i = 16; i < 19; ++i) {
-			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
-			//}
-			//for (int i = 20; i < 23; ++i) {
-			//	_renderer.drawLine(_posP[i].X, _posP[i].Y, col, _posP[i + 1].X, _posP[i + 1].Y, col);
-			//}
+			_renderer.drawLine(_posP[5].X, _posP[5].Y, col2, _posP[6].X, _posP[6].Y, col2);
+			_renderer.drawTexture(_posP[5].X - 2, _posP[5].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawTexture(_posP[6].X - 2, _posP[6].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawLine(_posP[6].X, _posP[6].Y, col2, _posP[8].X, _posP[8].Y, col2);
+			_renderer.drawTexture(_posP[8].X - 2, _posP[8].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+
+			_renderer.drawLine(_posP[11].X, _posP[11].Y, col2, _posP[12].X, _posP[12].Y, col2);
+			_renderer.drawTexture(_posP[11].X - 2, _posP[11].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawTexture(_posP[12].X - 2, _posP[12].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawLine(_posP[12].X, _posP[12].Y, col2, _posP[14].X, _posP[14].Y, col2);
+			_renderer.drawTexture(_posP[14].X - 2, _posP[14].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+
+			col1 = 0xffff6600;
+			col2 = 0xffff6600;
+			_renderer.drawLine(_posP[16].X, _posP[16].Y, col2, _posP[17].X, _posP[17].Y, col2);
+			_renderer.drawTexture(_posP[16].X - 2, _posP[16].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawTexture(_posP[17].X - 2, _posP[17].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawLine(_posP[17].X, _posP[17].Y, col2, _posP[19].X, _posP[19].Y, col2);
+			_renderer.drawTexture(_posP[19].X - 2, _posP[19].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+
+			_renderer.drawLine(_posP[20].X, _posP[20].Y, col2, _posP[21].X, _posP[21].Y, col2);
+			_renderer.drawTexture(_posP[20].X - 2, _posP[20].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawTexture(_posP[21].X - 2, _posP[21].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+			_renderer.drawLine(_posP[21].X, _posP[21].Y, col2, _posP[23].X, _posP[23].Y, col2);
+			_renderer.drawTexture(_posP[23].X - 2, _posP[23].Y - 2, 4, 4, NULL, 0, col1, col1, col1, col1);
+
+			string s = Poco::format("joint %?u", _posP.size());
+			_renderer.drawFontTextureText(0, 10, 10, 10, 0xccff3333, s);
 		}
 	}
 }

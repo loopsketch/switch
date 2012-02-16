@@ -26,7 +26,7 @@ void XN_CALLBACK_TYPE callback_endCalibration(xn::SkeletonCapability& capability
 }
 
 
-OpenNIScene::OpenNIScene(Renderer& renderer): Scene(renderer), _worker(NULL), _readCount(0), _avgTime(0)
+OpenNIScene::OpenNIScene(Renderer& renderer): Scene(renderer), _worker(NULL), _frame(0), _readCount(0), _avgTime(0)
 {
 	_openNIScene = this;
 	_log.information("OpenNI-scene");
@@ -235,7 +235,7 @@ void OpenNIScene::run() {
 							break;
 						default:
 							//dst[j++] = 0xff000000 | r | g | b;
-							dst[j++] = 0xff000000 | d;
+							dst[j++] = 0x00000000 | d;
 						}
 					}
 					j+=pitchAdd;
@@ -266,15 +266,17 @@ void OpenNIScene::run() {
 }
 
 void OpenNIScene::process() {
-	if (_keycode != 0) {
-		_log.information(Poco::format("inkey: %d", _keycode));
-	}
+	_frame++;
+	//if ((_frame % 60) == 0) {
+	//	LPDIRECT3DTEXTURE9 texture = _renderer.getCaptureTexture();
+	//	if (texture) {
+	//		if SUCCEEDED(D3DXSaveTextureToFileA(Poco::format("caps/capture_%05lu.png", _frame / 60).c_str(), D3DXIFF_PNG, texture, NULL)) {
+	//		}
+	//	}
+	//}
 }
 
 void OpenNIScene::draw1() {
-}
-
-void OpenNIScene::draw2() {
 	if (_worker) {
 		if (_texture) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
@@ -290,9 +292,14 @@ void OpenNIScene::draw2() {
 			for (map<XnUserID, UserViewerPtr>::iterator it = _users.begin(); it != _users.end(); it++) {
 				it->second->draw();
 			}
-			string s = Poco::format("%02lufps-%03.2hfms user-%?u", _fpsCounter.getFPS(), _avgTime, _users.size());
-			_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, s);
 		}
+	}
+}
+
+void OpenNIScene::draw2() {
+	if (_worker) {
+		string s = Poco::format("%02lufps-%03.2hfms user-%?u", _fpsCounter.getFPS(), _avgTime, _users.size());
+		_renderer.drawFontTextureText(0, 0, 10, 10, 0xccff3333, s);
 	}
 }
 

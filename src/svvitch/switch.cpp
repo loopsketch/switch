@@ -226,6 +226,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		captureScene->initialize();
 		_renderer->addScene("capture", captureScene);
 	}
+	MainScenePtr mainScene = NULL;
+	if (true) {
+		mainScene = new MainScene(*_renderer);
+		_renderer->addScene("main", mainScene);
+	}
 #ifdef USE_OPENNI
 	OpenNIScenePtr openNIScene = NULL;
 	if (_conf.hasScene("openni")) {
@@ -234,11 +239,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		_renderer->addScene("openni", openNIScene);
 	}
 #endif
-	MainScenePtr mainScene = NULL;
-	if (true) {
-		mainScene = new MainScene(*_renderer);
-		_renderer->addScene("main", mainScene);
-	}
 	if (_conf.hasScene("telop")) {
 		TelopScenePtr telop = new TelopScene(*_renderer);
 		telop->initialize();
