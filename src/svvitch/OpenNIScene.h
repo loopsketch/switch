@@ -46,7 +46,6 @@ private:
 	xn::UserGenerator _userGenerator;
 	xn::SceneMetaData _sceneMD;
 	XnChar _pose[20];
-	//vector<XnUserID> _userID;
 	map<XnUserID, UserViewerPtr> _users;
 
 	DWORD _frame;
