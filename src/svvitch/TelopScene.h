@@ -8,7 +8,9 @@
 
 using std::queue;
 
-
+/**
+ * テロップ管理クラス
+ */
 class Telop {
 private:
 	Telop& copy(const Telop& t) {
@@ -38,6 +40,10 @@ public:
 };
 
 
+/**
+ * ステージ上にテロップ表示を行います
+ * RSS1.0/2.0をソースに利用できます
+ */
 class TelopScene: private Poco::Runnable, public Scene
 {
 private:
