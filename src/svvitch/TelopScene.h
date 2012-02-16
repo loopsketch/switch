@@ -51,7 +51,7 @@ private:
 	Poco::Thread _thread;
 	Poco::Runnable* _worker;
 
-	string _remoteURL;
+	string _sourceURL;
 	string _title;
 	Poco::DateTime _date;
 	int _validMinutes;
@@ -59,6 +59,7 @@ private:
 	int _space;
 	vector<string> _categories;
 	bool _creating;
+	bool _visible;
 
 	queue<Telop> _prepared;
 	vector<Telop> _telops;
@@ -66,9 +67,7 @@ private:
 
 	void run();
 
-	map<string, vector<string>> readRSS(const Poco::LocalDateTime& now);
-
-	map<string, vector<string>> _readXML(const Poco::LocalDateTime& now);
+	map<string, vector<string>> readSource(const Poco::LocalDateTime& now);
 
 
 public:

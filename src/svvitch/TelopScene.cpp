@@ -20,7 +20,7 @@
 #include "Utils.h"
 
 
-TelopScene::TelopScene(Renderer& renderer): Scene(renderer) {
+TelopScene::TelopScene(Renderer& renderer): Scene(renderer), _visible(true) {
 }
 
 TelopScene::~TelopScene() {
@@ -31,14 +31,14 @@ TelopScene::~TelopScene() {
 
 bool TelopScene::initialize() {
 	_log.information("*initialize TelopScene");
-	_remoteURL = "http://rss.rssad.jp/rss/mainichi/flash.rss";
+	_sourceURL = "http://rss.rssad.jp/rss/mainichi/flash.rss";
 	_validMinutes = 120;
 	_speed = -1;
 	_space = 200;
 	try {
 		Poco::Util::XMLConfiguration* config = new Poco::Util::XMLConfiguration("telop-config.xml");
 		if (config) {
-			_remoteURL = config->getString("remoteURL", "http://rss.rssad.jp/rss/mainichi/flash.rss");
+			_sourceURL = config->getString("sourceURL", "http://rss.rssad.jp/rss/mainichi/flash.rss");
 			_validMinutes = config->getInt("validMinutes", 120);
 			_speed = config->getInt("speed", -1);
 			_space = config->getInt("space", 200);
@@ -60,7 +60,7 @@ void TelopScene::run() {
 	int i = -1;
 	while (_worker) {
 		Poco::LocalDateTime now;
-		map<string, vector<string>> sources = readRSS(now);
+		map<string, vector<string>> sources = readSource(now);
 
 		for (int t = 0; _worker && t < 300; ++t) {
 			if (texts.empty()) {
@@ -129,17 +129,16 @@ void TelopScene::run() {
 	}
 }
 
-map<string, vector<string>> TelopScene::readRSS(const Poco::LocalDateTime& now) {
-	_log.information(Poco::format("check remote[%s]: %s", Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT), _remoteURL));
+map<string, vector<string>> TelopScene::readSource(const Poco::LocalDateTime& now) {
+	_log.information(Poco::format("check source[%s]: %s", Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT), _sourceURL));
 	map<string, vector<string>> sources;
 	Poco::XML::DOMParser parser;
 	try {
-		Poco::XML::Document* doc = parser.parse(_remoteURL);
+		Poco::XML::Document* doc = parser.parse(_sourceURL);
 		if (doc) {
 			Poco::XML::Element* root = doc->documentElement();
 			if (root->nodeName() == "rdf:RDF") {
 				// rss1.0
-				_log.information("parse rss1.0");
 				Poco::XML::NodeList* list = root->getElementsByTagName("channel");
 				if (list) {
 					Poco::XML::Element* e = (Poco::XML::Element*)list->item(0);
@@ -200,9 +199,9 @@ map<string, vector<string>> TelopScene::readRSS(const Poco::LocalDateTime& now) 
 					count += m->second.size();
 				}
 				_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
+
 			} else if (root->nodeName() == "rss") {
 				// rss2.0 or atom
-				_log.information("parse rss2.0/ATOM");
 				Poco::XML::NodeList* channels = root->getElementsByTagName("channel");
 				if (channels->length() > 0) {
 					Poco::XML::Element* channel = (Poco::XML::Element*)channels->item(0);
@@ -252,10 +251,49 @@ map<string, vector<string>> TelopScene::readRSS(const Poco::LocalDateTime& now) 
 
 				int count = 0;
 				for (map<string, vector<string>>::iterator m = sources.begin(); m != sources.end(); ++m) {
-					//_log.information(Poco::format("category: %s",m->first));
-					//for (vector<string>::iterator it = m->second.begin(); it != m->second.end(); ++it) {
-					//	_log.information(Poco::format("text[%s]",*it));
-					//}
+					count += m->second.size();
+				}
+				_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
+
+			} else if (root->nodeName().find("-news") != string::npos) {
+				// original format
+				Poco::XML::NodeList* list = root->getElementsByTagName("item");
+				for (int i = 0; i < list->length(); i++) {
+					Poco::XML::Element* e = (Poco::XML::Element*)list->item(i);
+					Poco::XML::Element* date = e->getChildElement("date");
+					int tzd = 0;
+					Poco::DateTime dt;
+					if (date) {
+						dt = Poco::DateTimeParser::parse("%Y/%m/%d %H:%M:%S", date->innerText(), tzd);
+						if (now.day() != dt.day()) continue;
+						int d = (now.timestamp() - dt.timestamp()) / (60 * Poco::Timestamp::resolution());
+						if (d > _validMinutes) continue;
+						//_log.information(Poco::format("date: %s %d", date->innerText(), d));
+					}
+					Poco::XML::Element* command = e->getChildElement("command");
+					if (command && command->innerText() != "9") {
+						vector<string> categories;
+						Poco::XML::Element* category = e->getChildElement("category");
+						if (category) svvitch::split(category->innerText(), ',', categories);
+						if (categories.empty()) continue;
+						Poco::XML::Element* title = e->getChildElement("title");
+						if (title) {
+							for (vector<string>::iterator it = categories.begin(); it != categories.end(); ++it) {
+								const string& key = *it;
+								map<string, vector<string>>::iterator m = sources.find(key);
+								if (m == sources.end()) {
+									vector<string> vec;
+									sources[key] = vec;
+								}
+								sources[key].push_back(title->innerText());
+							}
+						}
+					}
+				}
+				list->release();
+
+				int count = 0;
+				for (map<string, vector<string>>::iterator m = sources.begin(); m != sources.end(); ++m) {
 					count += m->second.size();
 				}
 				_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
@@ -274,75 +312,22 @@ map<string, vector<string>> TelopScene::readRSS(const Poco::LocalDateTime& now) 
 	return sources;
 }
 
-map<string, vector<string>> TelopScene::_readXML(const Poco::LocalDateTime& now) {
-	_log.information(Poco::format("check remote[%s]: %s", Poco::DateTimeFormatter::format(now, Poco::DateTimeFormat::SORTABLE_FORMAT), _remoteURL));
-	map<string, vector<string>> sources;
-	Poco::XML::DOMParser parser;
-	try {
-		Poco::XML::Document* doc = parser.parse(_remoteURL);
-		if (doc) {
-			Poco::XML::NodeList* list = doc->getElementsByTagName("item");
-			for (int i = 0; i < list->length(); i++) {
-				Poco::XML::Element* e = (Poco::XML::Element*)list->item(i);
-				Poco::XML::Element* date = e->getChildElement("date");
-				int tzd = 0;
-				Poco::DateTime dt;
-				if (date) {
-					dt = Poco::DateTimeParser::parse("%Y/%m/%d %H:%M:%S", date->innerText(), tzd);
-					if (now.day() != dt.day()) continue;
-					int d = (now.timestamp() - dt.timestamp()) / (60 * Poco::Timestamp::resolution());
-					if (d > _validMinutes) continue;
-					//_log.information(Poco::format("date: %s %d", date->innerText(), d));
-				}
-				Poco::XML::Element* command = e->getChildElement("command");
-				if (command && command->innerText() != "9") {
-					vector<string> categories;
-					Poco::XML::Element* category = e->getChildElement("category");
-					if (category) svvitch::split(category->innerText(), ',', categories);
-					if (categories.empty()) continue;
-					Poco::XML::Element* title = e->getChildElement("title");
-					if (title) {
-						for (vector<string>::iterator it = categories.begin(); it != categories.end(); ++it) {
-							const string& key = *it;
-							map<string, vector<string>>::iterator m = sources.find(key);
-							if (m == sources.end()) {
-								vector<string> vec;
-								sources[key] = vec;
-							}
-							sources[key].push_back(title->innerText());
-						}
-					}
-					//Poco::XML::Element* caption = e->getChildElement("caption");
-					//if (caption) _log.information(Poco::format("caption: %s", caption->innerText()));
-				}
-			}
-			list->release();
-			doc->release();
-
-			int count = 0;
-			for (map<string, vector<string>>::iterator m = sources.begin(); m != sources.end(); ++m) {
-				//_log.information(Poco::format("category: %s",m->first));
-				//for (vector<string>::iterator it = m->second.begin(); it != m->second.end(); ++it) {
-				//	_log.information(Poco::format("text[%s]",*it));
-				//}
-				count += m->second.size();
-			}
-			_log.information(Poco::format("remote reading %ucategories, %dtexts", sources.size(), count));
-		} else {
-			_log.warning("failed not parse remote XML");
-		}
-	} catch (Poco::IOException& ex) {
-		_log.warning(Poco::format("failed not read XML: %s", ex.displayText()));
-	} catch (...) {
-		_log.warning(Poco::format("failed exception in readMXL(): %s", _remoteURL));
-	}
-	return sources;
-}
-
-
 void TelopScene::process() {
-	if (_telops.empty()) {
-		_creating = true;
+	switch (_keycode) {
+	case 'T':
+		_visible = !_visible;
+		break;
+	}
+
+	if (!_visible) {
+		Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+		for (vector<Telop>::iterator it = _telops.begin(); it != _telops.end(); ) {
+			Telop& t = *it;
+			_deletes.push(t);
+			it = _telops.erase(it);
+		}
+	} else if (_telops.empty()) {
+		_creating = _visible;
 	} else {
 		{
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
