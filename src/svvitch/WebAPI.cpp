@@ -83,20 +83,22 @@ void SwitchRequestHandler::doRequest() {
 		} else if (urls[1] == "version") {
 			version();
 		}
-
-	} else {
-		_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
-		Path src("docs", uri.getPath().substr(1));
-		File f(src);
-		if (f.exists()) {
-			if (f.isDirectory()) src = src.makeDirectory().append("index.html");
-			sendFile(src);
-		}
 	}
 
 	if (!response().sent()) {
-		string s = Poco::format("<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL %s was not found on this server.</p><hr><address>switch %s</address></body></html>", request().getURI(), svvitch::version());
-		sendResponse(HTTPResponse::HTTP_NOT_FOUND, s);
+		Path src("docs", uri.getPath().substr(1));
+		File f(src);
+		if (f.isDirectory()) {
+			src = src.makeDirectory().append("index.html");
+			f = File(src);
+		}
+		if (f.exists()) {
+			sendFile(src);
+		} else {
+			_log.warning(Poco::format("failed access uri [%s]", uri.getPath()));
+			string s = Poco::format("<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL %s was not found on this server.</p><hr><address>switch %s</address></body></html>", request().getURI(), svvitch::version());
+			sendResponse(HTTPResponse::HTTP_NOT_FOUND, s);
+		}
 	}
 }
 
