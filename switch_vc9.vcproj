@@ -149,7 +149,7 @@
 				AdditionalDependencies="strmbase.lib dxguid.lib d3dx9.lib d3d9.lib winmm.lib Quartz.lib Gdiplus.lib imm32.lib Psapi.Lib vfw32.lib comctl32.lib IPHLPAPI.lib PocoFoundationmt.lib PocoNetmt.lib libeay32MT.lib ssleay32MT.lib PocoNetSSLmt.lib PocoCryptomt.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libs"
-				IgnoreDefaultLibraryNames="MSVCRT.lib"
+				IgnoreDefaultLibraryNames=""
 				SubSystem="2"
 				TargetMachine="1"
 			/>
