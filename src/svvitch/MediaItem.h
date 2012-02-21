@@ -73,7 +73,7 @@ public:
 					string key = Poco::trim(pair.substr(0, i));
 					string value = Poco::trim(pair.substr(i + 1));
 					_properties[key] = value;
-//					_log.information(Poco::format("property[%s]=<%s>", key, value));
+					_log.debug(Poco::format("property[%s]=<%s>", key, value));
 				}
 			}
 		}

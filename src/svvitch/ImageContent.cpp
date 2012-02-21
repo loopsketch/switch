@@ -23,7 +23,6 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 
 	_iw = 0;
 	_ih = 0;
-	_dy = 0;
 	vector<LPDIRECT3DTEXTURE9> textures;
 	bool valid = true;
 	D3DFORMAT fomart = D3DFMT_X8R8G8B8; // D3DFMT_A8R8G8B8;
@@ -37,6 +36,10 @@ bool ImageContent::open(const MediaItemPtr media, const int offset) {
 
 		MediaItemFile mif = *it;
 		if (mif.type() == MediaTypeImage) {
+			_dx = mif.getFloatProperty("dx", 0);
+			_dy = mif.getFloatProperty("dy", 0);
+			_rx = mif.getFloatProperty("rx", 0);
+			_log.debug(Poco::format("image dx:%0.2hf dy:%0.2hf rx:%0.2hf", _dx, _dy, _rx));
 			LPDIRECT3DTEXTURE9 texture = _renderer.createTexture(mif.file());
 			if (texture) {
 				D3DSURFACE_DESC desc;
@@ -171,6 +174,14 @@ void ImageContent::process(const DWORD& frame) {
 	if (_playing) {
 		_current++;
 		if (_duration < _current) _current = _duration;
+		if (_dx != 0) {
+			_x += _dx;
+			if (_dx < 0 && _x <= _rx) {
+				_x = 0;
+			} else if (_dx > 0 && _x >= _rx) {
+				_x = 0;
+			}
+		}
 
 		int fps = 60;
 		unsigned long cu = _current / fps;

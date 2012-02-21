@@ -23,7 +23,9 @@ private:
 	LPDIRECT3DTEXTURE9 _target;
 	int _tw;
 	int _th;
+	float _dx;
 	float _dy;
+	float _rx;
 
 	bool _finished;
 	bool _playing;
