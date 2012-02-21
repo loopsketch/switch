@@ -219,24 +219,30 @@ void OpenNIScene::run() {
 						g = src[i++] << 8;
 						b = src[i++];
 						switch (label) {
-						case 1:
-							dst[j++] = d << 24 | 0x0099ff;
-							break;
-						case 2:
-							dst[j++] = d << 24 | 0xffcc00;
-							break;
-						case 3:
-							dst[j++] = d << 24 | 0xff0099;
-							break;
-						case 4:
-							dst[j++] = d << 24 | 0x009900;
-							break;
-						case 5:
-							dst[j++] = d << 24 | 0x00ff99;
-							break;
-						default:
+						case 0:
 							dst[j++] = 0xff000000 | r | g | b;
 							//dst[j++] = 0x00000000 | d;
+						case 1:
+							dst[j++] = d << 24 | 0x0033ff;
+							break;
+						case 2:
+							dst[j++] = d << 24 | 0xcc0000;
+							break;
+						case 3:
+							dst[j++] = d << 24 | 0xff00cc;
+							break;
+						case 4:
+							dst[j++] = d << 24 | 0x00cc00;
+							break;
+						case 5:
+							dst[j++] = d << 24 | 0x00ccff;
+							break;
+						case 6:
+							dst[j++] = d << 24 | 0xffcc00;
+							break;
+						default:
+							dst[j++] = d << 24 | 0xcccccc;
+							break;
 						}
 					}
 					j+=pitchAdd;
