@@ -26,7 +26,7 @@ void XN_CALLBACK_TYPE callback_endCalibration(xn::SkeletonCapability& capability
 }
 
 
-OpenNIScene::OpenNIScene(Renderer& renderer): Scene(renderer), _worker(NULL), _frame(0), _readCount(0), _avgTime(0)
+OpenNIScene::OpenNIScene(Renderer& renderer): Scene(renderer), _worker(NULL), _frame(0), _texture1(NULL), _texture2(NULL), _readCount(0), _avgTime(0)
 {
 	_openNIScene = this;
 	_log.information("OpenNI-scene");
@@ -39,7 +39,8 @@ OpenNIScene::~OpenNIScene() {
 	}
 	SAFE_RELEASE(_imageTexture);
 	SAFE_RELEASE(_imageSurface);
-	SAFE_RELEASE(_texture);
+	SAFE_RELEASE(_texture1);
+	SAFE_RELEASE(_texture2);
 
 	_log.information("*uninitialize OpenNI-scene");
 }
@@ -47,7 +48,6 @@ OpenNIScene::~OpenNIScene() {
 bool OpenNIScene::initialize() {
 	_imageTexture = NULL;
 	_imageSurface = NULL;
-	_texture = NULL;
 
 	XnStatus ret = XN_STATUS_OK;
 	//ret = _context.InitFromXmlFile("openni-config.xml", NULL);
@@ -104,7 +104,8 @@ bool OpenNIScene::initialize() {
 
 	_imageTexture = _renderer.createRenderTarget(SENSOR_WIDTH, SENSOR_HEIGHT, D3DFMT_A8R8G8B8);
 	_imageSurface = _renderer.createLockableSurface(SENSOR_WIDTH, SENSOR_HEIGHT, D3DFMT_A8R8G8B8);
-	_texture = _renderer.createRenderTarget(SENSOR_WIDTH, SENSOR_HEIGHT, D3DFMT_A8R8G8B8);
+	_texture1 = _renderer.createRenderTarget(SENSOR_WIDTH, SENSOR_HEIGHT, D3DFMT_A8R8G8B8);
+	_texture2 = _renderer.createRenderTarget(SENSOR_WIDTH, SENSOR_HEIGHT, D3DFMT_A8R8G8B8);
 
 	_worker = this;
 	_thread.start(*_worker);
@@ -199,10 +200,10 @@ void OpenNIScene::run() {
 			}
 			D3DLOCKED_RECT lockedRect = {0};
 			if SUCCEEDED(_imageSurface->LockRect(&lockedRect, NULL, 0)) {
-				//LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
+				LPBYTE src = (LPBYTE)_imageMD.RGB24Data();
 				LPUINT dst = (LPUINT)lockedRect.pBits;
 				int pitchAdd = lockedRect.Pitch / 4 - SENSOR_WIDTH;
-				//int i = 0;
+				int i = 0;
 				int j = 0;
 				UINT d, b, g, r;
 				XnLabel label;
@@ -214,9 +215,9 @@ void OpenNIScene::run() {
 						//	if (it != _users.end()) it->second->setHeight(y);
 						//}
 						d = 255 - ((256 * (_depthMD(x, y) - DEPTH_RANGE_MIN) >> 13)) & 0xff; // ëÂëÃd / DEPTH_RANGE_MAXÇçsÇ§ÇΩÇﬂÅA / 8192
-						//r = src[i++] << 16;
-						//g = src[i++] << 8;
-						//b = src[i++];
+						r = src[i++] << 16;
+						g = src[i++] << 8;
+						b = src[i++];
 						switch (label) {
 						case 1:
 							dst[j++] = d << 24 | 0x0099ff;
@@ -234,8 +235,8 @@ void OpenNIScene::run() {
 							dst[j++] = d << 24 | 0x00ff99;
 							break;
 						default:
-							//dst[j++] = 0xff000000 | r | g | b;
-							dst[j++] = 0x00000000 | d;
+							dst[j++] = 0xff000000 | r | g | b;
+							//dst[j++] = 0x00000000 | d;
 						}
 					}
 					j+=pitchAdd;
@@ -247,7 +248,7 @@ void OpenNIScene::run() {
 			}
 			{
 				Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-				_renderer.copyTexture(_imageTexture, _texture);
+				_renderer.copyTexture(_imageTexture, _texture1);
 			}
 			_fpsCounter.count();
 		} catch (const std::exception& ex) {
@@ -278,21 +279,33 @@ void OpenNIScene::process() {
 
 void OpenNIScene::draw1() {
 	if (_worker) {
-		if (_texture) {
+		LPDIRECT3DDEVICE9 device = _renderer.get3DDevice();
+		LPDIRECT3DSURFACE9 target = NULL;
+		HRESULT hr = device->GetRenderTarget(0, &target);
+		LPDIRECT3DSURFACE9 surface = NULL;
+		_texture2->GetSurfaceLevel(0, &surface);
+		hr = device->SetRenderTarget(0, surface);
+		if (_texture1) {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
-			DWORD col = 0xff0000ff;
-			//_renderer.drawTexture(400, 0, 640, 480, NULL, 0, col, col, col, col);
-			col = 0xffffffff;
-			_renderer.drawTexture(0, 0, 640, 480, _texture, 0, col, col, col, col);
-			//col = 0xccffffff;
-			//_renderer.drawTexture(400, 0, 640, 480, _depthTexture, 0, col, col, col, col);
-		}
-		{
-			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
+			DWORD col = 0xffffffff;
+			_renderer.drawTexture(0, 0, SENSOR_WIDTH, SENSOR_HEIGHT, _texture1, 0, col, col, col, col);
 			for (map<XnUserID, UserViewerPtr>::iterator it = _users.begin(); it != _users.end(); it++) {
 				it->second->draw();
 			}
 		}
+		hr = device->SetRenderTarget(0, target);
+		float z = F(config().stageRect.right) / SENSOR_WIDTH;
+		float sw = SENSOR_WIDTH * z;
+		float sh = SENSOR_HEIGHT * z;
+		float sx = (config().stageRect.right - sw) / 2;
+		float sy = (config().stageRect.bottom - sh) / 2;
+
+		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		DWORD col = 0xffffffff;
+		_renderer.drawTexture(config().stageRect.left, config().stageRect.top, config().stageRect.right, config().stageRect.bottom, sx, sy, sw, sh, _texture2, 0, col, col, col, col);
+		device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 	}
 }
 

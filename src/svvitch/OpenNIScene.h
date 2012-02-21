@@ -51,7 +51,8 @@ private:
 	DWORD _frame;
 	LPDIRECT3DTEXTURE9 _imageTexture;
 	LPDIRECT3DSURFACE9 _imageSurface;
-	LPDIRECT3DTEXTURE9 _texture;
+	LPDIRECT3DTEXTURE9 _texture1;
+	LPDIRECT3DTEXTURE9 _texture2;
 
 	FPSCounter _fpsCounter;
 	DWORD _readTime;
