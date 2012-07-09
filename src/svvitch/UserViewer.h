@@ -20,8 +20,8 @@ private:
 	xn::UserGenerator& _userGenerator;
 	XnUserID _id;
 	int _height;
-	vector<XnSkeletonJointPosition> _posR;
-	vector<XnPoint3D> _posP;
+	XnSkeletonJointPosition* _posR;
+	XnPoint3D* _posP;
 	//map<XnSkeletonJoint, XnSkeletonJointPosition> _pos;
 
 	float distance2D(const XnPoint3D& p1, const XnPoint3D& p2);

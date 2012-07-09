@@ -287,11 +287,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 }
 
 void mainloop(HWND hWnd) {
-	SetThreadAffinityMask(::GetCurrentThread(), 1 | 2 | 4 | 8);
+	//SetThreadAffinityMask(::GetCurrentThread(), 1 | 2 | 4 | 8);
+	timeBeginPeriod(1);
 	EXCEPTION_RECORD ERecord;
 	CONTEXT EContext; 
 	__try {
 		SetErrorMode(SEM_NOGPFAULTERRORBOX);
+
 
 		LARGE_INTEGER freq;
 		LARGE_INTEGER start;
@@ -337,6 +339,7 @@ void mainloop(HWND hWnd) {
 			fclose(fp);
 		}
 	}
+	timeEndPeriod(1);
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

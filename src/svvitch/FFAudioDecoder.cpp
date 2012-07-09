@@ -32,23 +32,23 @@ void FFAudioDecoder::start() {
 	WORD sampleBit;
 	string type;
 	switch (avctx->sample_fmt) {
-		case SAMPLE_FMT_U8:
+		case AV_SAMPLE_FMT_U8:
 			type = "unsigned 8 bits";
 			sampleBit = 8;
 			break;
-		case SAMPLE_FMT_S16:
+		case AV_SAMPLE_FMT_S16:
 			type = "signed 16 bits";
 			sampleBit = 16;
 			break;
-		case SAMPLE_FMT_S32:
+		case AV_SAMPLE_FMT_S32:
 			type = "signed 32 bits";
 			sampleBit = 32;
 			break;
-		case SAMPLE_FMT_FLT:
+		case AV_SAMPLE_FMT_FLT:
 			type = "float";
 			sampleBit = 32;
 			break;
-		case SAMPLE_FMT_DBL:
+		case AV_SAMPLE_FMT_DBL:
 			type = "double";
 			sampleBit = 32;
 			break;
