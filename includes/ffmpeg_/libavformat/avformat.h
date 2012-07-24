@@ -805,6 +805,11 @@ typedef struct AVStream {
      * should be discarded.
      */
     int skip_to_keyframe;
+
+    /**
+     * Number of samples to skip at the start of the frame decoded from the next packet.
+     */
+    int skip_samples;
 } AVStream;
 
 #define AV_PROGRAM_RUNNING 1
@@ -1944,6 +1949,10 @@ const struct AVCodecTag *avformat_get_riff_video_tags(void);
 const struct AVCodecTag *avformat_get_riff_audio_tags(void);
 
 /**
+ * @}
+ */
+
+/**
  * Guesses the sample aspect ratio of a frame, based on both the stream and the
  * frame aspect ratio.
  *
@@ -1963,8 +1972,20 @@ const struct AVCodecTag *avformat_get_riff_audio_tags(void);
 AVRational av_guess_sample_aspect_ratio(AVFormatContext *format, AVStream *stream, AVFrame *frame);
 
 /**
- * @}
+ * Check if the stream st contained in s is matched by the stream specifier
+ * spec.
+ *
+ * See the "stream specifiers" chapter in the documentation for the syntax
+ * of spec.
+ *
+ * @return  >0 if st is matched by spec;
+ *          0  if st is not matched by spec;
+ *          AVERROR code if spec is invalid
+ *
+ * @note  A stream specifier can match several streams in the format.
  */
+int avformat_match_stream_specifier(AVFormatContext *s, AVStream *st,
+                                    const char *spec);
 
 /**
  * @}
