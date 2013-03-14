@@ -66,8 +66,16 @@ bool OpenNIScene::initialize() {
 	mode.nXRes = SENSOR_WIDTH;
 	mode.nYRes = SENSOR_HEIGHT;
 	mode.nFPS = 30;
-	_imageGenerator.SetMapOutputMode(mode);
-	_imageGenerator.SetPixelFormat(XN_PIXEL_FORMAT_RGB24);
+	ret = _imageGenerator.SetMapOutputMode(mode);
+	if (ret != XN_STATUS_OK) {
+		_log.warning("failed not found ImageGenerator.SetMapOutputMode");
+		return false;
+	}
+	ret = _imageGenerator.SetPixelFormat(XN_PIXEL_FORMAT_GRAYSCALE_8_BIT); //XN_PIXEL_FORMAT_RGB24
+	if (ret != XN_STATUS_OK) {
+		_log.warning("failed not found ImageGenerator.SetPixelFormat");
+		return false;
+	}
 
 	ret = _depthGenerator.Create(_context);
 	//ret = _context.FindExistingNode(XN_NODE_TYPE_DEPTH, _depth);

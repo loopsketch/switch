@@ -186,13 +186,13 @@ HRESULT Renderer::initialize(HINSTANCE hInstance, HWND hWnd) {
 	}
 
 	// MediaFoundation向けのデバイスマネージャ生成
-	hr = DXVA2CreateDirect3DDeviceManager9(&_deviceResetToken, &_devManager);
-	if FAILED(hr) {
-		_log.warning("failed DXVA2CreateDirect3DDeviceManager9");
-	} else {
-		hr = _devManager->ResetDevice(_device, _deviceResetToken);
-		if SUCCEEDED(hr) _log.warning("initialized Direct3DDeviceManager9");
-	}
+	//hr = DXVA2CreateDirect3DDeviceManager9(&_deviceResetToken, &_devManager);
+	//if FAILED(hr) {
+	//	_log.warning("failed DXVA2CreateDirect3DDeviceManager9");
+	//} else {
+	//	hr = _devManager->ResetDevice(_device, _deviceResetToken);
+	//	if SUCCEEDED(hr) _log.warning("initialized Direct3DDeviceManager9");
+	//}
 
 	// フォント読込み
 	_fc = new Gdiplus::PrivateFontCollection();
@@ -291,7 +291,7 @@ void Renderer::finalize() {
 	SAFE_RELEASE(_fontTexture);
 	SAFE_RELEASE(_captureTexture);
 	SAFE_RELEASE(_backBuffer);
-	SAFE_RELEASE(_devManager);
+	//SAFE_RELEASE(_devManager);
 	SAFE_RELEASE(_device);
 	SAFE_RELEASE(_d3d);
 	SAFE_DELETE(_presentParams);

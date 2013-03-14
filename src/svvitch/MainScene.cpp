@@ -214,6 +214,7 @@ bool MainScene::initialize() {
 	_frame = 0;
 	_brightness = config().brightness;
 	_running = true;
+	_pause = false;
 	_startup = false;
 	_autoStart = false;
 	_log.information("*created main-scene");
@@ -1241,6 +1242,10 @@ int MainScene::copyFiles(const string& src, const string& dst) {
 
 
 
+void MainScene::setPause(bool sw) {
+	_pause = sw;
+}
+
 void MainScene::process() {
 	Poco::LocalDateTime now;
 	switch (_keycode) {
@@ -1250,6 +1255,8 @@ void MainScene::process() {
 	case 'X':
 		if (config().brightness < 100) config().brightness++;
 		break;
+	case ' ':
+		_pause = !_pause;
 	}
 	if (_brightness < config().brightness) {
 		_brightness++;
@@ -1428,8 +1435,11 @@ void MainScene::process() {
 			Poco::ScopedLock<Poco::FastMutex> lock(_lock);
 			ContentPtr currentContent = NULL;
 			if (_currentContent >= 0) currentContent = _contents[_currentContent]->get(0);
-			for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
-				(*it)->process(_frame);
+			if (!_pause)
+			{
+				for (vector<Container*>::iterator it = _contents.begin(); it != _contents.end(); it++) {
+					(*it)->process(_frame);
+				}
 			}
 
 			bool readyNext = !_status["next-content"].empty();

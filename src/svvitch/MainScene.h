@@ -168,6 +168,8 @@ private:
 	bool _initializing;
 	bool _running;
 
+	bool _pause;
+
 	string _castLogDate;
 	Poco::FileOutputStream* _castLog;
 
@@ -314,6 +316,9 @@ public:
 
 	/** リムーバブルメディアの追加(アクティブ版) */
 	ActiveMethod<void, string, MainScene> activeAddRemovableMedia;
+
+	/** ポーズを設定 */
+	void setPause(bool sw);
 
 	/** 毎フレームで行う処理 */
 	virtual void process();

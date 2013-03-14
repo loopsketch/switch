@@ -21,8 +21,8 @@
 #include <vfw.h>
 #include <dsound.h>
 #pragma comment(lib, "dsound.lib")
-#include <dxva2api.h>
-#pragma comment(lib, "dxva2.lib")
+//#include <dxva2api.h>
+//#pragma comment(lib, "dxva2.lib")
 
 
 using std::string;
@@ -94,7 +94,7 @@ private:
 	LPDIRECTSOUND _sound;
 
 	UINT _deviceResetToken;
-	IDirect3DDeviceManager9* _devManager;
+	//IDirect3DDeviceManager9* _devManager;
 
 	int _mem;
 	UINT _textureMem;
