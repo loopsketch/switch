@@ -47,7 +47,7 @@ void SwitchRequestHandler::doRequest() {
 	string encoded;
 	Poco::URI::encode(request().getURI(), "/", encoded);
 	Poco::URI uri(encoded);
-	//_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
+	_log.information(Poco::format("webAPI access uri [%s]", uri.getPath()));
 	//vector<string> params;
 	//svvitch::split(uri.getPath().substr(1), '?', params, 2);
 	vector<string> urls;
@@ -169,6 +169,14 @@ void SwitchRequestHandler::set(const string& command) {
 				scene->setBrightness(i);
 				map<string, string> params;
 				params["brightness"] = Poco::format("%d", i);
+				sendJSONP(form().get("callback", ""), params);
+				return;
+
+			} else if (command == "pause") {
+				string pause = form().get("v");
+				scene->setPause(pause == "true");
+				map<string, string> params;
+				params["pause"] = pause;
 				sendJSONP(form().get("callback", ""), params);
 				return;
 
@@ -338,11 +346,11 @@ void SwitchRequestHandler::get(const string& command) {
 
 void SwitchRequestHandler::files() {
 	string path = form().get("path", "");
-	//_log.information(Poco::format("files: %s", path));
 	if (path.at(0) == '/' || path.at(0) == '\\') path = path.substr(1);
-	Path dir(config().dataRoot, Path(path).toString());
-	//Path dir = config().dataRoot;
+	//_log.information(Poco::format("files: %s", path));
 	try {
+		Path dir(config().dataRoot, Path(path).toString());
+		//Path dir = config().dataRoot;
 		//if (!path.empty()) dir = dir.append(path);
 		map<string, string> result;
 		result["count"] = Poco::format("%d", svvitch::fileCount(dir));
@@ -359,40 +367,48 @@ void SwitchRequestHandler::files() {
 }
 
 string SwitchRequestHandler::fileToJSON(const Path path) {
-	string name = path.getFileName();
-	if (name.length() > 1 && (name.at(0) == '.' || name.at(0) == '$')) return "";
+	try {
+		string name = path.getFileName();
+		if (name.length() > 1 && (name.at(0) == '.' || name.at(0) == '$')) return "";
 
-	if (path.isDirectory()) {
-		vector<string> files;
-		vector<File> list;
-		File(path).list(list);
-		for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
-//			string json = fileToJSON(*it);
-//			files.push_back(json);
-			File f = *it;
-			string subName = Path(f.path()).getFileName();
-			if (subName.length() > 1 && subName.at(0) != '.' && subName.at(0) != '$') {
-				if (f.isDirectory()) {
-					files.push_back(subName + "/");
-				} else {
-					files.push_back(subName);
+		if (path.isDirectory()) {
+			vector<string> files;
+			vector<File> list;
+			File(path).list(list);
+			for (vector<File>::iterator it = list.begin(); it != list.end(); it++) {
+	//			string json = fileToJSON(*it);
+	//			files.push_back(json);
+				File f = *it;
+				string subName = Path(f.path()).getFileName();
+				if (subName.length() > 1 && subName.at(0) != '.' && subName.at(0) != '$') {
+					if (f.isDirectory()) {
+						files.push_back(subName + "/");
+					} else {
+						files.push_back(subName);
+					}
 				}
 			}
+			return svvitch::formatJSONArray(files);
 		}
-		return svvitch::formatJSONArray(files);
+		map<string, string> params;
+		params["name"] = svvitch::formatJSON(name);
+		File f(path);
+		Poco::DateTime modified(f.getLastModified());
+		modified.makeLocal(Poco::Timezone::tzd());
+		params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
+		params["size"] = Poco::format("%Lu", f.getSize());
+		//if (f.getSize() < 10485760) {
+		//	// 10MBˆÈ‰º‚È‚çmd5‚ðŒvŽZ
+		//	params["md5"] = "\"" + svvitch::md5(path) + "\"";
+		//}
+		return svvitch::formatJSON(params);
+	} catch (Poco::FileException& ex) {
+		_log.warning(ex.displayText());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
+	} catch (Poco::PathSyntaxException& ex) {
+		_log.warning(ex.displayText());
+		sendResponse(HTTPResponse::HTTP_NOT_FOUND, ex.displayText());
 	}
-	map<string, string> params;
-	params["name"] = svvitch::formatJSON(name);
-	File f(path);
-	Poco::DateTime modified(f.getLastModified());
-	modified.makeLocal(Poco::Timezone::tzd());
-	params["modified"] = "\"" + Poco::DateTimeFormatter::format(modified, Poco::DateTimeFormat::SORTABLE_FORMAT) + "\"";
-	params["size"] = Poco::format("%Lu", f.getSize());
-	//if (f.getSize() < 10485760) {
-	//	// 10MBˆÈ‰º‚È‚çmd5‚ðŒvŽZ
-	//	params["md5"] = "\"" + svvitch::md5(path) + "\"";
-	//}
-	return svvitch::formatJSON(params);
 }
 
 void SwitchRequestHandler::download() {
