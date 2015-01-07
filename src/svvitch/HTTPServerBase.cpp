@@ -122,46 +122,48 @@ bool BaseRequestHandler::sendFile(Path& path) {
 		if (is.good()) {
 			string ext = path.getExtension();
 			File f(path);
-			File::FileSize length = f.getSize();
-			response().setContentLength(static_cast<int>(length));
-			if (ext == "png") {
-				response().setContentType("image/png");
-			} else if (ext == "jpg" || ext == "jpeg") {
-				response().setContentType("image/jpeg");
-			} else if (ext == "bmp") {
-				response().setContentType("image/bmp");
-			} else if (ext == "gif") {
-				response().setContentType("image/gif");
-			} else if (ext == "mpg" || ext == "mpeg") {
-				response().setContentType("video/mpeg");
-			} else if (ext == "mp4" || ext == "f4v" || ext == "264") {
-				response().setContentType("video/mp4");
-			} else if (ext == "wmv") {
-				response().setContentType("video/x-ms-wmv"); 
-			} else if (ext == "mov") {
-				response().setContentType("video/quicktime");
-			} else if (ext == "flv") {
-				response().setContentType("video/x-flv");
-			} else if (ext == "swf") {
-				response().setContentType("application/x-shockwave-flash");
-			} else if (ext == "pdf") {
-				response().setContentType("application/pdf");
-			} else if (ext == "txt") {
-				response().setContentType("text/plain");
-			} else if (ext == "htm" || ext == "html") {
-				response().setContentType("text/html");
-			} else if (ext == "xml") {
-				response().setContentType("text/xml");
-			} else {
-				response().setContentType("application/octet-stream");
-			}
-			response().setChunkedTransferEncoding(false);
-			response().add("Access-Control-Allow-Origin", "*"); // for chrome xhr
-			response().add("Access-Control-Allow-Headers", "X-Requested-With"); // chrome xhr
+			if (f.exists()) {
+				File::FileSize length = f.getSize();
+				response().setContentLength(static_cast<int>(length));
+				if (ext == "png") {
+					response().setContentType("image/png");
+				} else if (ext == "jpg" || ext == "jpeg") {
+					response().setContentType("image/jpeg");
+				} else if (ext == "bmp") {
+					response().setContentType("image/bmp");
+				} else if (ext == "gif") {
+					response().setContentType("image/gif");
+				} else if (ext == "mpg" || ext == "mpeg") {
+					response().setContentType("video/mpeg");
+				} else if (ext == "mp4" || ext == "f4v" || ext == "264") {
+					response().setContentType("video/mp4");
+				} else if (ext == "wmv") {
+					response().setContentType("video/x-ms-wmv"); 
+				} else if (ext == "mov") {
+					response().setContentType("video/quicktime");
+				} else if (ext == "flv") {
+					response().setContentType("video/x-flv");
+				} else if (ext == "swf") {
+					response().setContentType("application/x-shockwave-flash");
+				} else if (ext == "pdf") {
+					response().setContentType("application/pdf");
+				} else if (ext == "txt") {
+					response().setContentType("text/plain");
+				} else if (ext == "htm" || ext == "html") {
+					response().setContentType("text/html");
+				} else if (ext == "xml") {
+					response().setContentType("text/xml");
+				} else {
+					response().setContentType("application/octet-stream");
+				}
+				response().setChunkedTransferEncoding(false);
+				response().add("Access-Control-Allow-Origin", "*"); // for chrome xhr
+				response().add("Access-Control-Allow-Headers", "X-Requested-With"); // chrome xhr
 
-			Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
-			is.close();
-			return true;
+				Poco::StreamCopier::copyStream(is, response().send(), 512 * 1024);
+				is.close();
+				return true;
+			}
 		} else {
 			throw Poco::OpenFileException(path.toString());
 		}
@@ -224,7 +226,7 @@ void BaseRequestHandler::sendResponse(HTTPResponse::HTTPStatus status, const str
 		}
 	} else {
 		response().setContentType("text/html; charset=UTF-8");
-		response().send() << message;
+		response().send() << message << std::endl;
 	}
 	response().send().flush();
 }

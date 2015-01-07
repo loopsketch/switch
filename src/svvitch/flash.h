@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * Flash‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ğ—˜—p‚·‚é‚½‚ß‚Ìƒwƒbƒ_W
+ * Flashï¿½ÌƒRï¿½ï¿½ï¿½|ï¿½[ï¿½lï¿½ï¿½ï¿½gï¿½ğ—˜—pï¿½ï¿½ï¿½é‚½ï¿½ß‚Ìƒwï¿½bï¿½_ï¿½W
  */
 #ifdef UNICODE
 #define FormatMessage FormatMessageW
@@ -23,7 +23,8 @@
 #include <atlbase.h>
 
 #pragma warning(disable: 4192)
-#import <C:\\Windows\\SysWOW64\\Macromed\\Flash\\Flash32_11_6_602_180.ocx> named_guids
+#import <C:\\Windows\\SysWOW64\\Macromed\\Flash\\Flash32_15_0_0_246.ocx> named_guids
+//#import <C:\\Windows\\SysWOW64\\Macromed\\Flash\\Flash32_11_7_700_224.ocx> named_guids
 //#import <C:\\WINDOWS\\system32\\Macromed\\Flash\\Flash64_11_1_102.ocx> named_guids
 #pragma warning(default: 4192)
 

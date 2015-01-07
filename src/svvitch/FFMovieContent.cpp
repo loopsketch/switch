@@ -223,6 +223,7 @@ bool FFMovieContent::open(const MediaItemPtr media, const int offset) {
 	_current = media->start() * 60 / 1000;
 	if (media->duration() > 0) _duration = media->duration() * 60 / 1000;
 	set("alpha", 1.0f);
+	set("aspect-mode", media->getProperty("aspect-mode", "")); 
 	_starting = false;
 	_finished = false;
 	return true;
